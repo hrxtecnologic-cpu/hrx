@@ -1,6 +1,7 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { clerkClient } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
+import '@/types/clerk';
 
 // Rotas públicas (não requerem autenticação)
 const isPublicRoute = createRouteMatcher([
@@ -61,16 +62,18 @@ export default clerkMiddleware(async (auth, req) => {
     const user = await client.users.getUser(userId);
     const userEmail = user.emailAddresses[0]?.emailAddress?.toLowerCase() || '';
 
+    const publicMetadata = sessionClaims?.publicMetadata as { role?: string } | undefined;
+
     console.log('[Middleware] 🔍 Verificando admin:', {
       userId: userId.substring(0, 10),
       email: userEmail,
-      role: sessionClaims?.publicMetadata?.role,
+      role: publicMetadata?.role,
       adminEmails: ADMIN_EMAILS,
     });
 
     const isAdmin =
       ADMIN_EMAILS.includes(userEmail) ||
-      sessionClaims?.publicMetadata?.role === 'admin';
+      publicMetadata?.role === 'admin';
 
     if (!isAdmin) {
       console.log('[Middleware] ❌ Acesso negado - não é admin:', userEmail);
