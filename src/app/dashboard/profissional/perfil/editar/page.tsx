@@ -7,8 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Save, AlertCircle, Upload, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Save, AlertCircle, Upload, CheckCircle, FileText, XCircle } from 'lucide-react';
 import Link from 'next/link';
+import { DocumentUpload } from '@/components/DocumentUpload';
 
 export default function EditProfessionalProfilePage() {
   const router = useRouter();
@@ -17,16 +18,21 @@ export default function EditProfessionalProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [professional, setProfessional] = useState<any>(null);
+  const [documentValidations, setDocumentValidations] = useState<any>({});
+  const [uploadedDocuments, setUploadedDocuments] = useState<Record<string, string>>({});
 
   // Estados do formulário
   const [formData, setFormData] = useState({
     full_name: '',
     phone: '',
     cpf: '',
+    street: '',
+    number: '',
+    complement: '',
+    neighborhood: '',
     city: '',
     state: '',
-    address: '',
-    zip_code: '',
+    cep: '',
     bio: '',
   });
 
@@ -43,12 +49,28 @@ export default function EditProfessionalProfilePage() {
           full_name: data.full_name || '',
           phone: data.phone || '',
           cpf: data.cpf || '',
+          street: data.street || '',
+          number: data.number || '',
+          complement: data.complement || '',
+          neighborhood: data.neighborhood || '',
           city: data.city || '',
           state: data.state || '',
-          address: data.address || '',
-          zip_code: data.zip_code || '',
+          cep: data.cep || '',
           bio: data.bio || '',
         });
+
+        // Buscar validações de documentos
+        if (data.id) {
+          try {
+            const validationsResponse = await fetch(`/api/admin/professionals/${data.id}/documents`);
+            if (validationsResponse.ok) {
+              const validationsData = await validationsResponse.json();
+              setDocumentValidations(validationsData.validations || {});
+            }
+          } catch (err) {
+            console.error('Erro ao buscar validações:', err);
+          }
+        }
       } catch (error) {
         console.error('Erro:', error);
         setError('Erro ao carregar perfil. Tente novamente.');
@@ -60,15 +82,53 @@ export default function EditProfessionalProfilePage() {
     loadProfile();
   }, []);
 
+  // Função para fazer upload de documento
+  async function handleDocumentUpload(file: File, documentType: string) {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('documentType', documentType);
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error('Erro no upload');
+
+      const { url } = await response.json();
+
+      setUploadedDocuments((prev) => ({
+        ...prev,
+        [documentType]: url,
+      }));
+
+      return url;
+    } catch (error) {
+      console.error('Erro no upload:', error);
+      alert('Erro ao fazer upload. Tente novamente.');
+      throw error;
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
 
     try {
+      // Mesclar documentos existentes com novos uploads
+      const updatedDocuments = {
+        ...professional.documents,
+        ...uploadedDocuments,
+      };
+
       const response = await fetch('/api/professional/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          documents: updatedDocuments,
+        }),
       });
 
       if (!response.ok) throw new Error('Erro ao salvar');
@@ -214,14 +274,14 @@ export default function EditProfessionalProfilePage() {
               </div>
 
               <div>
-                <Label htmlFor="zip_code" className="text-zinc-300">
+                <Label htmlFor="cep" className="text-zinc-300">
                   CEP
                 </Label>
                 <Input
-                  id="zip_code"
-                  value={formData.zip_code}
+                  id="cep"
+                  value={formData.cep}
                   onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, zip_code: e.target.value }))
+                    setFormData((prev) => ({ ...prev, cep: e.target.value }))
                   }
                   placeholder="00000-000"
                   className="bg-zinc-800 border-zinc-700 text-white"
@@ -229,19 +289,68 @@ export default function EditProfessionalProfilePage() {
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="address" className="text-zinc-300">
-                Endereço Completo
-              </Label>
-              <Input
-                id="address"
-                value={formData.address}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, address: e.target.value }))
-                }
-                placeholder="Rua, número, complemento"
-                className="bg-zinc-800 border-zinc-700 text-white"
-              />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="md:col-span-2">
+                <Label htmlFor="street" className="text-zinc-300">
+                  Rua/Avenida
+                </Label>
+                <Input
+                  id="street"
+                  value={formData.street}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, street: e.target.value }))
+                  }
+                  placeholder="Nome da rua"
+                  className="bg-zinc-800 border-zinc-700 text-white"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="number" className="text-zinc-300">
+                  Número
+                </Label>
+                <Input
+                  id="number"
+                  value={formData.number}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, number: e.target.value }))
+                  }
+                  placeholder="123"
+                  className="bg-zinc-800 border-zinc-700 text-white"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="complement" className="text-zinc-300">
+                  Complemento
+                </Label>
+                <Input
+                  id="complement"
+                  value={formData.complement}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, complement: e.target.value }))
+                  }
+                  placeholder="Apto, Bloco, etc"
+                  className="bg-zinc-800 border-zinc-700 text-white"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="neighborhood" className="text-zinc-300">
+                  Bairro
+                </Label>
+                <Input
+                  id="neighborhood"
+                  value={formData.neighborhood}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, neighborhood: e.target.value }))
+                  }
+                  placeholder="Nome do bairro"
+                  className="bg-zinc-800 border-zinc-700 text-white"
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -296,25 +405,164 @@ export default function EditProfessionalProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Documentos */}
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Upload className="h-5 w-5" />
-              Documentos
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4">
-              <p className="text-sm text-yellow-500">
-                ⚠️ Para reenviar documentos, entre em contato com o suporte ou use o formulário de cadastro completo.
+        {/* Documentos Rejeitados ou Pendentes */}
+        {Object.keys(documentValidations).some(
+          (key) =>
+            documentValidations[key]?.status === 'rejected' ||
+            !professional?.documents?.[key]
+        ) && (
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-white flex items-center gap-2 text-base sm:text-lg">
+                <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
+                Documentos para Corrigir
+              </CardTitle>
+              <p className="text-xs sm:text-sm text-zinc-400 mt-2">
+                Envie novamente os documentos rejeitados ou faltantes
               </p>
-              <p className="text-xs text-yellow-500/70 mt-2">
-                Em breve você poderá enviar documentos diretamente por aqui.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+            </CardHeader>
+            <CardContent className="space-y-4 p-4 sm:p-6">
+              {/* RG Frente */}
+              {(documentValidations.rg_front?.status === 'rejected' ||
+                !professional?.documents?.rg_front) && (
+                <div className="space-y-2">
+                  {documentValidations.rg_front?.status === 'rejected' && (
+                    <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+                      <div className="flex items-start gap-2">
+                        <XCircle className="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium text-red-500">
+                            RG (Frente) - Rejeitado
+                          </p>
+                          <p className="text-xs text-red-400 mt-1">
+                            {documentValidations.rg_front.rejection_reason}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <DocumentUpload
+                    label="RG (Frente) *"
+                    documentType="rg_front"
+                    onUpload={(file) => handleDocumentUpload(file, 'rg_front')}
+                    required
+                  />
+                </div>
+              )}
+
+              {/* RG Verso */}
+              {(documentValidations.rg_back?.status === 'rejected' ||
+                !professional?.documents?.rg_back) && (
+                <div className="space-y-2">
+                  {documentValidations.rg_back?.status === 'rejected' && (
+                    <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+                      <div className="flex items-start gap-2">
+                        <XCircle className="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium text-red-500">
+                            RG (Verso) - Rejeitado
+                          </p>
+                          <p className="text-xs text-red-400 mt-1">
+                            {documentValidations.rg_back.rejection_reason}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <DocumentUpload
+                    label="RG (Verso) *"
+                    documentType="rg_back"
+                    onUpload={(file) => handleDocumentUpload(file, 'rg_back')}
+                    required
+                  />
+                </div>
+              )}
+
+              {/* CPF */}
+              {(documentValidations.cpf?.status === 'rejected' ||
+                !professional?.documents?.cpf) && (
+                <div className="space-y-2">
+                  {documentValidations.cpf?.status === 'rejected' && (
+                    <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+                      <div className="flex items-start gap-2">
+                        <XCircle className="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium text-red-500">CPF - Rejeitado</p>
+                          <p className="text-xs text-red-400 mt-1">
+                            {documentValidations.cpf.rejection_reason}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <DocumentUpload
+                    label="CPF *"
+                    documentType="cpf"
+                    onUpload={(file) => handleDocumentUpload(file, 'cpf')}
+                    required
+                  />
+                </div>
+              )}
+
+              {/* Comprovante de Residência */}
+              {(documentValidations.proof_of_address?.status === 'rejected' ||
+                !professional?.documents?.proof_of_address) && (
+                <div className="space-y-2">
+                  {documentValidations.proof_of_address?.status === 'rejected' && (
+                    <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+                      <div className="flex items-start gap-2">
+                        <XCircle className="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium text-red-500">
+                            Comprovante de Residência - Rejeitado
+                          </p>
+                          <p className="text-xs text-red-400 mt-1">
+                            {documentValidations.proof_of_address.rejection_reason}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <DocumentUpload
+                    label="Comprovante de Residência *"
+                    documentType="proof_of_address"
+                    onUpload={(file) => handleDocumentUpload(file, 'proof_of_address')}
+                    required
+                  />
+                </div>
+              )}
+
+              {/* CNH (se for motorista) */}
+              {professional?.categories?.includes('Motorista') &&
+                (documentValidations.cnh_photo?.status === 'rejected' ||
+                  !professional?.documents?.cnh_photo) && (
+                  <div className="space-y-2">
+                    {documentValidations.cnh_photo?.status === 'rejected' && (
+                      <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+                        <div className="flex items-start gap-2">
+                          <XCircle className="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-sm font-medium text-red-500">
+                              CNH - Rejeitado
+                            </p>
+                            <p className="text-xs text-red-400 mt-1">
+                              {documentValidations.cnh_photo.rejection_reason}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    <DocumentUpload
+                      label="CNH (Foto) *"
+                      documentType="cnh_photo"
+                      onUpload={(file) => handleDocumentUpload(file, 'cnh_photo')}
+                      required
+                    />
+                  </div>
+                )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Botões */}
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
