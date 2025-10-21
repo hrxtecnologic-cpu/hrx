@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { PendingDocumentsEmail } from '@/lib/resend/templates/PendingDocumentsEmail';
-import { renderToStaticMarkup } from 'react-dom/server';
+import { render } from '@react-email/render';
 
 export async function GET() {
   // Dados de exemplo para preview
-  const html = renderToStaticMarkup(
+  const html = render(
     <PendingDocumentsEmail
       professionalName="João da Silva"
       professionalEmail="joao.silva@exemplo.com"
