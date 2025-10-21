@@ -105,10 +105,10 @@ export const RateLimitPresets = {
   },
 
   /**
-   * Cadastro de profissional: 3 cadastros por hora
+   * Cadastro de profissional: 20 cadastros por hora
    */
   REGISTRATION: {
-    limit: 3,
+    limit: 20,
     window: 3600000, // 1 hora
     prefix: 'registration',
   },
