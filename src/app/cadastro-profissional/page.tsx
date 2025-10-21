@@ -2,7 +2,7 @@
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { professionalSchema, type ProfessionalFormData, CATEGORIES } from '@/lib/validations/professional';
@@ -23,6 +23,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DocumentUpload } from '@/components/DocumentUpload';
 import { PortfolioUpload } from '@/components/PortfolioUpload';
+import { AlertCircle, XCircle } from 'lucide-react';
 
 export default function CadastroProfissionalPage() {
   const router = useRouter();
@@ -31,6 +32,10 @@ export default function CadastroProfissionalPage() {
   const [searchingCEP, setSearchingCEP] = useState(false);
   const [uploadedDocuments, setUploadedDocuments] = useState<Record<string, string>>({});
   const [portfolioUrls, setPortfolioUrls] = useState<string[]>([]);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [professionalData, setProfessionalData] = useState<any>(null);
+  const [documentValidations, setDocumentValidations] = useState<any>({});
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
   // Campos específicos de documentos
   const [cnhNumber, setCnhNumber] = useState('');
@@ -70,6 +75,89 @@ export default function CadastroProfissionalPage() {
   const acceptsNotifications = watch('acceptsNotifications');
   const isMotorista = selectedCategories.includes('Motorista' as any);
   const isSeguranca = selectedCategories.includes('Segurança' as any);
+
+  // Carregar dados existentes se profissional já cadastrado
+  useEffect(() => {
+    async function loadExistingData() {
+      if (!user?.id) return;
+
+      try {
+        // Buscar dados do profissional
+        const response = await fetch('/api/professional/profile');
+
+        if (response.ok) {
+          const data = await response.json();
+          setProfessionalData(data);
+          setIsEditMode(true);
+
+          // Preencher formulário com dados existentes
+          setValue('fullName', data.full_name || '');
+          setValue('cpf', data.cpf || '');
+          setValue('birthDate', data.birth_date || '');
+          setValue('email', data.email || '');
+          setValue('phone', data.phone || '');
+          setValue('cep', data.cep || '');
+          setValue('street', data.street || '');
+          setValue('number', data.number || '');
+          setValue('complement', data.complement || '');
+          setValue('neighborhood', data.neighborhood || '');
+          setValue('city', data.city || '');
+          setValue('state', data.state || '');
+          setValue('categories', data.categories || []);
+          setValue('hasExperience', data.has_experience || false);
+          setValue('experienceDescription', data.experience_description || '');
+          setValue('yearsOfExperience', data.years_of_experience || undefined);
+          setValue('availability', data.availability || {
+            weekdays: false,
+            weekends: false,
+            holidays: false,
+            night: false,
+            travel: false,
+          });
+          setValue('bankName', data.bank_name || '');
+          setValue('accountType', data.account_type || '');
+          setValue('agency', data.agency || '');
+          setValue('accountNumber', data.account_number || '');
+          setValue('pixKey', data.pix_key || '');
+          setValue('acceptsNotifications', data.accepts_notifications ?? true);
+          setValue('acceptsTerms', true); // Já aceitou antes
+
+          // Carregar documentos existentes
+          if (data.documents) {
+            setUploadedDocuments(data.documents);
+          }
+
+          // Carregar portfolio
+          if (data.portfolio) {
+            setPortfolioUrls(data.portfolio);
+          }
+
+          // Carregar campos de validades
+          setCnhNumber(data.cnh_number || '');
+          setCnhValidity(data.cnh_validity || '');
+          setCnvValidity(data.cnv_validity || '');
+          setNr10Validity(data.nr10_validity || '');
+          setNr35Validity(data.nr35_validity || '');
+          setDrtValidity(data.drt_validity || '');
+
+          // Buscar validações de documentos
+          if (data.id) {
+            const validationsResponse = await fetch(`/api/professional/document-validations`);
+            if (validationsResponse.ok) {
+              const validationsData = await validationsResponse.json();
+              setDocumentValidations(validationsData.validations || {});
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao carregar dados:', error);
+      } finally {
+        setIsLoadingData(false);
+      }
+    }
+
+    loadExistingData();
+  }, [user?.id, setValue]);
 
   // Buscar endereço ao digitar CEP
   async function handleCEPBlur(cep: string) {
@@ -173,21 +261,95 @@ export default function CadastroProfissionalPage() {
     }
   }
 
+  // Verificar se há documentos rejeitados
+  const hasRejectedDocs = Object.values(documentValidations).some(
+    (validation: any) => validation.status === 'rejected'
+  );
+
+  if (isLoadingData) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-white text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+          <p>Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-black py-12 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
-          <div className="inline-block mb-4 px-4 py-2 bg-red-600/10 border border-red-600/20 rounded-full">
-            <span className="text-red-500 font-semibold text-sm">Passo 2 de 2</span>
-          </div>
+          {!isEditMode && (
+            <div className="inline-block mb-4 px-4 py-2 bg-red-600/10 border border-red-600/20 rounded-full">
+              <span className="text-red-500 font-semibold text-sm">Passo 2 de 2</span>
+            </div>
+          )}
+          {isEditMode && professionalData?.status === 'rejected' && (
+            <div className="inline-block mb-4 px-4 py-2 bg-yellow-600/10 border border-yellow-600/20 rounded-full">
+              <span className="text-yellow-500 font-semibold text-sm">Cadastro Rejeitado - Correção Necessária</span>
+            </div>
+          )}
+          {isEditMode && professionalData?.status === 'pending' && (
+            <div className="inline-block mb-4 px-4 py-2 bg-blue-600/10 border border-blue-600/20 rounded-full">
+              <span className="text-blue-500 font-semibold text-sm">Em Análise</span>
+            </div>
+          )}
+          {isEditMode && professionalData?.status === 'approved' && (
+            <div className="inline-block mb-4 px-4 py-2 bg-green-600/10 border border-green-600/20 rounded-full">
+              <span className="text-green-500 font-semibold text-sm">Aprovado</span>
+            </div>
+          )}
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-            Cadastro Profissional
+            {isEditMode ? 'Atualizar Cadastro' : 'Cadastro Profissional'}
           </h1>
           <p className="text-lg text-zinc-400 max-w-2xl mx-auto">
-            Preencha todos os campos abaixo para começar a receber oportunidades de trabalho
+            {isEditMode
+              ? 'Revise e atualize suas informações'
+              : 'Preencha todos os campos abaixo para começar a receber oportunidades de trabalho'}
           </p>
         </div>
+
+        {/* Alerta de Documentos Rejeitados */}
+        {hasRejectedDocs && (
+          <Card className="bg-red-500/10 border-red-500/20 mb-8">
+            <CardContent className="p-6">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="text-red-500 font-semibold mb-2">
+                    Documentos Rejeitados - Ação Necessária
+                  </h3>
+                  <p className="text-red-400 text-sm mb-3">
+                    Alguns documentos foram rejeitados e precisam ser corrigidos. Revise os motivos abaixo e faça o upload novamente.
+                  </p>
+                  <ul className="space-y-2">
+                    {Object.entries(documentValidations).map(([key, validation]: [string, any]) => {
+                      if (validation.status === 'rejected') {
+                        return (
+                          <li key={key} className="flex items-start gap-2">
+                            <XCircle className="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5" />
+                            <div>
+                              <span className="text-red-400 font-medium text-sm">
+                                {key.replace(/_/g, ' ').toUpperCase()}:
+                              </span>
+                              <span className="text-red-300 text-sm ml-2">
+                                {validation.rejection_reason}
+                              </span>
+                            </div>
+                          </li>
+                        );
+                      }
+                      return null;
+                    })}
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
           {/* Dados Pessoais */}
@@ -914,7 +1076,11 @@ export default function CadastroProfissionalPage() {
               disabled={isSubmitting}
               className="bg-red-600 hover:bg-red-500 text-white px-12 py-6 text-lg"
             >
-              {isSubmitting ? 'Salvando...' : 'Finalizar Cadastro'}
+              {isSubmitting
+                ? 'Salvando...'
+                : isEditMode
+                  ? 'Atualizar Cadastro'
+                  : 'Finalizar Cadastro'}
             </Button>
           </div>
         </form>

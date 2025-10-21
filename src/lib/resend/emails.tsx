@@ -774,7 +774,7 @@ export async function sendProfessionalRejectionEmail(
                   </ul>
 
                   <div style="text-align: center; margin: 30px 0 0 0;">
-                    <a href="${appUrl}/dashboard/profissional/perfil/editar"
+                    <a href="${appUrl}/cadastro-profissional"
                        style="display: inline-block; background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
                       Corrigir Cadastro Agora
                     </a>

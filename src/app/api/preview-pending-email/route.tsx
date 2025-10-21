@@ -23,7 +23,7 @@ export async function GET() {
           reason: 'CNH está vencida. Por favor, envie uma CNH válida',
         },
       ]}
-      profileUrl="https://www.hrxeventos.com.br/perfil-profissional"
+      profileUrl="https://www.hrxeventos.com.br/cadastro-profissional"
     />
   );
 

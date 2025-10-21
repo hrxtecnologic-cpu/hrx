@@ -114,8 +114,8 @@ export async function POST(
     console.log('[NOTIFY] Documentos pendentes:', pendingDocuments);
     console.log('[NOTIFY] Documentos rejeitados:', rejectedDocuments);
 
-    // URL do perfil do profissional (assumindo que existe uma página de perfil)
-    const profileUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.hrxeventos.com.br'}/perfil-profissional`;
+    // URL do perfil do profissional
+    const profileUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.hrxeventos.com.br'}/cadastro-profissional`;
 
     // Enviar email
     console.log('[NOTIFY] Enviando email para:', professional.email);

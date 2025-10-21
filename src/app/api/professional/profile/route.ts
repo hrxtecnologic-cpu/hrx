@@ -80,7 +80,6 @@ export async function PATCH(req: Request) {
       has_experience,
       years_of_experience,
       availability,
-      bio,
       documents,
     } = body;
 
@@ -120,7 +119,6 @@ export async function PATCH(req: Request) {
         has_experience,
         years_of_experience,
         availability,
-        bio,
         documents,
         // Se foi rejeitado, voltar para pending após edição
         status: 'pending',

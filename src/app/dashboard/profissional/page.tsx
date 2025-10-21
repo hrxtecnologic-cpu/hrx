@@ -139,7 +139,7 @@ export default async function DashboardProfissionalPage() {
               </div>
 
               {/* Botão Editar Perfil */}
-              <Link href="/dashboard/profissional/perfil/editar">
+              <Link href="/cadastro-profissional">
                 <Button
                   variant={professional.status === 'rejected' ? 'default' : 'outline'}
                   className={professional.status === 'rejected' ? 'bg-red-600 hover:bg-red-500' : ''}
