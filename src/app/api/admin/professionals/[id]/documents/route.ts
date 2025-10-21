@@ -48,8 +48,12 @@ export async function GET(
     });
   } catch (error) {
     console.error('Erro ao buscar documentos:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
     return NextResponse.json(
-      { error: 'Erro ao buscar documentos' },
+      {
+        error: 'Erro ao buscar documentos',
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+      },
       { status: 500 }
     );
   }
@@ -208,8 +212,12 @@ export async function PATCH(
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Erro ao validar documento:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
     return NextResponse.json(
-      { error: 'Erro ao validar documento' },
+      {
+        error: 'Erro ao validar documento',
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+      },
       { status: 500 }
     );
   }
