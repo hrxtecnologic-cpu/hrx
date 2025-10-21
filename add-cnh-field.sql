@@ -80,3 +80,30 @@ COMMENT ON COLUMN professionals.cnv_validity IS 'Data de validade da Carteira Na
 COMMENT ON COLUMN professionals.nr10_validity IS 'Data de validade do certificado NR-10';
 COMMENT ON COLUMN professionals.nr35_validity IS 'Data de validade do certificado NR-35';
 COMMENT ON COLUMN professionals.drt_validity IS 'Data de validade do DRT';
+
+-- ============================================
+-- IMPORTANTE: Atualizar CHECK CONSTRAINT da tabela document_validations
+-- ============================================
+-- A tabela document_validations tem um constraint que define quais tipos
+-- de documentos são válidos. Precisamos incluir 'cnh_photo' e 'cnv'.
+-- ============================================
+
+-- Remover constraint antigo
+ALTER TABLE document_validations
+DROP CONSTRAINT IF EXISTS valid_document_type;
+
+-- Criar novo constraint com TODOS os tipos de documentos
+ALTER TABLE document_validations
+ADD CONSTRAINT valid_document_type
+CHECK (document_type IN (
+  'rg_front',
+  'rg_back',
+  'cpf',
+  'proof_of_address',
+  'cnh_photo',      -- NOVO: CNH para motoristas
+  'nr10',
+  'nr35',
+  'drt',
+  'cnv',            -- NOVO: CNV para segurança
+  'portfolio'
+));

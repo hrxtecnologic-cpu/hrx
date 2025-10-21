@@ -67,10 +67,13 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    console.log('[PATCH] Iniciando validação de documento');
+
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     }
+    console.log('[PATCH] userId:', userId);
 
     const { isAdmin: userIsAdmin } = await isAdmin();
     if (!userIsAdmin) {
@@ -79,6 +82,7 @@ export async function PATCH(
 
     const { id } = await params;
     const { document_type, status, rejection_reason } = await req.json();
+    console.log('[PATCH] Validando documento:', { id, document_type, status });
 
     if (!document_type || !status) {
       return NextResponse.json(
@@ -90,37 +94,55 @@ export async function PATCH(
     const supabase = await createClient();
 
     // Buscar user_id do admin
-    const { data: adminUser } = await supabase
+    console.log('[PATCH] Buscando adminUser...');
+    const { data: adminUser, error: adminError } = await supabase
       .from('users')
       .select('id')
       .eq('clerk_id', userId)
       .single();
 
+    if (adminError) {
+      console.error('[PATCH] Erro ao buscar admin:', adminError);
+      throw adminError;
+    }
+    console.log('[PATCH] adminUser encontrado:', adminUser?.id);
+
     // Buscar profissional para pegar URL do documento
-    const { data: professional } = await supabase
+    console.log('[PATCH] Buscando profissional...');
+    const { data: professional, error: professionalError } = await supabase
       .from('professionals')
       .select('documents')
       .eq('id', id)
       .single();
 
+    if (professionalError) {
+      console.error('[PATCH] Erro ao buscar profissional:', professionalError);
+      throw professionalError;
+    }
+
     if (!professional) {
+      console.error('[PATCH] Profissional não encontrado');
       return NextResponse.json(
         { error: 'Profissional não encontrado' },
         { status: 404 }
       );
     }
+    console.log('[PATCH] Profissional encontrado, documents:', professional.documents);
 
     // Verificar se há URL do documento
     const documentUrl = professional.documents?.[document_type];
     if (!documentUrl) {
+      console.error('[PATCH] Documento não enviado:', document_type);
       return NextResponse.json(
         { error: 'Documento não foi enviado ainda' },
         { status: 404 }
       );
     }
+    console.log('[PATCH] documentUrl:', documentUrl);
 
     // Buscar a validação existente mais recente
-    const { data: existingValidation } = await supabase
+    console.log('[PATCH] Buscando validação existente...');
+    const { data: existingValidation, error: validationError } = await supabase
       .from('document_validations')
       .select('*')
       .eq('professional_id', id)
@@ -129,9 +151,15 @@ export async function PATCH(
       .limit(1)
       .maybeSingle();
 
+    if (validationError) {
+      console.error('[PATCH] Erro ao buscar validação:', validationError);
+      throw validationError;
+    }
+    console.log('[PATCH] existingValidation:', existingValidation?.id);
+
     if (!existingValidation) {
       // CRIAR nova validação se não existir
-      console.log(`Criando nova validação para documento ${document_type}`);
+      console.log(`[PATCH] Criando nova validação para documento ${document_type}`);
 
       const { error: insertError } = await supabase
         .from('document_validations')
@@ -147,11 +175,14 @@ export async function PATCH(
         });
 
       if (insertError) {
-        console.error('Erro ao criar validação:', insertError);
+        console.error('[PATCH] Erro ao criar validação:', insertError);
         throw insertError;
       }
+      console.log('[PATCH] Validação criada com sucesso');
     } else {
       // ATUALIZAR validação existente
+      console.log('[PATCH] Atualizando validação existente:', existingValidation.id);
+
       const { error: updateError } = await supabase
         .from('document_validations')
         .update({
@@ -164,13 +195,15 @@ export async function PATCH(
         .eq('id', existingValidation.id);
 
       if (updateError) {
-        console.error('Erro ao atualizar validação:', updateError);
+        console.error('[PATCH] Erro ao atualizar validação:', updateError);
         throw updateError;
       }
+      console.log('[PATCH] Validação atualizada com sucesso');
     }
 
     // Registrar no histórico
-    await supabase.from('professional_history').insert({
+    console.log('[PATCH] Registrando no histórico...');
+    const { error: historyError } = await supabase.from('professional_history').insert({
       professional_id: id,
       action_type: `document_${status}`,
       action_by: adminUser?.id,
@@ -181,34 +214,60 @@ export async function PATCH(
       }`,
     });
 
+    if (historyError) {
+      console.error('[PATCH] Erro ao registrar histórico:', historyError);
+      throw historyError;
+    }
+    console.log('[PATCH] Histórico registrado com sucesso');
+
     // Verificar se todos os documentos foram aprovados
-    const { data: allValidations } = await supabase
+    console.log('[PATCH] Verificando status de todos os documentos...');
+    const { data: allValidations, error: allValidationsError } = await supabase
       .from('document_validations')
       .select('status')
       .eq('professional_id', id);
 
+    if (allValidationsError) {
+      console.error('[PATCH] Erro ao buscar validações:', allValidationsError);
+      throw allValidationsError;
+    }
+
     const allApproved = allValidations?.every((v) => v.status === 'approved');
     const anyRejected = allValidations?.some((v) => v.status === 'rejected');
+    console.log('[PATCH] Status das validações:', { allApproved, anyRejected, total: allValidations?.length });
 
     // Atualizar status geral do profissional
     if (allApproved) {
-      await supabase
+      console.log('[PATCH] Todos documentos aprovados, atualizando profissional para approved');
+      const { error: updateStatusError } = await supabase
         .from('professionals')
         .update({
           status: 'approved',
           updated_at: new Date().toISOString(),
         })
         .eq('id', id);
+
+      if (updateStatusError) {
+        console.error('[PATCH] Erro ao atualizar status do profissional:', updateStatusError);
+        throw updateStatusError;
+      }
     } else if (anyRejected) {
-      await supabase
+      console.log('[PATCH] Algum documento rejeitado, atualizando profissional para rejected');
+      const { error: updateStatusError } = await supabase
         .from('professionals')
         .update({
           status: 'rejected',
           updated_at: new Date().toISOString(),
         })
         .eq('id', id);
+
+      if (updateStatusError) {
+        console.error('[PATCH] Erro ao atualizar status do profissional:', updateStatusError);
+        throw updateStatusError;
+      }
     }
 
+    console.log('[PATCH] Validação concluída com sucesso!');
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Erro ao validar documento:', error);
