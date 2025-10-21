@@ -16,6 +16,9 @@ import {
 import { notFound } from 'next/navigation';
 import { ProfessionalActions } from '@/components/admin/ProfessionalActions';
 import { DocumentViewer } from '@/components/admin/DocumentViewer';
+import { DocumentValidation } from '@/components/admin/DocumentValidation';
+import { ProfessionalHistory } from '@/components/admin/ProfessionalHistory';
+import { EditProfessionalModal } from '@/components/admin/EditProfessionalModal';
 
 export default async function ProfessionalDetailPage({
   params,
@@ -37,25 +40,27 @@ export default async function ProfessionalDetailPage({
   }
 
   return (
-    <div className="space-y-6 max-w-7xl">
+    <div className="space-y-4 sm:space-y-6 max-w-7xl p-4 sm:p-0">
       {/* Header com ações */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-2">{professional.full_name}</h1>
-          <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2 break-words">
+            {professional.full_name}
+          </h1>
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             {professional.status === 'approved' ? (
-              <span className="inline-flex items-center gap-1 text-sm bg-green-500/10 text-green-500 px-3 py-1 rounded-full">
-                <CheckCircle className="h-4 w-4" />
+              <span className="inline-flex items-center gap-1 text-xs sm:text-sm bg-green-500/10 text-green-500 px-2 sm:px-3 py-1 rounded-full whitespace-nowrap">
+                <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" />
                 Aprovado
               </span>
             ) : professional.status === 'pending' ? (
-              <span className="inline-flex items-center gap-1 text-sm bg-yellow-500/10 text-yellow-500 px-3 py-1 rounded-full">
-                <AlertCircle className="h-4 w-4" />
+              <span className="inline-flex items-center gap-1 text-xs sm:text-sm bg-yellow-500/10 text-yellow-500 px-2 sm:px-3 py-1 rounded-full whitespace-nowrap">
+                <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4" />
                 Pendente de Validação
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1 text-sm bg-red-500/10 text-red-500 px-3 py-1 rounded-full">
-                <XCircle className="h-4 w-4" />
+              <span className="inline-flex items-center gap-1 text-xs sm:text-sm bg-red-500/10 text-red-500 px-2 sm:px-3 py-1 rounded-full whitespace-nowrap">
+                <XCircle className="h-3 w-3 sm:h-4 sm:w-4" />
                 Rejeitado
               </span>
             )}
@@ -63,43 +68,100 @@ export default async function ProfessionalDetailPage({
         </div>
 
         {/* Ações */}
-        <ProfessionalActions professionalId={id} currentStatus={professional.status} />
+        <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-2 sm:gap-3">
+          <EditProfessionalModal professional={professional} />
+          <ProfessionalActions professionalId={id} currentStatus={professional.status} />
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Coluna Principal - Documentos */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Documentos Obrigatórios */}
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+          {/* Documentos Obrigatórios - NOVA VALIDAÇÃO INDIVIDUAL */}
           <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <FileText className="h-5 w-5 text-red-600" />
-                Documentos Obrigatórios
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-white flex items-center gap-2 text-base sm:text-lg">
+                <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
+                Validação de Documentos
               </CardTitle>
+              <p className="text-xs sm:text-sm text-zinc-400 mt-2">
+                Aprove ou rejeite cada documento individualmente com feedback específico
+              </p>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <DocumentViewer
-                label="RG - Frente"
-                url={professional.documents?.rg_front}
-                required
+            <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6">
+              <DocumentValidation
+                professionalId={id}
+                documentType="rg_front"
+                documentUrl={professional.documents?.rg_front}
+                professionalData={{
+                  full_name: professional.full_name,
+                  cpf: professional.cpf,
+                  birth_date: professional.birth_date,
+                  street: professional.street,
+                  number: professional.number,
+                  complement: professional.complement,
+                  neighborhood: professional.neighborhood,
+                  city: professional.city,
+                  state: professional.state,
+                  cep: professional.cep,
+                }}
               />
-              <DocumentViewer
-                label="RG - Verso"
-                url={professional.documents?.rg_back}
-                required
+              <DocumentValidation
+                professionalId={id}
+                documentType="rg_back"
+                documentUrl={professional.documents?.rg_back}
+                professionalData={{
+                  full_name: professional.full_name,
+                  cpf: professional.cpf,
+                  birth_date: professional.birth_date,
+                  street: professional.street,
+                  number: professional.number,
+                  complement: professional.complement,
+                  neighborhood: professional.neighborhood,
+                  city: professional.city,
+                  state: professional.state,
+                  cep: professional.cep,
+                }}
               />
-              <DocumentViewer
-                label="CPF"
-                url={professional.documents?.cpf}
-                required
+              <DocumentValidation
+                professionalId={id}
+                documentType="cpf"
+                documentUrl={professional.documents?.cpf}
+                professionalData={{
+                  full_name: professional.full_name,
+                  cpf: professional.cpf,
+                  birth_date: professional.birth_date,
+                  street: professional.street,
+                  number: professional.number,
+                  complement: professional.complement,
+                  neighborhood: professional.neighborhood,
+                  city: professional.city,
+                  state: professional.state,
+                  cep: professional.cep,
+                }}
               />
-              <DocumentViewer
-                label="Comprovante de Residência"
-                url={professional.documents?.proof_of_address}
-                required
+              <DocumentValidation
+                professionalId={id}
+                documentType="proof_of_address"
+                documentUrl={professional.documents?.proof_of_address}
+                professionalData={{
+                  full_name: professional.full_name,
+                  cpf: professional.cpf,
+                  birth_date: professional.birth_date,
+                  street: professional.street,
+                  number: professional.number,
+                  complement: professional.complement,
+                  neighborhood: professional.neighborhood,
+                  city: professional.city,
+                  state: professional.state,
+                  cep: professional.cep,
+                }}
               />
             </CardContent>
           </Card>
+
+          {/* Histórico de Alterações */}
+          <ProfessionalHistory professionalId={id} />
 
           {/* Certificações (Opcional) */}
           {(professional.documents?.nr10 ||
@@ -107,13 +169,13 @@ export default async function ProfessionalDetailPage({
             professional.documents?.drt ||
             professional.documents?.cnv) && (
             <Card className="bg-zinc-900 border-zinc-800">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-blue-600" />
+              <CardHeader className="p-4 sm:p-6">
+                <CardTitle className="text-white flex items-center gap-2 text-base sm:text-lg">
+                  <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
                   Certificações
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6">
                 {professional.documents?.nr10 && (
                   <DocumentViewer label="NR-10" url={professional.documents.nr10} />
                 )}
@@ -133,11 +195,11 @@ export default async function ProfessionalDetailPage({
           {/* Portfólio */}
           {professional.portfolio && professional.portfolio.length > 0 && (
             <Card className="bg-zinc-900 border-zinc-800">
-              <CardHeader>
-                <CardTitle className="text-white">Portfólio</CardTitle>
+              <CardHeader className="p-4 sm:p-6">
+                <CardTitle className="text-white text-base sm:text-lg">Portfólio</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <CardContent className="p-4 sm:p-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
                   {professional.portfolio.map((url: string, index: number) => (
                     <a
                       key={index}
@@ -160,13 +222,13 @@ export default async function ProfessionalDetailPage({
         </div>
 
         {/* Coluna Lateral - Informações */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Dados Pessoais */}
           <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader>
-              <CardTitle className="text-white text-base">Dados Pessoais</CardTitle>
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-white text-sm sm:text-base">Dados Pessoais</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6">
               <div className="flex items-start gap-3">
                 <User className="h-5 w-5 text-zinc-500 mt-0.5" />
                 <div>
@@ -228,10 +290,10 @@ export default async function ProfessionalDetailPage({
 
           {/* Categorias */}
           <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader>
-              <CardTitle className="text-white text-base">Categorias</CardTitle>
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-white text-sm sm:text-base">Categorias</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 sm:p-6">
               <div className="flex flex-wrap gap-2">
                 {professional.categories?.map((cat: string) => (
                   <span
@@ -248,13 +310,13 @@ export default async function ProfessionalDetailPage({
           {/* Experiência */}
           {professional.has_experience && (
             <Card className="bg-zinc-900 border-zinc-800">
-              <CardHeader>
-                <CardTitle className="text-white text-base flex items-center gap-2">
-                  <Briefcase className="h-4 w-4" />
+              <CardHeader className="p-4 sm:p-6">
+                <CardTitle className="text-white text-sm sm:text-base flex items-center gap-2">
+                  <Briefcase className="h-3 w-3 sm:h-4 sm:w-4" />
                   Experiência
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-2 sm:space-y-3 p-4 sm:p-6">
                 {professional.years_of_experience && (
                   <div>
                     <p className="text-xs text-zinc-500">Anos de Experiência</p>
@@ -275,10 +337,10 @@ export default async function ProfessionalDetailPage({
 
           {/* Disponibilidade */}
           <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader>
-              <CardTitle className="text-white text-base">Disponibilidade</CardTitle>
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-white text-sm sm:text-base">Disponibilidade</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 sm:p-6">
               <div className="space-y-2 text-sm">
                 {professional.availability?.weekdays && (
                   <div className="flex items-center gap-2">
@@ -316,8 +378,8 @@ export default async function ProfessionalDetailPage({
 
           {/* Datas */}
           <Card className="bg-zinc-900 border-zinc-800">
-            <CardContent className="p-4">
-              <div className="space-y-2 text-xs">
+            <CardContent className="p-3 sm:p-4">
+              <div className="space-y-1.5 sm:space-y-2 text-xs">
                 <div>
                   <span className="text-zinc-500">Cadastrado em:</span>
                   <p className="text-white">

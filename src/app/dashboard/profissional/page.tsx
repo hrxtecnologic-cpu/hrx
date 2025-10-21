@@ -74,13 +74,13 @@ export default async function DashboardProfissionalPage() {
       message: 'Parabéns! Seu cadastro foi aprovado. Agora você pode receber oportunidades de trabalho.',
     },
     rejected: {
-      icon: XCircle,
+      icon: AlertCircle,
       color: 'red',
       bgColor: 'bg-red-500/10',
       borderColor: 'border-red-500/20',
       textColor: 'text-red-500',
-      title: 'Não Aprovado',
-      message: 'Infelizmente seu cadastro não foi aprovado. Entre em contato conosco para mais informações.',
+      title: 'Ajustes Necessários',
+      message: 'Seu cadastro precisa de alguns ajustes. Corrija as informações abaixo e reenvie para análise.',
     },
   };
 
@@ -108,22 +108,46 @@ export default async function DashboardProfissionalPage() {
         {/* Status do Cadastro */}
         <Card className={`bg-zinc-900 border-zinc-800 mb-8 ${status.borderColor}`}>
           <CardContent className="p-6">
-            <div className="flex items-start gap-4">
-              <div className={`p-3 rounded-lg ${status.bgColor}`}>
-                <StatusIcon className={`h-8 w-8 ${status.textColor}`} />
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-4 flex-1">
+                <div className={`p-3 rounded-lg ${status.bgColor}`}>
+                  <StatusIcon className={`h-8 w-8 ${status.textColor}`} />
+                </div>
+                <div className="flex-1">
+                  <h2 className={`text-xl font-bold mb-2 ${status.textColor}`}>
+                    Status: {status.title}
+                  </h2>
+                  <p className="text-zinc-400">{status.message}</p>
+
+                  {/* Motivo da rejeição */}
+                  {professional.status === 'rejected' && professional.rejection_reason && (
+                    <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+                      <p className="text-sm font-medium text-red-400 mb-2">Motivo:</p>
+                      <p className="text-sm text-red-300 whitespace-pre-line">
+                        {professional.rejection_reason}
+                      </p>
+                    </div>
+                  )}
+
+                  {professional.status === 'pending' && (
+                    <div className="mt-4 flex items-center gap-2 text-sm text-zinc-500">
+                      <Clock className="h-4 w-4" />
+                      <span>Tempo médio de análise: 24-48 horas úteis</span>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="flex-1">
-                <h2 className={`text-xl font-bold mb-2 ${status.textColor}`}>
-                  Status: {status.title}
-                </h2>
-                <p className="text-zinc-400">{status.message}</p>
-                {professional.status === 'pending' && (
-                  <div className="mt-4 flex items-center gap-2 text-sm text-zinc-500">
-                    <Clock className="h-4 w-4" />
-                    <span>Tempo médio de análise: 24-48 horas úteis</span>
-                  </div>
-                )}
-              </div>
+
+              {/* Botão Editar Perfil */}
+              <Link href="/dashboard/profissional/perfil/editar">
+                <Button
+                  variant={professional.status === 'rejected' ? 'default' : 'outline'}
+                  className={professional.status === 'rejected' ? 'bg-red-600 hover:bg-red-500' : ''}
+                >
+                  <User className="h-4 w-4 mr-2" />
+                  Editar Perfil
+                </Button>
+              </Link>
             </div>
           </CardContent>
         </Card>

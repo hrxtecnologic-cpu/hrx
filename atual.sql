@@ -78,6 +78,30 @@ CREATE TABLE public.email_logs (
   sent_at timestamp with time zone DEFAULT now(),
   CONSTRAINT email_logs_pkey PRIMARY KEY (id)
 );
+CREATE TABLE public.equipment_allocations (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  request_id uuid NOT NULL UNIQUE,
+  allocations jsonb NOT NULL DEFAULT '[]'::jsonb,
+  notes text,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT equipment_allocations_pkey PRIMARY KEY (id),
+  CONSTRAINT equipment_allocations_request_id_fkey FOREIGN KEY (request_id) REFERENCES public.contractor_requests(id)
+);
+CREATE TABLE public.equipment_suppliers (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  company_name text NOT NULL,
+  contact_name text NOT NULL,
+  email text NOT NULL,
+  phone text NOT NULL,
+  equipment_types ARRAY NOT NULL DEFAULT '{}'::text[],
+  notes text,
+  status text NOT NULL DEFAULT 'active'::text CHECK (status = ANY (ARRAY['active'::text, 'inactive'::text])),
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  proposed_budget numeric,
+  CONSTRAINT equipment_suppliers_pkey PRIMARY KEY (id)
+);
 CREATE TABLE public.event_allocations (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   request_id uuid NOT NULL,

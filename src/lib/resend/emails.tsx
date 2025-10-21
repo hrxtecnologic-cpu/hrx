@@ -689,6 +689,136 @@ interface SendSupplierQuoteRequestParams {
 /**
  * Envia email para fornecedor solicitando orçamento de equipamentos
  */
+interface SendProfessionalRejectionEmailParams {
+  professionalName: string;
+  professionalEmail: string;
+  rejectionReason: string;
+  documentsWithIssues?: string[];
+}
+
+/**
+ * Envia email notificando profissional que foi rejeitado com feedback
+ */
+export async function sendProfessionalRejectionEmail(
+  params: SendProfessionalRejectionEmailParams
+): Promise<{ success: boolean; error?: string; emailId?: string }> {
+  try {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.hrxeventos.com.br';
+
+    const { data, error } = await resend.emails.send({
+      from: `HRX <${FROM_EMAIL}>`,
+      to: [params.professionalEmail],
+      subject: `Ajustes necessários no seu cadastro - HRX`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          </head>
+          <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0a0a0a;">
+            <div style="max-width: 600px; margin: 0 auto; background-color: #111111;">
+              <!-- Header -->
+              <div style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); padding: 40px 20px; text-align: center;">
+                <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: bold;">
+                  HRX
+                </h1>
+                <p style="margin: 10px 0 0 0; color: #fecaca; font-size: 14px; letter-spacing: 2px;">
+                  RECURSOS HUMANOS
+                </p>
+              </div>
+
+              <!-- Content -->
+              <div style="padding: 40px 20px;">
+                <div style="background-color: #1a1a1a; border: 1px solid #27272a; border-radius: 12px; padding: 30px;">
+                  <h2 style="margin: 0 0 20px 0; color: #f59e0b; font-size: 24px; text-align: center;">
+                    ⚠️ Ajustes Necessários
+                  </h2>
+
+                  <p style="margin: 0 0 20px 0; color: #e4e4e7; font-size: 16px; line-height: 1.6;">
+                    Olá <strong style="color: #ffffff;">${params.professionalName}</strong>,
+                  </p>
+
+                  <p style="margin: 0 0 20px 0; color: #e4e4e7; font-size: 16px; line-height: 1.6;">
+                    Nossa equipe analisou seu cadastro e identificou alguns pontos que precisam ser ajustados antes da aprovação.
+                  </p>
+
+                  <div style="background-color: #0f172a; border-left: 4px solid #f59e0b; padding: 20px; margin: 20px 0; border-radius: 8px;">
+                    <h3 style="margin: 0 0 10px 0; color: #f59e0b; font-size: 16px;">
+                      Motivo da Pendência:
+                    </h3>
+                    <p style="margin: 0; color: #e4e4e7; font-size: 15px; line-height: 1.6; white-space: pre-line;">
+                      ${params.rejectionReason}
+                    </p>
+                  </div>
+
+                  ${params.documentsWithIssues && params.documentsWithIssues.length > 0 ? `
+                    <div style="background-color: #1e1e1e; padding: 20px; margin: 20px 0; border-radius: 8px;">
+                      <h3 style="margin: 0 0 15px 0; color: #ffffff; font-size: 16px;">
+                        Documentos que precisam de atenção:
+                      </h3>
+                      <ul style="margin: 0; padding-left: 20px; color: #fbbf24; font-size: 15px; line-height: 1.8;">
+                        ${params.documentsWithIssues.map(doc => `<li>${doc}</li>`).join('')}
+                      </ul>
+                    </div>
+                  ` : ''}
+
+                  <h3 style="margin: 30px 0 15px 0; color: #ffffff; font-size: 18px;">
+                    O que fazer agora?
+                  </h3>
+
+                  <ul style="margin: 0 0 20px 0; padding-left: 20px; color: #e4e4e7; font-size: 15px; line-height: 1.8;">
+                    <li>Acesse seu perfil e faça as correções necessárias</li>
+                    <li>Reenvie os documentos solicitados com melhor qualidade</li>
+                    <li>Após os ajustes, sua documentação será reavaliada</li>
+                  </ul>
+
+                  <div style="text-align: center; margin: 30px 0 0 0;">
+                    <a href="${appUrl}/dashboard/profissional/perfil/editar"
+                       style="display: inline-block; background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+                      Corrigir Cadastro Agora
+                    </a>
+                  </div>
+
+                  <div style="background-color: #0f172a; padding: 15px; margin: 20px 0 0 0; border-radius: 8px; text-align: center;">
+                    <p style="margin: 0; color: #94a3b8; font-size: 14px;">
+                      💡 Dica: Certifique-se de que todos os documentos estejam legíveis e com boa iluminação.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Footer -->
+              <div style="padding: 20px; text-align: center; border-top: 1px solid #27272a;">
+                <p style="margin: 0 0 10px 0; color: #71717a; font-size: 14px;">
+                  Precisando de ajuda? Entre em contato conosco.
+                </p>
+                <p style="margin: 0; color: #52525b; font-size: 12px;">
+                  © ${new Date().getFullYear()} HRX Tecnologia. Todos os direitos reservados.
+                </p>
+              </div>
+            </div>
+          </body>
+        </html>
+      `,
+    });
+
+    if (error) {
+      console.error('❌ Erro ao enviar email de rejeição:', error);
+      return { success: false, error: error.message };
+    }
+
+    console.log(`✅ Email de rejeição enviado para: ${params.professionalEmail} (ID: ${data?.id})`);
+    return { success: true, emailId: data?.id };
+  } catch (error) {
+    console.error('❌ Erro ao enviar email de rejeição:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Erro desconhecido'
+    };
+  }
+}
+
 export async function sendSupplierQuoteRequest(
   params: SendSupplierQuoteRequestParams
 ): Promise<{ success: boolean; error?: string; emailId?: string }> {
