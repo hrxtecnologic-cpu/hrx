@@ -13,6 +13,8 @@ const nextConfig: NextConfig = {
 
   // Headers de segurança
   async headers() {
+    const isDevelopment = process.env.NODE_ENV === 'development';
+
     return [
       {
         source: '/:path*',
@@ -21,13 +23,14 @@ const nextConfig: NextConfig = {
             key: 'X-DNS-Prefetch-Control',
             value: 'on'
           },
-          {
+          // Apenas HSTS em produção
+          ...(!isDevelopment ? [{
             key: 'Strict-Transport-Security',
             value: 'max-age=63072000; includeSubDomains; preload'
-          },
+          }] : []),
           {
             key: 'X-Frame-Options',
-            value: 'DENY' // Upgraded from SAMEORIGIN to DENY for better security
+            value: 'DENY'
           },
           {
             key: 'X-Content-Type-Options',
@@ -47,21 +50,36 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Content-Security-Policy',
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://clerk.hrxeventos.com.br https://challenges.cloudflare.com",
-              "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob: https: *.supabase.co https://img.clerk.com",
-              "font-src 'self' data:",
-              "connect-src 'self' https://clerk.hrxeventos.com.br https://api.clerk.com https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com",
-              "frame-src 'self' https://challenges.cloudflare.com",
-              "worker-src 'self' blob:",
-              "object-src 'none'",
-              "base-uri 'self'",
-              "form-action 'self'",
-              "frame-ancestors 'none'",
-              "upgrade-insecure-requests"
-            ].join('; ')
+            value: isDevelopment
+              ? [
+                  "default-src 'self'",
+                  "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://clerk.hrxeventos.com.br https://*.clerk.accounts.dev https://challenges.cloudflare.com",
+                  "style-src 'self' 'unsafe-inline'",
+                  "img-src 'self' data: blob: https: http:",
+                  "font-src 'self' data:",
+                  "connect-src 'self' http://localhost:* ws://localhost:* https://clerk.hrxeventos.com.br https://*.clerk.accounts.dev https://api.clerk.com https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com",
+                  "frame-src 'self' https://challenges.cloudflare.com https://*.clerk.accounts.dev",
+                  "worker-src 'self' blob:",
+                  "object-src 'none'",
+                  "base-uri 'self'",
+                  "form-action 'self'",
+                  "frame-ancestors 'none'"
+                ].join('; ')
+              : [
+                  "default-src 'self'",
+                  "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://clerk.hrxeventos.com.br https://challenges.cloudflare.com",
+                  "style-src 'self' 'unsafe-inline'",
+                  "img-src 'self' data: blob: https: *.supabase.co https://img.clerk.com",
+                  "font-src 'self' data:",
+                  "connect-src 'self' https://clerk.hrxeventos.com.br https://api.clerk.com https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com",
+                  "frame-src 'self' https://challenges.cloudflare.com",
+                  "worker-src 'self' blob:",
+                  "object-src 'none'",
+                  "base-uri 'self'",
+                  "form-action 'self'",
+                  "frame-ancestors 'none'",
+                  "upgrade-insecure-requests"
+                ].join('; ')
           }
         ],
       },

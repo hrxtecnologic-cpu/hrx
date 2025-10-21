@@ -19,6 +19,7 @@ import { DocumentViewer } from '@/components/admin/DocumentViewer';
 import { DocumentValidation } from '@/components/admin/DocumentValidation';
 import { ProfessionalHistory } from '@/components/admin/ProfessionalHistory';
 import { EditProfessionalModal } from '@/components/admin/EditProfessionalModal';
+import { NotifyPendingDocsButton } from '@/components/admin/NotifyPendingDocsButton';
 
 export default async function ProfessionalDetailPage({
   params,
@@ -71,6 +72,7 @@ export default async function ProfessionalDetailPage({
         <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-2 sm:gap-3">
           <EditProfessionalModal professional={professional} />
           <ProfessionalActions professionalId={id} currentStatus={professional.status} />
+          <NotifyPendingDocsButton professionalId={id} />
         </div>
       </div>
 
