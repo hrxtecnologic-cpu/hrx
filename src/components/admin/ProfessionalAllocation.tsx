@@ -265,30 +265,36 @@ export function ProfessionalAllocation({ requestId, professionalsNeeded, current
   return (
     <Card className="bg-zinc-900 border-zinc-800">
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <CardTitle className="text-white flex items-center gap-2">
             <Users className="h-5 w-5 text-red-600" />
             Alocar Profissionais
           </CardTitle>
           {allocations.some(a => a.selectedProfessionals.length > 0) && (
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
               <Button
                 onClick={handleNotify}
                 size="sm"
                 variant="outline"
-                className="border-white text-white hover:bg-red-600 hover:border-red-600"
+                className="border-white text-white hover:bg-red-600 hover:border-red-600 text-xs sm:text-sm px-2 sm:px-3"
                 disabled={saving}
               >
-                <Send className="h-4 w-4 mr-2" />
-                Notificar Selecionados
+                <Send className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Notificar Selecionados</span>
+                <span className="sm:hidden">Notificar</span>
               </Button>
               <Button
                 onClick={handleSave}
                 size="sm"
-                className="bg-red-600 hover:bg-red-500 text-white"
+                className="bg-red-600 hover:bg-red-500 text-white text-xs sm:text-sm px-2 sm:px-3"
                 disabled={saving}
               >
-                {saving ? 'Salvando...' : 'Salvar Alocações'}
+                {saving ? 'Salvando...' : (
+                  <>
+                    <span className="hidden sm:inline">Salvar Alocações</span>
+                    <span className="sm:hidden">Salvar</span>
+                  </>
+                )}
               </Button>
             </div>
           )}

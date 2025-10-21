@@ -64,17 +64,17 @@ export function RequestActions({
   }
 
   return (
-    <div className="flex flex-col sm:flex-row flex-wrap gap-2 w-full sm:w-auto">
+    <div className="grid grid-cols-2 sm:flex sm:flex-row flex-wrap gap-2 w-full sm:w-auto">
       {currentStatus === 'pending' && (
         <Button
           onClick={() => handleUpdateStatus('in_progress')}
           disabled={isLoading}
-          className="bg-blue-600 hover:bg-blue-500 text-white w-full sm:w-auto"
+          className="bg-blue-600 hover:bg-blue-500 text-white col-span-2 sm:col-span-1 sm:w-auto text-sm sm:text-base px-3 sm:px-4"
         >
           {isLoading ? (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            <Loader2 className="h-4 w-4 mr-1 sm:mr-2 animate-spin" />
           ) : (
-            <Phone className="h-4 w-4 mr-2" />
+            <Phone className="h-4 w-4 mr-1 sm:mr-2" />
           )}
           <span className="hidden sm:inline">Marcar como Contatado</span>
           <span className="sm:hidden">Contatado</span>
@@ -86,31 +86,32 @@ export function RequestActions({
           <Button
             onClick={() => alert('Funcionalidade em desenvolvimento')}
             variant="outline"
-            className="border-white text-white hover:bg-red-600 hover:border-red-600 w-full sm:w-auto"
+            className="border-white text-white hover:bg-red-600 hover:border-red-600 sm:w-auto text-sm sm:text-base px-3 sm:px-4"
           >
-            <FileText className="h-4 w-4 mr-2" />
-            Criar Proposta
+            <FileText className="h-4 w-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Criar Proposta</span>
+            <span className="sm:hidden">Proposta</span>
           </Button>
 
           <Button
             onClick={() => alert('Funcionalidade em desenvolvimento')}
             variant="outline"
-            className="border-white text-white hover:bg-red-600 hover:border-red-600 w-full sm:w-auto"
+            className="border-white text-white hover:bg-red-600 hover:border-red-600 sm:w-auto text-sm sm:text-base px-3 sm:px-4"
           >
-            <Users className="h-4 w-4 mr-2" />
-            <span className="hidden md:inline">Alocar Profissionais</span>
-            <span className="md:hidden">Alocar</span>
+            <Users className="h-4 w-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Alocar Profissionais</span>
+            <span className="sm:hidden">Alocar</span>
           </Button>
 
           <Button
             onClick={() => handleUpdateStatus('completed')}
             disabled={isLoading}
-            className="bg-green-600 hover:bg-green-500 text-white w-full sm:w-auto"
+            className="bg-green-600 hover:bg-green-500 text-white col-span-2 sm:col-span-1 sm:w-auto text-sm sm:text-base px-3 sm:px-4"
           >
             {isLoading ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              <Loader2 className="h-4 w-4 mr-1 sm:mr-2 animate-spin" />
             ) : (
-              <CheckCircle className="h-4 w-4 mr-2" />
+              <CheckCircle className="h-4 w-4 mr-1 sm:mr-2" />
             )}
             Concluir
           </Button>
@@ -125,9 +126,9 @@ export function RequestActions({
         }}
         disabled={isLoading}
         variant="outline"
-        className="border-red-600 text-red-600 hover:bg-red-600 hover:text-white w-full sm:w-auto"
+        className="border-red-600 text-red-600 hover:bg-red-600 hover:text-white col-span-2 sm:col-span-1 sm:w-auto text-sm sm:text-base px-3 sm:px-4"
       >
-        <XCircle className="h-4 w-4 mr-2" />
+        <XCircle className="h-4 w-4 mr-1 sm:mr-2" />
         Cancelar
       </Button>
     </div>

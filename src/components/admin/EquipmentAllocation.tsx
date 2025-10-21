@@ -204,7 +204,7 @@ export function EquipmentAllocation({ requestId, equipmentList, currentStatus }:
   return (
     <Card className="bg-zinc-900 border-zinc-800">
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <CardTitle className="text-white flex items-center gap-2">
             <Package className="h-5 w-5 text-red-600" />
             Alocar Equipamentos e Fornecedores
@@ -213,10 +213,11 @@ export function EquipmentAllocation({ requestId, equipmentList, currentStatus }:
             onClick={handleSave}
             disabled={saving || allocations.length === 0}
             size="sm"
-            className="bg-red-600 hover:bg-red-700 text-white"
+            className="bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm px-2 sm:px-3 w-full sm:w-auto"
           >
-            <Send className="h-4 w-4 mr-2" />
-            {saving ? 'Salvando...' : 'Salvar e Solicitar Orçamentos'}
+            <Send className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">{saving ? 'Salvando...' : 'Salvar e Solicitar Orçamentos'}</span>
+            <span className="sm:hidden">{saving ? 'Salvando...' : 'Salvar e Solicitar'}</span>
           </Button>
         </div>
       </CardHeader>

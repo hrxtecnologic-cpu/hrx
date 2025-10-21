@@ -1,4 +1,4 @@
-import { auth } from '@clerk/nextjs/server';
+import { auth, clerkClient } from '@clerk/nextjs/server';
 import { createClient } from '@supabase/supabase-js';
 
 /**
@@ -11,7 +11,7 @@ import { createClient } from '@supabase/supabase-js';
  * @returns {Promise<{isAdmin: boolean, userId: string | null}>}
  */
 export async function isAdmin() {
-  const { userId, sessionClaims } = await auth();
+  const { userId } = await auth();
 
   if (!userId) {
     return { isAdmin: false, userId: null };
@@ -23,7 +23,10 @@ export async function isAdmin() {
     .map(e => e.trim().toLowerCase())
     .filter(e => e.length > 0);
 
-  const userEmail = (sessionClaims?.email as string)?.toLowerCase() || '';
+  // Buscar email do usuário via Clerk API
+  const client = await clerkClient();
+  const user = await client.users.getUser(userId);
+  const userEmail = user.emailAddresses[0]?.emailAddress?.toLowerCase() || '';
 
   // Se está na lista de emails admin, é admin
   if (ADMIN_EMAILS.includes(userEmail)) {

@@ -1,5 +1,6 @@
 import { auth } from '@clerk/nextjs/server';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   Shield,
   Flame,
@@ -75,14 +76,21 @@ export default async function Home() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32">
           {/* Logo/Brand */}
           <div className="text-center mb-8">
-            <h1 className="text-6xl md:text-7xl font-bold text-white mb-4 tracking-tight">
-              HRX
-            </h1>
-            <div className="w-24 h-1 bg-red-600 mx-auto rounded-full" />
+            <div className="flex justify-center mb-4">
+              <Image
+                src="/icons/icone1_hrx_cropped.svg"
+                alt="HRX Logo"
+                width={800}
+                height={576}
+                priority
+                className="w-auto h-32 md:h-40 lg:h-48 object-contain"
+              />
+            </div>
+            <div className="w-48 md:w-64 h-1 bg-red-600 mx-auto rounded-full" />
           </div>
 
           {/* Main headline */}
-          <div className="text-center mb-12">
+          <div className="text-center mb-10">
             <h2 className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight">
               Encontre os melhores
               <br />
