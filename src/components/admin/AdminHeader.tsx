@@ -4,7 +4,12 @@ import { UserButton, useUser } from '@clerk/nextjs';
 import { Bell, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-export function AdminHeader() {
+interface AdminHeaderProps {
+  mobileMenuOpen?: boolean;
+  setMobileMenuOpen?: (open: boolean) => void;
+}
+
+export function AdminHeader({ setMobileMenuOpen }: AdminHeaderProps) {
   const { user } = useUser();
 
   return (
@@ -14,6 +19,7 @@ export function AdminHeader() {
         variant="ghost"
         size="icon"
         className="lg:hidden text-zinc-400 hover:text-white"
+        onClick={() => setMobileMenuOpen?.(true)}
       >
         <Menu className="h-6 w-6" />
       </Button>

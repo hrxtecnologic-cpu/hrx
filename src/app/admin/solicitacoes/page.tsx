@@ -84,42 +84,42 @@ export default async function SolicitacoesPage() {
         {requests && requests.length > 0 ? (
           requests.map((request) => (
             <Card key={request.id} className="bg-zinc-900 border-zinc-800 hover:border-zinc-700 transition">
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row items-start gap-4">
                   {/* Status Badge */}
-                  <div className="flex-shrink-0">
+                  <div className="flex-shrink-0 self-start sm:self-auto">
                     {request.urgency === 'very_urgent' ? (
-                      <div className="h-12 w-12 rounded-full bg-red-500/10 flex items-center justify-center">
-                        <AlertTriangle className="h-6 w-6 text-red-500" />
+                      <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-red-500/10 flex items-center justify-center">
+                        <AlertTriangle className="h-5 w-5 sm:h-6 sm:w-6 text-red-500" />
                       </div>
                     ) : request.status === 'completed' ? (
-                      <div className="h-12 w-12 rounded-full bg-green-500/10 flex items-center justify-center">
-                        <CheckCircle className="h-6 w-6 text-green-500" />
+                      <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-green-500/10 flex items-center justify-center">
+                        <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-green-500" />
                       </div>
                     ) : (
-                      <div className="h-12 w-12 rounded-full bg-yellow-500/10 flex items-center justify-center">
-                        <Clock className="h-6 w-6 text-yellow-500" />
+                      <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-yellow-500/10 flex items-center justify-center">
+                        <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-500" />
                       </div>
                     )}
                   </div>
 
                   {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-4 mb-3">
-                      <div>
-                        <h3 className="text-lg font-semibold text-white mb-1">
+                  <div className="flex-1 min-w-0 w-full">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4 mb-3">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-base sm:text-lg font-semibold text-white mb-1 truncate">
                           {request.event_name}
                         </h3>
-                        <p className="text-sm text-zinc-400">{request.company_name}</p>
+                        <p className="text-sm text-zinc-400 truncate">{request.company_name}</p>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-shrink-0">
                         {request.urgency === 'very_urgent' && (
-                          <span className="text-xs bg-red-500/10 text-red-500 px-3 py-1 rounded-full whitespace-nowrap">
+                          <span className="text-xs bg-red-500/10 text-red-500 px-2 sm:px-3 py-1 rounded-full whitespace-nowrap">
                             Muito Urgente
                           </span>
                         )}
                         {request.urgency === 'urgent' && (
-                          <span className="text-xs bg-orange-500/10 text-orange-500 px-3 py-1 rounded-full whitespace-nowrap">
+                          <span className="text-xs bg-orange-500/10 text-orange-500 px-2 sm:px-3 py-1 rounded-full whitespace-nowrap">
                             Urgente
                           </span>
                         )}

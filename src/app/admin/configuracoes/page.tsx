@@ -75,9 +75,11 @@ export default function ConfiguracoesPage() {
             <p className="text-sm text-zinc-400 mb-4">
               Gerenciar roles e permissões de admin
             </p>
-            <Button className="w-full bg-yellow-600 hover:bg-yellow-500 text-white">
-              Configurar Permissões
-            </Button>
+            <Link href="/admin/configuracoes/usuarios">
+              <Button className="w-full bg-yellow-600 hover:bg-yellow-500 text-white">
+                Gerenciar Usuários
+              </Button>
+            </Link>
           </CardContent>
         </Card>
 

@@ -41,31 +41,33 @@ export default async function SolicitacaoDetailPage({
   return (
     <div className="space-y-6 max-w-7xl">
       {/* Header com ações */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-2">{request.event_name}</h1>
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div className="flex-1">
+          <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">{request.event_name}</h1>
           <p className="text-zinc-400">{request.company_name}</p>
-          <div className="flex items-center gap-3 mt-2">
+          <div className="flex flex-wrap items-center gap-2 md:gap-3 mt-2">
             {request.urgency === 'very_urgent' && (
-              <span className="inline-flex items-center gap-1 text-sm bg-red-500/10 text-red-500 px-3 py-1 rounded-full">
-                <AlertTriangle className="h-4 w-4" />
+              <span className="inline-flex items-center gap-1 text-xs md:text-sm bg-red-500/10 text-red-500 px-2 md:px-3 py-1 rounded-full">
+                <AlertTriangle className="h-3 md:h-4 w-3 md:w-4" />
                 Muito Urgente
               </span>
             )}
             {request.urgency === 'urgent' && (
-              <span className="inline-flex items-center gap-1 text-sm bg-orange-500/10 text-orange-500 px-3 py-1 rounded-full">
-                <AlertTriangle className="h-4 w-4" />
+              <span className="inline-flex items-center gap-1 text-xs md:text-sm bg-orange-500/10 text-orange-500 px-2 md:px-3 py-1 rounded-full">
+                <AlertTriangle className="h-3 md:h-4 w-3 md:w-4" />
                 Urgente
               </span>
             )}
-            <span className="text-sm text-zinc-500">
+            <span className="text-xs md:text-sm text-zinc-500">
               Recebida em {new Date(request.created_at).toLocaleDateString('pt-BR')}
             </span>
           </div>
         </div>
 
         {/* Ações */}
-        <RequestActions requestId={id} currentStatus={request.status} />
+        <div className="w-full md:w-auto">
+          <RequestActions requestId={id} currentStatus={request.status} />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
