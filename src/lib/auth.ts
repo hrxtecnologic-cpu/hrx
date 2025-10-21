@@ -39,13 +39,13 @@ export async function isAdmin() {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  const { data: user } = await supabase
+  const { data: dbUser } = await supabase
     .from('users')
     .select('role')
     .eq('clerk_id', userId)
     .single();
 
-  if (user && user.role === 'admin') {
+  if (dbUser && dbUser.role === 'admin') {
     return { isAdmin: true, userId };
   }
 
