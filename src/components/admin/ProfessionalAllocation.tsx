@@ -276,7 +276,7 @@ export function ProfessionalAllocation({ requestId, professionalsNeeded, current
                 onClick={handleNotify}
                 size="sm"
                 variant="outline"
-                className="border-zinc-700"
+                className="border-white text-white hover:bg-red-600 hover:border-red-600"
                 disabled={saving}
               >
                 <Send className="h-4 w-4 mr-2" />
@@ -285,7 +285,7 @@ export function ProfessionalAllocation({ requestId, professionalsNeeded, current
               <Button
                 onClick={handleSave}
                 size="sm"
-                className="bg-red-600 hover:bg-red-500"
+                className="bg-red-600 hover:bg-red-500 text-white"
                 disabled={saving}
               >
                 {saving ? 'Salvando...' : 'Salvar Alocações'}

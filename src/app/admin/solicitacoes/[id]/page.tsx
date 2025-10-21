@@ -17,6 +17,7 @@ import {
 import { notFound } from 'next/navigation';
 import { RequestActions } from '@/components/admin/RequestActions';
 import { ProfessionalAllocation } from '@/components/admin/ProfessionalAllocation';
+import { EquipmentAllocation } from '@/components/admin/EquipmentAllocation';
 
 export default async function SolicitacaoDetailPage({
   params,
@@ -236,35 +237,47 @@ export default async function SolicitacaoDetailPage({
 
           {/* Equipamentos */}
           {request.needs_equipment && request.equipment_list?.length > 0 && (
-            <Card className="bg-zinc-900 border-zinc-800">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <Package className="h-5 w-5 text-red-600" />
-                  Equipamentos Necessários
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {request.equipment_list.map((eq: string) => (
-                    <span key={eq} className="text-sm bg-zinc-800 text-zinc-300 px-3 py-1 rounded">
-                      {eq}
-                    </span>
-                  ))}
-                </div>
-                {request.equipment_other && (
-                  <div className="pt-3 border-t border-zinc-800">
-                    <p className="text-xs text-zinc-500 mb-1">Outros Equipamentos:</p>
-                    <p className="text-sm text-zinc-300">{request.equipment_other}</p>
+            <>
+              <Card className="bg-zinc-900 border-zinc-800">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center gap-2">
+                    <Package className="h-5 w-5 text-red-600" />
+                    Equipamentos Solicitados
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {request.equipment_list.map((eq: string) => (
+                      <span key={eq} className="text-sm bg-zinc-800 text-zinc-300 px-3 py-1 rounded">
+                        {eq}
+                      </span>
+                    ))}
                   </div>
-                )}
-                {request.equipment_notes && (
-                  <div className="pt-3 border-t border-zinc-800 mt-3">
-                    <p className="text-xs text-zinc-500 mb-1">Observações:</p>
-                    <p className="text-sm text-zinc-300">{request.equipment_notes}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                  {request.equipment_other && (
+                    <div className="pt-3 border-t border-zinc-800">
+                      <p className="text-xs text-zinc-500 mb-1">Outros Equipamentos:</p>
+                      <p className="text-sm text-zinc-300">{request.equipment_other}</p>
+                    </div>
+                  )}
+                  {request.equipment_notes && (
+                    <div className="pt-3 border-t border-zinc-800 mt-3">
+                      <p className="text-xs text-zinc-500 mb-1">Observações:</p>
+                      <p className="text-sm text-zinc-300">{request.equipment_notes}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Alocação de Equipamentos */}
+              <EquipmentAllocation
+                requestId={id}
+                equipmentList={request.equipment_list.map((item: string) => ({
+                  item: item,
+                  quantity: 1
+                }))}
+                currentStatus={request.status}
+              />
+            </>
           )}
 
           {/* Observações Gerais */}

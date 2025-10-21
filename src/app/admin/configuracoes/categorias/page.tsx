@@ -125,7 +125,7 @@ export default function CategoriasPage() {
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-red-600 hover:bg-red-500">
+            <Button className="bg-red-600 hover:bg-red-500 text-white">
               <Plus className="h-4 w-4 mr-2" />
               Nova Categoria
             </Button>
@@ -170,7 +170,7 @@ export default function CategoriasPage() {
                 </Button>
                 <Button
                   type="submit"
-                  className="flex-1 bg-red-600 hover:bg-red-500"
+                  className="flex-1 bg-red-600 hover:bg-red-500 text-white"
                   disabled={submitting}
                 >
                   {submitting ? 'Salvando...' : editingCategory ? 'Atualizar' : 'Criar'}

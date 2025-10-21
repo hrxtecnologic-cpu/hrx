@@ -16,6 +16,8 @@ import {
   Building2,
   MapPin,
   Users,
+  Edit,
+  Eye,
 } from 'lucide-react';
 
 export default async function DashboardContratantePage() {
@@ -240,8 +242,24 @@ export default async function DashboardContratantePage() {
                       </div>
                     )}
 
-                    <div className="mt-3 text-xs text-zinc-500">
-                      Solicitado em: {new Date(request.created_at).toLocaleString('pt-BR')}
+                    <div className="mt-3 flex items-center justify-between">
+                      <div className="text-xs text-zinc-500">
+                        Solicitado em: {new Date(request.created_at).toLocaleString('pt-BR')}
+                      </div>
+                      <div className="flex gap-2">
+                        <Link href={`/solicitar-equipe?edit=${request.id}`}>
+                          <Button size="sm" variant="outline" className="border-zinc-700 hover:bg-zinc-800 text-zinc-300">
+                            <Edit className="h-3 w-3 mr-1" />
+                            Editar
+                          </Button>
+                        </Link>
+                        <Link href={`/admin/solicitacoes/${request.id}`}>
+                          <Button size="sm" variant="outline" className="border-red-600/30 hover:bg-red-600/10 text-red-400">
+                            <Eye className="h-3 w-3 mr-1" />
+                            Ver Detalhes
+                          </Button>
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 ))}

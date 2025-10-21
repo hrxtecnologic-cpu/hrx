@@ -83,30 +83,36 @@ export async function POST(
     });
 
     if (professionalIds.length > 0) {
-      // Buscar todas as alocações existentes que envolvem esses profissionais
+      // Buscar todas as alocações existentes
       const { data: existingAllocations, error: allocError } = await supabase
         .from('event_allocations')
-        .select(`
-          id,
-          request_id,
-          allocations,
-          contractor_requests!inner (
-            event_name,
-            start_date,
-            end_date,
-            start_time,
-            end_time
-          )
-        `)
+        .select('id, request_id, allocations')
         .neq('request_id', id); // Excluir o evento atual
 
       if (allocError) {
         console.error('❌ Erro ao verificar conflitos:', allocError);
         // Não falhar se erro ao verificar conflitos, apenas logar
       } else if (existingAllocations && existingAllocations.length > 0) {
-        // Verificar cada alocação existente
-        for (const existingAlloc of existingAllocations) {
-          const otherRequest = existingAlloc.contractor_requests as any;
+        // Buscar detalhes dos requests
+        const requestIds = existingAllocations.map(a => a.request_id);
+        const { data: otherRequests, error: requestsError } = await supabase
+          .from('contractor_requests')
+          .select('id, event_name, start_date, end_date, start_time, end_time')
+          .in('id', requestIds);
+
+        if (requestsError) {
+          console.error('❌ Erro ao buscar detalhes dos eventos:', requestsError);
+        } else {
+          // Criar mapa de requests
+          const requestsMap = new Map(otherRequests?.map(r => [r.id, r]) || []);
+
+          // Verificar cada alocação existente
+          for (const existingAlloc of existingAllocations) {
+            const otherRequest = requestsMap.get(existingAlloc.request_id);
+
+            if (!otherRequest) {
+              continue;
+            }
 
           // Verificar se há conflito de horário
           const hasConflict = eventsConflict(currentRequest, otherRequest);
@@ -142,6 +148,7 @@ export async function POST(
               }
             }
           }
+        }
         }
       }
     }

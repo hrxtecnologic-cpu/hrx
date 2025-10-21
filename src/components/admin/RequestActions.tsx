@@ -69,7 +69,7 @@ export function RequestActions({
         <Button
           onClick={() => handleUpdateStatus('in_progress')}
           disabled={isLoading}
-          className="bg-blue-600 hover:bg-blue-500"
+          className="bg-blue-600 hover:bg-blue-500 text-white"
         >
           {isLoading ? (
             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -85,7 +85,7 @@ export function RequestActions({
           <Button
             onClick={() => alert('Funcionalidade em desenvolvimento')}
             variant="outline"
-            className="border-zinc-700"
+            className="border-white text-white hover:bg-red-600 hover:border-red-600"
           >
             <FileText className="h-4 w-4 mr-2" />
             Criar Proposta
@@ -94,7 +94,7 @@ export function RequestActions({
           <Button
             onClick={() => alert('Funcionalidade em desenvolvimento')}
             variant="outline"
-            className="border-zinc-700"
+            className="border-white text-white hover:bg-red-600 hover:border-red-600"
           >
             <Users className="h-4 w-4 mr-2" />
             Alocar Profissionais
@@ -103,7 +103,7 @@ export function RequestActions({
           <Button
             onClick={() => handleUpdateStatus('completed')}
             disabled={isLoading}
-            className="bg-green-600 hover:bg-green-500"
+            className="bg-green-600 hover:bg-green-500 text-white"
           >
             {isLoading ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />

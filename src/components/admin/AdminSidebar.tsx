@@ -12,6 +12,7 @@ import {
   MessageSquare,
   Settings,
   Home,
+  Building2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -27,6 +28,7 @@ const menuItems = [
     title: 'Gestão',
     items: [
       { icon: Users, label: 'Profissionais', href: '/admin/profissionais', badge: null },
+      { icon: Building2, label: 'Fornecedores', href: '/admin/fornecedores', badge: null },
       { icon: FileCheck, label: 'Documentos', href: '/admin/documentos', badge: 12 },
       { icon: ClipboardList, label: 'Solicitações', href: '/admin/solicitacoes', badge: 5 },
       { icon: Calendar, label: 'Eventos', href: '/admin/eventos', badge: null },

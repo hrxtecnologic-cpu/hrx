@@ -1,6 +1,7 @@
 import { auth } from '@clerk/nextjs/server';
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { isAdmin } from '@/lib/auth';
 
 export async function POST(
   req: Request,
@@ -12,7 +13,14 @@ export async function POST(
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     }
 
-    // TODO: Verificar se é admin (em produção)
+    // Verificar se é admin
+    const { isAdmin: userIsAdmin } = await isAdmin();
+    if (!userIsAdmin) {
+      return NextResponse.json(
+        { error: 'Acesso negado. Apenas administradores podem rejeitar profissionais.' },
+        { status: 403 }
+      );
+    }
 
     const { id } = await params;
     const { reason } = await req.json();

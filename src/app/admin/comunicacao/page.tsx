@@ -20,7 +20,7 @@ export default function ComunicacaoPage() {
             <p className="text-sm text-zinc-400 mb-4">
               Enviar emails para múltiplos destinatários
             </p>
-            <Button className="w-full bg-red-600 hover:bg-red-500">
+            <Button className="w-full bg-red-600 hover:bg-red-500 text-white">
               <Send className="h-4 w-4 mr-2" />
               Criar Campanha
             </Button>
@@ -34,7 +34,7 @@ export default function ComunicacaoPage() {
             <p className="text-sm text-zinc-400 mb-4">
               Enviar notificações via WhatsApp ou SMS
             </p>
-            <Button className="w-full bg-blue-600 hover:bg-blue-500">
+            <Button className="w-full bg-blue-600 hover:bg-blue-500 text-white">
               <Send className="h-4 w-4 mr-2" />
               Enviar Notificação
             </Button>
@@ -48,7 +48,7 @@ export default function ComunicacaoPage() {
             <p className="text-sm text-zinc-400 mb-4">
               Gerenciar templates de mensagens
             </p>
-            <Button className="w-full bg-green-600 hover:bg-green-500">
+            <Button className="w-full bg-green-600 hover:bg-green-500 text-white">
               <FileText className="h-4 w-4 mr-2" />
               Ver Templates
             </Button>

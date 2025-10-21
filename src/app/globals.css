@@ -78,37 +78,39 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  /* HRX Theme - Preto, Cinzas e Vermelho */
+  --background: 0 0% 0%;              /* black - bg-black */
+  --foreground: 0 0% 100%;            /* white - text-white */
+  --card: 240 4% 16%;                 /* zinc-900 - bg-zinc-900 */
+  --card-foreground: 0 0% 100%;       /* white - text-white */
+  --popover: 240 5% 11%;              /* zinc-950 */
+  --popover-foreground: 0 0% 100%;    /* white */
+  --primary: 0 72% 51%;               /* red-600 - bg-red-600 */
+  --primary-foreground: 0 0% 100%;    /* white */
+  --secondary: 240 4% 26%;            /* zinc-800 - bg-zinc-800 */
+  --secondary-foreground: 0 0% 100%;  /* white */
+  --muted: 240 5% 21%;                /* zinc-850 */
+  --muted-foreground: 240 5% 65%;     /* zinc-400 - text-zinc-400 */
+  --accent: 0 72% 51%;                /* red-600 */
+  --accent-foreground: 0 0% 100%;     /* white */
+  --destructive: 0 84% 60%;           /* red-500 */
+  --destructive-foreground: 0 0% 100%; /* white */
+  --border: 240 3% 26%;               /* zinc-800 - border-zinc-800 */
+  --input: 240 4% 26%;                /* zinc-800 */
+  --ring: 0 72% 51%;                  /* red-600 */
+  --chart-1: 0 72% 51%;               /* red-600 */
+  --chart-2: 142 76% 36%;             /* green-600 */
+  --chart-3: 45 93% 47%;              /* yellow-500 */
+  --chart-4: 217 91% 60%;             /* blue-500 */
+  --chart-5: 280 87% 47%;             /* purple-600 */
+  --sidebar: 240 4% 16%;              /* zinc-900 */
+  --sidebar-foreground: 0 0% 100%;    /* white */
+  --sidebar-primary: 0 72% 51%;       /* red-600 */
+  --sidebar-primary-foreground: 0 0% 100%; /* white */
+  --sidebar-accent: 240 4% 26%;       /* zinc-800 */
+  --sidebar-accent-foreground: 0 0% 100%; /* white */
+  --sidebar-border: 240 3% 26%;       /* zinc-800 */
+  --sidebar-ring: 0 72% 51%;          /* red-600 */
 }
 
 @layer base {

@@ -31,24 +31,32 @@ export async function GET(
     // Buscar todas as alocações existentes (exceto do evento atual)
     const { data: allAllocations, error: allocError } = await supabase
       .from('event_allocations')
-      .select(`
-        id,
-        request_id,
-        allocations,
-        contractor_requests!inner (
-          event_name,
-          start_date,
-          end_date,
-          start_time,
-          end_time
-        )
-      `)
+      .select('id, request_id, allocations')
       .neq('request_id', id);
 
     if (allocError) {
       console.error('❌ Erro ao buscar alocações:', allocError);
       return NextResponse.json({ error: 'Erro ao buscar alocações' }, { status: 500 });
     }
+
+    // Buscar detalhes dos requests das alocações
+    if (!allAllocations || allAllocations.length === 0) {
+      return NextResponse.json({ conflicts: {} });
+    }
+
+    const requestIds = allAllocations.map(a => a.request_id);
+    const { data: otherRequests, error: requestsError } = await supabase
+      .from('contractor_requests')
+      .select('id, event_name, start_date, end_date, start_time, end_time')
+      .in('id', requestIds);
+
+    if (requestsError) {
+      console.error('❌ Erro ao buscar detalhes dos eventos:', requestsError);
+      return NextResponse.json({ error: 'Erro ao buscar detalhes dos eventos' }, { status: 500 });
+    }
+
+    // Criar mapa de requests por ID para lookup rápido
+    const requestsMap = new Map(otherRequests?.map(r => [r.id, r]) || []);
 
     // Construir mapa de conflitos: professionalId -> { eventName, dates, times }
     const conflicts: Record<string, {
@@ -61,7 +69,11 @@ export async function GET(
 
     if (allAllocations && allAllocations.length > 0) {
       for (const allocation of allAllocations) {
-        const otherRequest = allocation.contractor_requests as any;
+        const otherRequest = requestsMap.get(allocation.request_id);
+
+        if (!otherRequest) {
+          continue; // Skip if request not found
+        }
 
         // Verificar se os eventos têm conflito de horário
         const hasConflict = eventsConflict(currentRequest, otherRequest);

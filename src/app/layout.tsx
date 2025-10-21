@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ptBR } from "@clerk/localizations";
+import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
 
 const inter = Inter({
@@ -21,9 +22,10 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider localization={ptBR}>
-      <html lang="pt-BR">
-        <body className={`${inter.variable} antialiased bg-black text-white`}>
+      <html lang="pt-BR" className="dark">
+        <body className={`${inter.variable} antialiased bg-background text-foreground`}>
           {children}
+          <Toaster />
         </body>
       </html>
     </ClerkProvider>

@@ -122,7 +122,7 @@ export default async function ProfissionaisPage({
                 <SelectItem value="rejected">Rejeitados</SelectItem>
               </SelectContent>
             </Select>
-            <Button type="submit" className="bg-red-600 hover:bg-red-500">
+            <Button type="submit" className="bg-red-600 hover:bg-red-500 text-white">
               <Filter className="h-4 w-4 mr-2" />
               Filtrar
             </Button>

@@ -36,7 +36,7 @@ export default function ConfiguracoesPage() {
               Gerenciar categorias disponíveis para profissionais
             </p>
             <Link href="/admin/configuracoes/categorias">
-              <Button className="w-full bg-red-600 hover:bg-red-500">
+              <Button className="w-full bg-red-600 hover:bg-red-500 text-white">
                 Gerenciar Categorias
               </Button>
             </Link>
@@ -56,7 +56,7 @@ export default function ConfiguracoesPage() {
               Configurar tipos de eventos disponíveis
             </p>
             <Link href="/admin/configuracoes/tipos-evento">
-              <Button className="w-full bg-blue-600 hover:bg-blue-500">
+              <Button className="w-full bg-blue-600 hover:bg-blue-500 text-white">
                 Gerenciar Tipos
               </Button>
             </Link>
@@ -75,7 +75,7 @@ export default function ConfiguracoesPage() {
             <p className="text-sm text-zinc-400 mb-4">
               Gerenciar roles e permissões de admin
             </p>
-            <Button className="w-full bg-yellow-600 hover:bg-yellow-500">
+            <Button className="w-full bg-yellow-600 hover:bg-yellow-500 text-white">
               Configurar Permissões
             </Button>
           </CardContent>
@@ -93,7 +93,7 @@ export default function ConfiguracoesPage() {
             <p className="text-sm text-zinc-400 mb-4">
               Configurar notificações automáticas
             </p>
-            <Button className="w-full bg-green-600 hover:bg-green-500">
+            <Button className="w-full bg-green-600 hover:bg-green-500 text-white">
               Configurar Alertas
             </Button>
           </CardContent>

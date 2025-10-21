@@ -136,7 +136,7 @@ export default async function DocumentosPage() {
 
                   {/* Action Button */}
                   <Link href={`/admin/profissionais/${prof.id}`}>
-                    <Button className="bg-red-600 hover:bg-red-500 ml-4">
+                    <Button className="bg-red-600 hover:bg-red-500 text-white ml-4">
                       <FileCheck className="h-4 w-4 mr-2" />
                       Validar Documentos
                     </Button>

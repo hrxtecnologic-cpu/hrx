@@ -665,3 +665,129 @@ export async function sendProfessionalApprovalEmail(
     };
   }
 }
+
+interface SendSupplierQuoteRequestParams {
+  supplierEmail: string;
+  supplierName: string;
+  companyName: string;
+  eventName: string;
+  eventType: string;
+  startDate: string;
+  endDate?: string;
+  venueCity: string;
+  venueState: string;
+  venueName?: string;
+  venueAddress?: string;
+  equipmentList: Array<{
+    item: string;
+    quantity: number;
+    estimatedBudget?: number;
+  }>;
+  additionalNotes?: string;
+}
+
+/**
+ * Envia email para fornecedor solicitando orçamento de equipamentos
+ */
+export async function sendSupplierQuoteRequest(
+  params: SendSupplierQuoteRequestParams
+): Promise<{ success: boolean; error?: string; emailId?: string }> {
+  try {
+    // Calcular orçamento total estimado
+    const totalEstimatedBudget = params.equipmentList.reduce(
+      (sum, item) => sum + (item.estimatedBudget || 0),
+      0
+    );
+
+    const { data, error } = await resend.emails.send({
+      from: `HRX <${FROM_EMAIL}>`,
+      to: [params.supplierEmail],
+      subject: `Solicitação de Orçamento - ${params.eventName}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: #dc2626;">Solicitação de Orçamento de Equipamentos</h1>
+
+          <p>Olá <strong>${params.supplierName}</strong>!</p>
+
+          <p>Estamos organizando um evento e precisamos de equipamentos. Gostaríamos de solicitar um orçamento para os itens listados abaixo.</p>
+
+          <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h2 style="margin-top: 0; color: #111827;">Detalhes do Evento</h2>
+            <p><strong>Evento:</strong> ${params.eventName}</p>
+            <p><strong>Empresa:</strong> ${params.companyName}</p>
+            <p><strong>Tipo:</strong> ${params.eventType}</p>
+            <p><strong>Data de Início:</strong> ${new Date(params.startDate).toLocaleDateString('pt-BR')}</p>
+            ${params.endDate ? `<p><strong>Data de Término:</strong> ${new Date(params.endDate).toLocaleDateString('pt-BR')}</p>` : ''}
+            ${params.venueName ? `<p><strong>Local:</strong> ${params.venueName}</p>` : ''}
+            <p><strong>Cidade:</strong> ${params.venueCity}, ${params.venueState}</p>
+            ${params.venueAddress ? `<p><strong>Endereço:</strong> ${params.venueAddress}</p>` : ''}
+          </div>
+
+          <div style="background: #fef3c7; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h2 style="margin-top: 0; color: #92400e;">Equipamentos Necessários</h2>
+            <table style="width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr style="border-bottom: 2px solid #d97706;">
+                  <th style="text-align: left; padding: 8px;">Equipamento</th>
+                  <th style="text-align: center; padding: 8px;">Qtd</th>
+                  ${totalEstimatedBudget > 0 ? '<th style="text-align: right; padding: 8px;">Orç. Estimado</th>' : ''}
+                </tr>
+              </thead>
+              <tbody>
+                ${params.equipmentList.map(item => `
+                  <tr style="border-bottom: 1px solid #fbbf24;">
+                    <td style="padding: 8px;">${item.item}</td>
+                    <td style="text-align: center; padding: 8px;">${item.quantity}</td>
+                    ${totalEstimatedBudget > 0 && item.estimatedBudget ?
+                      `<td style="text-align: right; padding: 8px;">R$ ${item.estimatedBudget.toFixed(2)}</td>` :
+                      totalEstimatedBudget > 0 ? '<td style="text-align: right; padding: 8px;">-</td>' : ''
+                    }
+                  </tr>
+                `).join('')}
+              </tbody>
+              ${totalEstimatedBudget > 0 ? `
+                <tfoot>
+                  <tr style="border-top: 2px solid #d97706; font-weight: bold;">
+                    <td colspan="2" style="padding: 8px; text-align: right;">Total Estimado:</td>
+                    <td style="text-align: right; padding: 8px;">R$ ${totalEstimatedBudget.toFixed(2)}</td>
+                  </tr>
+                </tfoot>
+              ` : ''}
+            </table>
+          </div>
+
+          ${params.additionalNotes ? `
+            <div style="background: #e0f2fe; padding: 15px; border-radius: 8px; margin: 20px 0;">
+              <p style="margin: 0;"><strong>Observações Adicionais:</strong></p>
+              <p style="margin: 10px 0 0 0;">${params.additionalNotes}</p>
+            </div>
+          ` : ''}
+
+          <p><strong>Por favor, envie sua proposta de orçamento para:</strong> ${ADMIN_EMAIL}</p>
+
+          <p>Aguardamos seu retorno em breve!</p>
+
+          <p style="color: #6b7280; font-size: 14px; margin-top: 40px;">
+            Atenciosamente,<br>
+            <strong>HRX Tecnologia</strong><br>
+            ${ADMIN_EMAIL}
+          </p>
+        </div>
+      `,
+    });
+
+    if (error) {
+      console.error('❌ Erro ao enviar email para fornecedor:', error);
+      return { success: false, error: error.message };
+    }
+
+    console.log(`✅ Email de solicitação de orçamento enviado para: ${params.supplierEmail} (ID: ${data?.id})`);
+    return { success: true, emailId: data?.id };
+  } catch (error) {
+    console.error('❌ Erro ao enviar email para fornecedor:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Erro desconhecido'
+    };
+  }
+}

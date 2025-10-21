@@ -125,7 +125,7 @@ export default function TiposEventoPage() {
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-blue-600 hover:bg-blue-500">
+            <Button className="bg-blue-600 hover:bg-blue-500 text-white">
               <Plus className="h-4 w-4 mr-2" />
               Novo Tipo
             </Button>
@@ -170,7 +170,7 @@ export default function TiposEventoPage() {
                 </Button>
                 <Button
                   type="submit"
-                  className="flex-1 bg-blue-600 hover:bg-blue-500"
+                  className="flex-1 bg-blue-600 hover:bg-blue-500 text-white"
                   disabled={submitting}
                 >
                   {submitting ? 'Salvando...' : editingEventType ? 'Atualizar' : 'Criar'}

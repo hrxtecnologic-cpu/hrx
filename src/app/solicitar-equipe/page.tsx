@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,10 +23,13 @@ import {
 import { formatCNPJ, formatPhone } from '@/lib/format';
 import { Building2, Calendar, MapPin, Users, Package, DollarSign, Plus, Trash2 } from 'lucide-react';
 
-export default function SolicitarEquipePage() {
+function SolicitarEquipeForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const editId = searchParams.get('edit');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showEquipment, setShowEquipment] = useState(false);
+  const [isLoading, setIsLoading] = useState(!!editId);
 
   const {
     register,
@@ -35,6 +38,7 @@ export default function SolicitarEquipePage() {
     setValue,
     watch,
     control,
+    reset,
   } = useForm<RequestFormData>({
     resolver: zodResolver(requestSchema),
     defaultValues: {
@@ -52,34 +56,114 @@ export default function SolicitarEquipePage() {
     name: 'professionalsNeeded',
   });
 
+  // Carregar dados para edição
+  useEffect(() => {
+    if (editId) {
+      const loadRequestData = async () => {
+        try {
+          setIsLoading(true);
+          const response = await fetch(`/api/requests/${editId}`);
+
+          if (!response.ok) {
+            throw new Error('Solicitação não encontrada');
+          }
+
+          const data = await response.json();
+
+          // Mapear campos do banco para o formulário
+          reset({
+            companyName: data.company_name,
+            cnpj: data.cnpj,
+            responsibleName: data.responsible_name,
+            responsibleRole: data.responsible_role || '',
+            email: data.email,
+            phone: data.phone,
+            acceptsWhatsApp: data.accepts_whatsapp || false,
+            website: data.website || '',
+            companyAddress: data.company_address || '',
+            eventName: data.event_name,
+            eventType: data.event_type,
+            eventDescription: data.event_description || '',
+            startDate: data.start_date,
+            startTime: data.start_time || '',
+            endDate: data.end_date,
+            endTime: data.end_time || '',
+            venueName: data.venue_name || '',
+            venueAddress: data.venue_address,
+            venueCity: data.venue_city,
+            venueState: data.venue_state,
+            expectedAttendance: data.expected_attendance || undefined,
+            professionalsNeeded: data.professionals_needed || [],
+            needsEquipment: data.needs_equipment || false,
+            equipmentList: data.equipment_list || [],
+            equipmentOther: data.equipment_other || '',
+            equipmentNotes: data.equipment_notes || '',
+            budgetRange: data.budget_range || '',
+            urgency: data.urgency || 'normal',
+            additionalNotes: data.additional_notes || '',
+            acceptsTerms: true,
+          });
+
+          setShowEquipment(data.needs_equipment || false);
+        } catch (error) {
+          console.error('Erro ao carregar solicitação:', error);
+          alert('Erro ao carregar dados da solicitação');
+          router.push('/dashboard/contratante');
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      loadRequestData();
+    }
+  }, [editId, reset, router]);
+
   const selectedEquipment = watch('equipmentList') || [];
 
   const onSubmit = async (data: RequestFormData) => {
     try {
       setIsSubmitting(true);
 
-      const response = await fetch('/api/requests', {
-        method: 'POST',
+      const url = editId ? `/api/requests/${editId}` : '/api/requests';
+      const method = editId ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Erro ao enviar solicitação');
+        throw new Error(error.error || `Erro ao ${editId ? 'atualizar' : 'enviar'} solicitação`);
       }
 
       const result = await response.json();
 
-      // Redireciona para página de sucesso
-      router.push(`/solicitar-equipe/sucesso?request=${result.requestNumber}`);
+      // Redireciona
+      if (editId) {
+        router.push('/dashboard/contratante');
+      } else {
+        router.push(`/solicitar-equipe/sucesso?request=${result.requestNumber}`);
+      }
     } catch (error) {
-      console.error('Erro ao enviar solicitação:', error);
-      alert(error instanceof Error ? error.message : 'Erro ao enviar solicitação. Tente novamente.');
+      console.error('Erro ao processar solicitação:', error);
+      alert(error instanceof Error ? error.message : `Erro ao ${editId ? 'atualizar' : 'enviar'} solicitação. Tente novamente.`);
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-black py-12 px-4 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+          <p className="text-zinc-400">Carregando dados da solicitação...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-black py-12 px-4">
@@ -87,13 +171,18 @@ export default function SolicitarEquipePage() {
         {/* Header */}
         <div className="text-center mb-12">
           <div className="inline-block mb-4 px-4 py-2 bg-red-600/10 border border-red-600/20 rounded-full">
-            <span className="text-red-500 font-semibold text-sm">Solicitação de Equipe</span>
+            <span className="text-red-500 font-semibold text-sm">
+              {editId ? 'Editar Solicitação' : 'Solicitação de Equipe'}
+            </span>
           </div>
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-            Monte sua equipe perfeita
+            {editId ? 'Edite sua solicitação' : 'Monte sua equipe perfeita'}
           </h1>
           <p className="text-lg text-zinc-400 max-w-2xl mx-auto">
-            Preencha o formulário abaixo e nossa equipe entrará em contato em até 2 horas
+            {editId
+              ? 'Atualize os dados da sua solicitação de equipe'
+              : 'Preencha o formulário abaixo e nossa equipe entrará em contato em até 2 horas'
+            }
           </p>
         </div>
 
@@ -835,7 +924,10 @@ export default function SolicitarEquipePage() {
               disabled={isSubmitting}
               className="bg-red-600 hover:bg-red-500 text-white px-12 py-6 text-lg"
             >
-              {isSubmitting ? 'Enviando...' : 'Enviar Solicitação'}
+              {isSubmitting
+                ? (editId ? 'Atualizando...' : 'Enviando...')
+                : (editId ? 'Atualizar Solicitação' : 'Enviar Solicitação')
+              }
             </Button>
           </div>
 
@@ -845,5 +937,19 @@ export default function SolicitarEquipePage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function SolicitarEquipePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-black py-8 px-4">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center text-white">Carregando...</div>
+        </div>
+      </div>
+    }>
+      <SolicitarEquipeForm />
+    </Suspense>
   );
 }

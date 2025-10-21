@@ -190,7 +190,7 @@ export default async function SolicitacoesPage() {
                       </div>
 
                       <Link href={`/admin/solicitacoes/${request.id}`}>
-                        <Button size="sm" className="bg-red-600 hover:bg-red-500">
+                        <Button size="sm" className="bg-red-600 hover:bg-red-500 text-white">
                           <Eye className="h-4 w-4 mr-2" />
                           Ver Detalhes
                         </Button>

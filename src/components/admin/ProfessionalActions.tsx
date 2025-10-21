@@ -94,7 +94,7 @@ export function ProfessionalActions({
       <Button
         onClick={handleApprove}
         disabled={isLoading}
-        className="bg-green-600 hover:bg-green-500"
+        className="bg-green-600 hover:bg-green-500 text-white"
       >
         {isLoading ? (
           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -137,7 +137,7 @@ export function ProfessionalActions({
               <Button
                 onClick={handleReject}
                 disabled={isLoading || !rejectReason.trim()}
-                className="bg-red-600 hover:bg-red-500"
+                className="bg-red-600 hover:bg-red-500 text-white"
               >
                 {isLoading ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
