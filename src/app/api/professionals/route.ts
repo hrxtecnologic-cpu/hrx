@@ -84,11 +84,50 @@ export async function POST(req: Request) {
     // Verificar se já existe cadastro para este usuário
     const { data: existingProfessional } = await supabase
       .from('professionals')
-      .select('id')
+      .select('*')
       .eq('user_id', userData.id)
       .single();
 
+    // Se já existe e está rejeitado, permite atualizar
     if (existingProfessional) {
+      if (existingProfessional.status === 'rejected') {
+        console.log('✏️ [API] Profissional rejeitado encontrado, atualizando cadastro...');
+
+        // Atualizar cadastro existente
+        const { data: updatedProfessional, error: updateError } = await supabase
+          .from('professionals')
+          .update({
+            ...validatedData,
+            documents,
+            portfolio: portfolio || null,
+            cnh_number: cnh_number || null,
+            cnh_validity: cnh_validity || null,
+            cnv_validity: cnv_validity || null,
+            nr10_validity: nr10_validity || null,
+            nr35_validity: nr35_validity || null,
+            drt_validity: drt_validity || null,
+            status: 'pending', // Volta para pendente
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', existingProfessional.id)
+          .select()
+          .single();
+
+        if (updateError) {
+          console.error('Erro ao atualizar profissional:', updateError);
+          throw updateError;
+        }
+
+        console.log('✅ [API] Cadastro atualizado com sucesso para reanálise');
+
+        return NextResponse.json({
+          success: true,
+          professional: updatedProfessional,
+          message: 'Cadastro atualizado e enviado para nova análise!',
+        });
+      }
+
+      // Se já existe e não está rejeitado, retorna erro
       return NextResponse.json(
         { error: 'Você já possui um cadastro profissional' },
         { status: 400 }
