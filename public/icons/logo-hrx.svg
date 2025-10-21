@@ -1,0 +1,14 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" fill="#000000"/>
+
+  <!-- HRX Text -->
+  <text x="256" y="280" font-family="Arial, sans-serif" font-weight="bold" font-size="160" fill="#DC2626" text-anchor="middle" dominant-baseline="middle">
+    HRX
+  </text>
+
+  <!-- Subtitle -->
+  <text x="256" y="360" font-family="Arial, sans-serif" font-weight="400" font-size="32" fill="#FFFFFF" text-anchor="middle" opacity="0.8">
+    EVENTOS
+  </text>
+</svg>
