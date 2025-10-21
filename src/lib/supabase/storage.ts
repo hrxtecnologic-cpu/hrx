@@ -13,6 +13,7 @@ export type DocumentType =
   | 'rg_back'
   | 'cpf'
   | 'proof_of_address'
+  | 'cnh_photo'
   | 'nr10'
   | 'nr35'
   | 'drt'

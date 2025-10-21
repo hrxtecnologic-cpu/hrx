@@ -32,6 +32,14 @@ export default function CadastroProfissionalPage() {
   const [uploadedDocuments, setUploadedDocuments] = useState<Record<string, string>>({});
   const [portfolioUrls, setPortfolioUrls] = useState<string[]>([]);
 
+  // Campos específicos de documentos
+  const [cnhNumber, setCnhNumber] = useState('');
+  const [cnhValidity, setCnhValidity] = useState('');
+  const [cnvValidity, setCnvValidity] = useState('');
+  const [nr10Validity, setNr10Validity] = useState('');
+  const [nr35Validity, setNr35Validity] = useState('');
+  const [drtValidity, setDrtValidity] = useState('');
+
   const {
     register,
     handleSubmit,
@@ -60,6 +68,8 @@ export default function CadastroProfissionalPage() {
   const availability = watch('availability');
   const acceptsTerms = watch('acceptsTerms');
   const acceptsNotifications = watch('acceptsNotifications');
+  const isMotorista = selectedCategories.includes('Motorista' as any);
+  const isSeguranca = selectedCategories.includes('Segurança' as any);
 
   // Buscar endereço ao digitar CEP
   async function handleCEPBlur(cep: string) {
@@ -133,6 +143,12 @@ export default function CadastroProfissionalPage() {
         ...data,
         documents: uploadedDocuments,
         portfolio: portfolioUrls,
+        cnh_number: isMotorista ? cnhNumber : undefined,
+        cnh_validity: cnhValidity || undefined,
+        cnv_validity: cnvValidity || undefined,
+        nr10_validity: nr10Validity || undefined,
+        nr35_validity: nr35Validity || undefined,
+        drt_validity: drtValidity || undefined,
       };
 
       console.log('📦 [FORMULÁRIO] Enviando documentos:', uploadedDocuments);
@@ -604,43 +620,240 @@ export default function CadastroProfissionalPage() {
                 </div>
               </div>
 
+              {/* CNH - Obrigatório para Motoristas */}
+              {isMotorista && (
+                <div className="p-6 bg-yellow-500/10 border-2 border-yellow-500/30 rounded-lg">
+                  <h3 className="text-lg font-semibold text-yellow-500 mb-2 flex items-center gap-2">
+                    <span>🚗</span>
+                    CNH - Obrigatório para Motoristas
+                  </h3>
+                  <p className="text-sm text-zinc-400 mb-6">
+                    Como você selecionou a categoria "Motorista", é obrigatório enviar o número, validade e a foto da sua CNH (Carteira Nacional de Habilitação).
+                  </p>
+
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <Label htmlFor="cnhNumber" className="text-zinc-300 mb-2 block">
+                          Número da CNH *
+                        </Label>
+                        <Input
+                          id="cnhNumber"
+                          value={cnhNumber}
+                          onChange={(e) => setCnhNumber(e.target.value)}
+                          className="bg-zinc-800 border-zinc-700 text-white h-11"
+                          placeholder="00000000000"
+                          maxLength={20}
+                          required={isMotorista}
+                        />
+                        <p className="text-xs text-zinc-500 mt-2">
+                          Digite o número da sua CNH sem espaços ou pontos
+                        </p>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="cnhValidity" className="text-zinc-300 mb-2 block">
+                          Validade da CNH *
+                        </Label>
+                        <Input
+                          id="cnhValidity"
+                          type="date"
+                          value={cnhValidity}
+                          onChange={(e) => setCnhValidity(e.target.value)}
+                          className="bg-zinc-800 border-zinc-700 text-white h-11"
+                          required={isMotorista}
+                          min={new Date().toISOString().split('T')[0]}
+                        />
+                        <p className="text-xs text-zinc-500 mt-2">
+                          A CNH deve estar válida para aprovação
+                        </p>
+                      </div>
+                    </div>
+
+                    <DocumentUpload
+                      label="Foto da CNH"
+                      description="Foto ou PDF da frente da CNH"
+                      documentType="cnh_photo"
+                      onUpload={(file) => handleDocumentUpload(file, 'cnh_photo')}
+                      currentUrl={uploadedDocuments.cnh_photo}
+                      required
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* CNV - Obrigatório para Seguranças */}
+              {isSeguranca && (
+                <div className="p-6 bg-blue-500/10 border-2 border-blue-500/30 rounded-lg">
+                  <h3 className="text-lg font-semibold text-blue-500 mb-2 flex items-center gap-2">
+                    <span>🛡️</span>
+                    CNV - Obrigatório para Seguranças
+                  </h3>
+                  <p className="text-sm text-zinc-400 mb-6">
+                    Como você selecionou a categoria "Segurança", é obrigatório enviar a foto e a data de validade da sua CNV (Carteira Nacional de Vigilante).
+                  </p>
+
+                  <div className="space-y-6">
+                    <div>
+                      <Label htmlFor="cnvValidity" className="text-zinc-300 mb-2 block">
+                        Data de Validade da CNV *
+                      </Label>
+                      <Input
+                        id="cnvValidity"
+                        type="date"
+                        value={cnvValidity}
+                        onChange={(e) => setCnvValidity(e.target.value)}
+                        className="bg-zinc-800 border-zinc-700 text-white h-11"
+                        required={isSeguranca}
+                        min={new Date().toISOString().split('T')[0]}
+                      />
+                      <p className="text-xs text-zinc-500 mt-2">
+                        A CNV deve estar válida para aprovação do cadastro
+                      </p>
+                    </div>
+
+                    <DocumentUpload
+                      label="Foto da CNV"
+                      description="Foto ou PDF da Carteira Nacional de Vigilante"
+                      documentType="cnv"
+                      onUpload={(file) => handleDocumentUpload(file, 'cnv')}
+                      currentUrl={uploadedDocuments.cnv}
+                      required
+                    />
+                  </div>
+                </div>
+              )}
+
               {/* Certificações (Opcional) */}
               <div>
                 <h3 className="text-lg font-semibold text-white mb-2">
                   Certificações e Habilitações (Opcional)
                 </h3>
                 <p className="text-sm text-zinc-500 mb-4">
-                  Envie apenas se você possuir. Isso aumenta suas chances de contratação.
+                  Envie o certificado e a data de validade. Isso aumenta suas chances de contratação.
                 </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <DocumentUpload
-                    label="NR-10"
-                    description="Certificado de segurança em eletricidade"
-                    documentType="nr10"
-                    onUpload={(file) => handleDocumentUpload(file, 'nr10')}
-                    currentUrl={uploadedDocuments.nr10}
-                  />
-                  <DocumentUpload
-                    label="NR-35"
-                    description="Certificado de trabalho em altura"
-                    documentType="nr35"
-                    onUpload={(file) => handleDocumentUpload(file, 'nr35')}
-                    currentUrl={uploadedDocuments.nr35}
-                  />
-                  <DocumentUpload
-                    label="DRT"
-                    description="Registro profissional de técnico"
-                    documentType="drt"
-                    onUpload={(file) => handleDocumentUpload(file, 'drt')}
-                    currentUrl={uploadedDocuments.drt}
-                  />
-                  <DocumentUpload
-                    label="CNV"
-                    description="Carteira Nacional de Vigilante"
-                    documentType="cnv"
-                    onUpload={(file) => handleDocumentUpload(file, 'cnv')}
-                    currentUrl={uploadedDocuments.cnv}
-                  />
+                <div className="space-y-6">
+                  {/* NR-10 */}
+                  <div className="p-4 bg-zinc-800/30 rounded-lg space-y-4">
+                    <h4 className="text-white font-medium">NR-10 - Segurança em Eletricidade</h4>
+                    <DocumentUpload
+                      label="Certificado NR-10"
+                      description="Foto ou PDF do certificado"
+                      documentType="nr10"
+                      onUpload={(file) => handleDocumentUpload(file, 'nr10')}
+                      currentUrl={uploadedDocuments.nr10}
+                    />
+                    {uploadedDocuments.nr10 && (
+                      <div>
+                        <Label htmlFor="nr10Validity" className="text-zinc-300 mb-2 block">
+                          Validade do NR-10
+                        </Label>
+                        <Input
+                          id="nr10Validity"
+                          type="date"
+                          value={nr10Validity}
+                          onChange={(e) => setNr10Validity(e.target.value)}
+                          className="bg-zinc-800 border-zinc-700 text-white h-11"
+                          min={new Date().toISOString().split('T')[0]}
+                        />
+                        <p className="text-xs text-zinc-500 mt-2">
+                          Informe a data de validade do certificado
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* NR-35 */}
+                  <div className="p-4 bg-zinc-800/30 rounded-lg space-y-4">
+                    <h4 className="text-white font-medium">NR-35 - Trabalho em Altura</h4>
+                    <DocumentUpload
+                      label="Certificado NR-35"
+                      description="Foto ou PDF do certificado"
+                      documentType="nr35"
+                      onUpload={(file) => handleDocumentUpload(file, 'nr35')}
+                      currentUrl={uploadedDocuments.nr35}
+                    />
+                    {uploadedDocuments.nr35 && (
+                      <div>
+                        <Label htmlFor="nr35Validity" className="text-zinc-300 mb-2 block">
+                          Validade do NR-35
+                        </Label>
+                        <Input
+                          id="nr35Validity"
+                          type="date"
+                          value={nr35Validity}
+                          onChange={(e) => setNr35Validity(e.target.value)}
+                          className="bg-zinc-800 border-zinc-700 text-white h-11"
+                          min={new Date().toISOString().split('T')[0]}
+                        />
+                        <p className="text-xs text-zinc-500 mt-2">
+                          Informe a data de validade do certificado
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* DRT */}
+                  <div className="p-4 bg-zinc-800/30 rounded-lg space-y-4">
+                    <h4 className="text-white font-medium">DRT - Registro Profissional</h4>
+                    <DocumentUpload
+                      label="DRT"
+                      description="Foto ou PDF do registro profissional"
+                      documentType="drt"
+                      onUpload={(file) => handleDocumentUpload(file, 'drt')}
+                      currentUrl={uploadedDocuments.drt}
+                    />
+                    {uploadedDocuments.drt && (
+                      <div>
+                        <Label htmlFor="drtValidity" className="text-zinc-300 mb-2 block">
+                          Validade do DRT
+                        </Label>
+                        <Input
+                          id="drtValidity"
+                          type="date"
+                          value={drtValidity}
+                          onChange={(e) => setDrtValidity(e.target.value)}
+                          className="bg-zinc-800 border-zinc-700 text-white h-11"
+                          min={new Date().toISOString().split('T')[0]}
+                        />
+                        <p className="text-xs text-zinc-500 mt-2">
+                          Informe a data de validade do registro
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* CNV só aparece aqui se NÃO for Segurança (para Segurança é obrigatório acima) */}
+                  {!isSeguranca && (
+                    <div className="p-4 bg-zinc-800/30 rounded-lg space-y-4">
+                      <h4 className="text-white font-medium">CNV - Carteira Nacional de Vigilante</h4>
+                      <DocumentUpload
+                        label="CNV"
+                        description="Foto ou PDF da Carteira Nacional de Vigilante"
+                        documentType="cnv"
+                        onUpload={(file) => handleDocumentUpload(file, 'cnv')}
+                        currentUrl={uploadedDocuments.cnv}
+                      />
+                      {uploadedDocuments.cnv && (
+                        <div>
+                          <Label htmlFor="cnvValidityOptional" className="text-zinc-300 mb-2 block">
+                            Validade da CNV
+                          </Label>
+                          <Input
+                            id="cnvValidityOptional"
+                            type="date"
+                            value={cnvValidity}
+                            onChange={(e) => setCnvValidity(e.target.value)}
+                            className="bg-zinc-800 border-zinc-700 text-white h-11"
+                            min={new Date().toISOString().split('T')[0]}
+                          />
+                          <p className="text-xs text-zinc-500 mt-2">
+                            Informe a data de validade da CNV
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 

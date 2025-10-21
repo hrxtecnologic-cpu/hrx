@@ -27,9 +27,9 @@ export async function GET() {
       return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
     }
 
-    // Buscar todos os usuários
+    // Buscar todos os usuários (limite aumentado para 500)
     const response = await client.users.getUserList({
-      limit: 100,
+      limit: 500,
       orderBy: '-created_at',
     });
 

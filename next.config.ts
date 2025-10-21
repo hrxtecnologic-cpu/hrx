@@ -27,7 +27,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'X-Frame-Options',
-            value: 'SAMEORIGIN'
+            value: 'DENY' // Upgraded from SAMEORIGIN to DENY for better security
           },
           {
             key: 'X-Content-Type-Options',
@@ -39,7 +39,28 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Referrer-Policy',
-            value: 'origin-when-cross-origin'
+            value: 'strict-origin-when-cross-origin'
+          },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()'
+          },
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://clerk.hrxeventos.com.br https://challenges.cloudflare.com",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: blob: https: *.supabase.co https://img.clerk.com",
+              "font-src 'self' data:",
+              "connect-src 'self' https://clerk.hrxeventos.com.br https://api.clerk.com https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com",
+              "frame-src 'self' https://challenges.cloudflare.com",
+              "object-src 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+              "frame-ancestors 'none'",
+              "upgrade-insecure-requests"
+            ].join('; ')
           }
         ],
       },

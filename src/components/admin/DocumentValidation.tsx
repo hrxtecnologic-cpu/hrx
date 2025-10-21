@@ -33,6 +33,12 @@ interface DocumentValidationProps {
     city?: string;
     state?: string;
     cep?: string;
+    cnh_number?: string;
+    cnh_validity?: string;
+    cnv_validity?: string;
+    nr10_validity?: string;
+    nr35_validity?: string;
+    drt_validity?: string;
   };
 }
 
@@ -41,6 +47,11 @@ const DOCUMENT_LABELS: Record<string, string> = {
   rg_back: 'RG - Verso',
   cpf: 'CPF',
   proof_of_address: 'Comprovante de Residência',
+  cnh_photo: 'CNH - Carteira Nacional de Habilitação',
+  cnv: 'CNV - Carteira Nacional de Vigilante',
+  nr10: 'NR-10 - Segurança em Eletricidade',
+  nr35: 'NR-35 - Trabalho em Altura',
+  drt: 'DRT - Registro Profissional',
   work_permit: 'Carteira de Trabalho',
   criminal_record: 'Antecedentes Criminais',
   vaccination_card: 'Cartão de Vacinação',
@@ -240,6 +251,57 @@ export function DocumentValidation({
           { label: 'Bairro', value: professionalData.neighborhood },
           { label: 'Cidade/Estado', value: cityState || undefined },
           { label: 'CEP', value: professionalData.cep },
+        ];
+      case 'cnh_photo':
+        return [
+          { label: 'Nome', value: professionalData.full_name },
+          { label: 'Número da CNH', value: professionalData.cnh_number },
+          {
+            label: 'Validade da CNH',
+            value: professionalData.cnh_validity
+              ? new Date(professionalData.cnh_validity).toLocaleDateString('pt-BR')
+              : undefined,
+          },
+        ];
+      case 'cnv':
+        return [
+          { label: 'Nome', value: professionalData.full_name },
+          {
+            label: 'Validade da CNV',
+            value: professionalData.cnv_validity
+              ? new Date(professionalData.cnv_validity).toLocaleDateString('pt-BR')
+              : undefined,
+          },
+        ];
+      case 'nr10':
+        return [
+          { label: 'Nome', value: professionalData.full_name },
+          {
+            label: 'Validade do NR-10',
+            value: professionalData.nr10_validity
+              ? new Date(professionalData.nr10_validity).toLocaleDateString('pt-BR')
+              : undefined,
+          },
+        ];
+      case 'nr35':
+        return [
+          { label: 'Nome', value: professionalData.full_name },
+          {
+            label: 'Validade do NR-35',
+            value: professionalData.nr35_validity
+              ? new Date(professionalData.nr35_validity).toLocaleDateString('pt-BR')
+              : undefined,
+          },
+        ];
+      case 'drt':
+        return [
+          { label: 'Nome', value: professionalData.full_name },
+          {
+            label: 'Validade do DRT',
+            value: professionalData.drt_validity
+              ? new Date(professionalData.drt_validity).toLocaleDateString('pt-BR')
+              : undefined,
+          },
         ];
       default:
         return null;

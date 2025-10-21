@@ -157,6 +157,33 @@ export default async function ProfessionalDetailPage({
                   cep: professional.cep,
                 }}
               />
+
+              {/* CNH - Obrigatório para Motoristas */}
+              {professional.categories?.includes('Motorista') && (
+                <DocumentValidation
+                  professionalId={id}
+                  documentType="cnh_photo"
+                  documentUrl={professional.documents?.cnh_photo}
+                  professionalData={{
+                    full_name: professional.full_name,
+                    cnh_number: professional.cnh_number,
+                    cnh_validity: professional.cnh_validity,
+                  }}
+                />
+              )}
+
+              {/* CNV - Obrigatório para Seguranças */}
+              {professional.categories?.includes('Segurança') && (
+                <DocumentValidation
+                  professionalId={id}
+                  documentType="cnv"
+                  documentUrl={professional.documents?.cnv}
+                  professionalData={{
+                    full_name: professional.full_name,
+                    cnv_validity: professional.cnv_validity,
+                  }}
+                />
+              )}
             </CardContent>
           </Card>
 
@@ -167,26 +194,62 @@ export default async function ProfessionalDetailPage({
           {(professional.documents?.nr10 ||
             professional.documents?.nr35 ||
             professional.documents?.drt ||
-            professional.documents?.cnv) && (
+            (professional.documents?.cnv && !professional.categories?.includes('Segurança'))) && (
             <Card className="bg-zinc-900 border-zinc-800">
               <CardHeader className="p-4 sm:p-6">
                 <CardTitle className="text-white flex items-center gap-2 text-base sm:text-lg">
                   <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
                   Certificações
                 </CardTitle>
+                <p className="text-xs sm:text-sm text-zinc-400 mt-2">
+                  Certificações opcionais que aumentam as chances de contratação
+                </p>
               </CardHeader>
               <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6">
                 {professional.documents?.nr10 && (
-                  <DocumentViewer label="NR-10" url={professional.documents.nr10} />
+                  <DocumentValidation
+                    professionalId={id}
+                    documentType="nr10"
+                    documentUrl={professional.documents.nr10}
+                    professionalData={{
+                      full_name: professional.full_name,
+                      nr10_validity: professional.nr10_validity,
+                    }}
+                  />
                 )}
                 {professional.documents?.nr35 && (
-                  <DocumentViewer label="NR-35" url={professional.documents.nr35} />
+                  <DocumentValidation
+                    professionalId={id}
+                    documentType="nr35"
+                    documentUrl={professional.documents.nr35}
+                    professionalData={{
+                      full_name: professional.full_name,
+                      nr35_validity: professional.nr35_validity,
+                    }}
+                  />
                 )}
                 {professional.documents?.drt && (
-                  <DocumentViewer label="DRT" url={professional.documents.drt} />
+                  <DocumentValidation
+                    professionalId={id}
+                    documentType="drt"
+                    documentUrl={professional.documents.drt}
+                    professionalData={{
+                      full_name: professional.full_name,
+                      drt_validity: professional.drt_validity,
+                    }}
+                  />
                 )}
-                {professional.documents?.cnv && (
-                  <DocumentViewer label="CNV" url={professional.documents.cnv} />
+                {/* CNV só aparece aqui se NÃO for Segurança (para Segurança aparece na seção obrigatória) */}
+                {professional.documents?.cnv && !professional.categories?.includes('Segurança') && (
+                  <DocumentValidation
+                    professionalId={id}
+                    documentType="cnv"
+                    documentUrl={professional.documents.cnv}
+                    professionalData={{
+                      full_name: professional.full_name,
+                      cnv_validity: professional.cnv_validity,
+                    }}
+                  />
                 )}
               </CardContent>
             </Card>

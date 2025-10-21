@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { createClient } from '@supabase/supabase-js';
+import { rateLimit, RateLimitPresets, createRateLimitError } from '@/lib/rate-limit';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -13,6 +14,22 @@ export async function POST(req: Request) {
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    }
+
+    // 🔒 SECURITY: Rate limiting - 10 uploads por minuto
+    const rateLimitResult = await rateLimit(userId, RateLimitPresets.UPLOAD);
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        createRateLimitError(rateLimitResult),
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+            'X-RateLimit-Reset': rateLimitResult.reset.toString(),
+          },
+        }
+      );
     }
 
     // Parse do FormData
@@ -38,6 +55,19 @@ export async function POST(req: Request) {
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
         { error: 'Tipo de arquivo não permitido. Use PDF ou imagens (JPG, PNG, WEBP)' },
+        { status: 400 }
+      );
+    }
+
+    // 🔒 SECURITY: Validar documentType para prevenir path traversal
+    const allowedDocumentTypes = [
+      'rg_front', 'rg_back', 'cpf', 'proof_of_address', 'cnh_photo',
+      'nr10', 'nr35', 'drt', 'cnv', 'portfolio'
+    ];
+
+    if (!documentType || !allowedDocumentTypes.includes(documentType)) {
+      return NextResponse.json(
+        { error: 'Tipo de documento inválido' },
         { status: 400 }
       );
     }

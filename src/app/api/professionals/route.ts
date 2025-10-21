@@ -3,6 +3,7 @@ import { auth, currentUser } from '@clerk/nextjs/server';
 import { createClient } from '@supabase/supabase-js';
 import { professionalSchema } from '@/lib/validations/professional';
 import { sendProfessionalRegistrationEmails } from '@/lib/resend/emails';
+import { rateLimit, RateLimitPresets, createRateLimitError } from '@/lib/rate-limit';
 
 // IMPORTANTE: Força Node.js runtime para usar Resend
 export const runtime = 'nodejs';
@@ -18,6 +19,22 @@ export async function POST(req: Request) {
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    }
+
+    // 🔒 SECURITY: Rate limiting - 3 cadastros por hora
+    const rateLimitResult = await rateLimit(userId, RateLimitPresets.REGISTRATION);
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        createRateLimitError(rateLimitResult),
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+            'X-RateLimit-Reset': rateLimitResult.reset.toString(),
+          },
+        }
+      );
     }
 
     // Obter usuário do Clerk
@@ -40,8 +57,8 @@ export async function POST(req: Request) {
     // Obter dados do body
     const body = await req.json();
 
-    // Extrair documentos e portfolio separadamente
-    const { documents, portfolio, ...formData } = body;
+    // Extrair documentos, portfolio e validades de documentos separadamente
+    const { documents, portfolio, cnh_number, cnh_validity, cnv_validity, nr10_validity, nr35_validity, drt_validity, ...formData } = body;
 
     console.log('📦 [API] Documentos recebidos:', documents);
     console.log('📦 [API] Documentos (JSON):', JSON.stringify(documents, null, 2));
@@ -89,6 +106,14 @@ export async function POST(req: Request) {
         birth_date: validatedData.birthDate,
         email: validatedData.email,
         phone: validatedData.phone,
+
+        // Documentos específicos e validades
+        cnh_number: cnh_number || null, // Obrigatório para motoristas
+        cnh_validity: cnh_validity || null,
+        cnv_validity: cnv_validity || null, // Obrigatório para seguranças
+        nr10_validity: nr10_validity || null,
+        nr35_validity: nr35_validity || null,
+        drt_validity: drt_validity || null,
 
         // Endereço
         cep: validatedData.cep,
