@@ -128,11 +128,14 @@ export async function POST(req: Request) {
         user_id: existingProfessional.user_id
       });
 
+      // Remover campos que não existem na tabela
+      const { acceptsNotifications, acceptsTerms, ...dataToUpdate } = validatedData as any;
+
       // Atualizar cadastro existente
       const { data: updatedProfessional, error: updateError } = await supabase
         .from('professionals')
         .update({
-          ...validatedData,
+          ...dataToUpdate,
           documents,
           portfolio: portfolio || null,
           cnh_number: cnh_number || null,
@@ -141,6 +144,7 @@ export async function POST(req: Request) {
           nr10_validity: nr10_validity || null,
           nr35_validity: nr35_validity || null,
           drt_validity: drt_validity || null,
+          accepts_notifications: acceptsNotifications ?? true,
           status: 'pending', // Sempre volta para pendente após atualização
           updated_at: new Date().toISOString(),
         })
