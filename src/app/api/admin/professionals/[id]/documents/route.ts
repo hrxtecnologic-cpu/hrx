@@ -2,6 +2,29 @@ import { auth } from '@clerk/nextjs/server';
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { isAdmin } from '@/lib/auth';
+import { DocumentType, DocumentValidationStatus } from '@/types';
+import {
+  unauthorizedResponse,
+  forbiddenResponse,
+  notFoundResponse,
+  successResponse,
+  badRequestResponse,
+  handleError,
+} from '@/lib/api-response';
+import { logger, logDocumentOperation } from '@/lib/logger';
+
+interface DocumentValidationRecord {
+  id: string;
+  professional_id: string;
+  document_type: DocumentType;
+  status: DocumentValidationStatus;
+  message?: string;
+  rejection_reason?: string;
+  validated_by: string;
+  validated_at: string;
+  version: number;
+  created_at: string;
+}
 
 /**
  * GET: Buscar status de todos os documentos de um profissional
@@ -13,12 +36,12 @@ export async function GET(
   try {
     const { userId } = await auth();
     if (!userId) {
-      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+      return unauthorizedResponse();
     }
 
     const { isAdmin: userIsAdmin } = await isAdmin();
     if (!userIsAdmin) {
-      return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
+      return forbiddenResponse();
     }
 
     const { id } = await params;
@@ -35,27 +58,20 @@ export async function GET(
     if (error) throw error;
 
     // Agrupar por tipo de documento (pegar apenas a última versão)
-    const latestValidations = validations?.reduce((acc: any, val: any) => {
+    const latestValidations = validations?.reduce((acc: Record<string, DocumentValidationRecord>, val: DocumentValidationRecord) => {
       if (!acc[val.document_type] || val.version > acc[val.document_type].version) {
         acc[val.document_type] = val;
       }
       return acc;
-    }, {});
+    }, {} as Record<string, DocumentValidationRecord>);
 
-    return NextResponse.json({
+    return successResponse({
       validations: latestValidations || {},
       allVersions: validations || [],
     });
   } catch (error) {
-    console.error('Erro ao buscar documentos:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-    return NextResponse.json(
-      {
-        error: 'Erro ao buscar documentos',
-        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
-      },
-      { status: 500 }
-    );
+    logger.error('Erro ao buscar documentos do profissional', error instanceof Error ? error : undefined, { professionalId: id });
+    return handleError(error, 'Erro ao buscar documentos');
   }
 }
 
@@ -65,36 +81,35 @@ export async function GET(
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
-) {
+)  {
   try {
-    console.log('[PATCH] Iniciando validação de documento');
-
     const { userId } = await auth();
     if (!userId) {
-      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+      return unauthorizedResponse();
     }
-    console.log('[PATCH] userId:', userId);
 
     const { isAdmin: userIsAdmin } = await isAdmin();
     if (!userIsAdmin) {
-      return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
+      return forbiddenResponse();
     }
 
     const { id } = await params;
     const { document_type, status, rejection_reason } = await req.json();
-    console.log('[PATCH] Validando documento:', { id, document_type, status });
+
+    logger.info('Iniciando validação de documento', {
+      professionalId: id,
+      documentType: document_type,
+      status,
+      adminUserId: userId
+    });
 
     if (!document_type || !status) {
-      return NextResponse.json(
-        { error: 'Tipo de documento e status são obrigatórios' },
-        { status: 400 }
-      );
+      return badRequestResponse('Tipo de documento e status são obrigatórios');
     }
 
     const supabase = await createClient();
 
     // Buscar user_id do admin
-    console.log('[PATCH] Buscando adminUser...');
     const { data: adminUser, error: adminError } = await supabase
       .from('users')
       .select('id')
@@ -102,13 +117,11 @@ export async function PATCH(
       .single();
 
     if (adminError) {
-      console.error('[PATCH] Erro ao buscar admin:', adminError);
+      logger.error('Erro ao buscar admin no banco', adminError, { userId });
       throw adminError;
     }
-    console.log('[PATCH] adminUser encontrado:', adminUser?.id);
 
     // Buscar profissional para pegar URL do documento
-    console.log('[PATCH] Buscando profissional...');
     const { data: professional, error: professionalError } = await supabase
       .from('professionals')
       .select('documents')
@@ -116,32 +129,25 @@ export async function PATCH(
       .single();
 
     if (professionalError) {
-      console.error('[PATCH] Erro ao buscar profissional:', professionalError);
+      logger.error('Erro ao buscar profissional', professionalError, { professionalId: id });
       throw professionalError;
     }
 
     if (!professional) {
-      console.error('[PATCH] Profissional não encontrado');
-      return NextResponse.json(
-        { error: 'Profissional não encontrado' },
-        { status: 404 }
-      );
+      return notFoundResponse('Profissional não encontrado');
     }
-    console.log('[PATCH] Profissional encontrado, documents:', professional.documents);
 
     // Verificar se há URL do documento
     const documentUrl = professional.documents?.[document_type];
     if (!documentUrl) {
-      console.error('[PATCH] Documento não enviado:', document_type);
-      return NextResponse.json(
-        { error: 'Documento não foi enviado ainda' },
-        { status: 404 }
-      );
+      logger.warn('Tentativa de validar documento não enviado', {
+        professionalId: id,
+        documentType: document_type
+      });
+      return notFoundResponse('Documento não foi enviado ainda');
     }
-    console.log('[PATCH] documentUrl:', documentUrl);
 
     // Buscar a validação existente mais recente
-    console.log('[PATCH] Buscando validação existente...');
     const { data: existingValidation, error: validationError } = await supabase
       .from('document_validations')
       .select('*')
@@ -152,15 +158,15 @@ export async function PATCH(
       .maybeSingle();
 
     if (validationError) {
-      console.error('[PATCH] Erro ao buscar validação:', validationError);
+      logger.error('Erro ao buscar validação existente', validationError, {
+        professionalId: id,
+        documentType: document_type
+      });
       throw validationError;
     }
-    console.log('[PATCH] existingValidation:', existingValidation?.id);
 
     if (!existingValidation) {
       // CRIAR nova validação se não existir
-      console.log(`[PATCH] Criando nova validação para documento ${document_type}`);
-
       const { error: insertError } = await supabase
         .from('document_validations')
         .insert({
@@ -175,14 +181,19 @@ export async function PATCH(
         });
 
       if (insertError) {
-        console.error('[PATCH] Erro ao criar validação:', insertError);
+        logger.error('Erro ao criar validação de documento', insertError, {
+          professionalId: id,
+          documentType: document_type
+        });
         throw insertError;
       }
-      console.log('[PATCH] Validação criada com sucesso');
+
+      logDocumentOperation(status === 'approved' ? 'approve' : 'reject', userId, document_type, {
+        professionalId: id,
+        action: 'create_validation'
+      });
     } else {
       // ATUALIZAR validação existente
-      console.log('[PATCH] Atualizando validação existente:', existingValidation.id);
-
       const { error: updateError } = await supabase
         .from('document_validations')
         .update({
@@ -195,14 +206,21 @@ export async function PATCH(
         .eq('id', existingValidation.id);
 
       if (updateError) {
-        console.error('[PATCH] Erro ao atualizar validação:', updateError);
+        logger.error('Erro ao atualizar validação de documento', updateError, {
+          professionalId: id,
+          documentType: document_type,
+          validationId: existingValidation.id
+        });
         throw updateError;
       }
-      console.log('[PATCH] Validação atualizada com sucesso');
+
+      logDocumentOperation(status === 'approved' ? 'approve' : 'reject', userId, document_type, {
+        professionalId: id,
+        action: 'update_validation'
+      });
     }
 
     // Registrar no histórico
-    console.log('[PATCH] Registrando no histórico...');
     const { error: historyError } = await supabase.from('professional_history').insert({
       professional_id: id,
       action_type: `document_${status}`,
@@ -215,30 +233,29 @@ export async function PATCH(
     });
 
     if (historyError) {
-      console.error('[PATCH] Erro ao registrar histórico:', historyError);
+      logger.error('Erro ao registrar histórico', historyError, {
+        professionalId: id,
+        documentType: document_type
+      });
       throw historyError;
     }
-    console.log('[PATCH] Histórico registrado com sucesso');
 
     // Verificar se todos os documentos foram aprovados
-    console.log('[PATCH] Verificando status de todos os documentos...');
     const { data: allValidations, error: allValidationsError } = await supabase
       .from('document_validations')
       .select('status')
       .eq('professional_id', id);
 
     if (allValidationsError) {
-      console.error('[PATCH] Erro ao buscar validações:', allValidationsError);
+      logger.error('Erro ao buscar validações', allValidationsError, { professionalId: id });
       throw allValidationsError;
     }
 
     const allApproved = allValidations?.every((v) => v.status === 'approved');
     const anyRejected = allValidations?.some((v) => v.status === 'rejected');
-    console.log('[PATCH] Status das validações:', { allApproved, anyRejected, total: allValidations?.length });
 
     // Atualizar status geral do profissional
     if (allApproved) {
-      console.log('[PATCH] Todos documentos aprovados, atualizando profissional para approved');
       const { error: updateStatusError } = await supabase
         .from('professionals')
         .update({
@@ -248,11 +265,15 @@ export async function PATCH(
         .eq('id', id);
 
       if (updateStatusError) {
-        console.error('[PATCH] Erro ao atualizar status do profissional:', updateStatusError);
+        logger.error('Erro ao atualizar status do profissional', updateStatusError, { professionalId: id });
         throw updateStatusError;
       }
+
+      logger.info('Profissional aprovado - todos documentos validados', {
+        professionalId: id,
+        documentCount: allValidations?.length
+      });
     } else if (anyRejected) {
-      console.log('[PATCH] Algum documento rejeitado, atualizando profissional para rejected');
       const { error: updateStatusError } = await supabase
         .from('professionals')
         .update({
@@ -262,22 +283,22 @@ export async function PATCH(
         .eq('id', id);
 
       if (updateStatusError) {
-        console.error('[PATCH] Erro ao atualizar status do profissional:', updateStatusError);
+        logger.error('Erro ao atualizar status do profissional', updateStatusError, { professionalId: id });
         throw updateStatusError;
       }
+
+      logger.warn('Profissional rejeitado - documentos com problemas', {
+        professionalId: id,
+        documentCount: allValidations?.length
+      });
     }
 
-    console.log('[PATCH] Validação concluída com sucesso!');
-    return NextResponse.json({ success: true });
+    return successResponse(undefined, 'Documento validado com sucesso');
   } catch (error) {
-    console.error('Erro ao validar documento:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-    return NextResponse.json(
-      {
-        error: 'Erro ao validar documento',
-        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
-      },
-      { status: 500 }
-    );
+    logger.error('Erro ao validar documento', error instanceof Error ? error : undefined, {
+      professionalId: id,
+      documentType: document_type
+    });
+    return handleError(error, 'Erro ao validar documento');
   }
 }

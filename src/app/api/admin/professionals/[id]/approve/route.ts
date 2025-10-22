@@ -3,6 +3,14 @@ import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { sendProfessionalApprovalEmail } from '@/lib/resend/emails';
 import { isAdmin } from '@/lib/auth';
+import {
+  unauthorizedResponse,
+  forbiddenResponse,
+  notFoundResponse,
+  successResponse,
+  handleError,
+} from '@/lib/api-response';
+import { logger } from '@/lib/logger';
 
 export async function POST(
   req: Request,
@@ -11,16 +19,13 @@ export async function POST(
   try {
     const { userId } = await auth();
     if (!userId) {
-      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+      return unauthorizedResponse();
     }
 
     // Verificar se é admin
     const { isAdmin: userIsAdmin } = await isAdmin();
     if (!userIsAdmin) {
-      return NextResponse.json(
-        { error: 'Acesso negado. Apenas administradores podem aprovar profissionais.' },
-        { status: 403 }
-      );
+      return forbiddenResponse('Acesso negado. Apenas administradores podem aprovar profissionais.');
     }
 
     const { id } = await params;
@@ -34,11 +39,8 @@ export async function POST(
       .single();
 
     if (fetchError || !professional) {
-      console.error('❌ Erro ao buscar profissional:', fetchError);
-      return NextResponse.json(
-        { error: 'Profissional não encontrado' },
-        { status: 404 }
-      );
+      logger.error('Erro ao buscar profissional para aprovação', fetchError, { professionalId: id });
+      return notFoundResponse('Profissional não encontrado');
     }
 
     // Atualizar status do profissional
@@ -61,18 +63,20 @@ export async function POST(
     });
 
     if (!emailResult.success) {
-      console.error('❌ Erro ao enviar email de aprovação:', emailResult.error);
+      logger.error('Erro ao enviar email de aprovação', undefined, {
+        professionalId: id,
+        error: emailResult.error
+      });
       // Não falhar a operação se o email não for enviado
     } else {
-      console.log(`✅ Profissional aprovado e email enviado para: ${professional.email}`);
+      logger.info('Profissional aprovado e email enviado', {
+        professionalId: id
+      });
     }
 
-    return NextResponse.json({ success: true });
+    return successResponse(undefined, 'Profissional aprovado com sucesso');
   } catch (error) {
-    console.error('Erro ao aprovar profissional:', error);
-    return NextResponse.json(
-      { error: 'Erro ao aprovar profissional' },
-      { status: 500 }
-    );
+    logger.error('Erro ao aprovar profissional', error instanceof Error ? error : undefined, { professionalId: id });
+    return handleError(error, 'Erro ao aprovar profissional');
   }
 }

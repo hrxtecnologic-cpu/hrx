@@ -158,7 +158,7 @@ export default async function EventosPage() {
                         </div>
 
                         <Link href={`/admin/solicitacoes/${event.id}`}>
-                          <Button size="sm" variant="outline" className="border-zinc-700">
+                          <Button size="sm" className="bg-red-600 hover:bg-red-500 text-white">
                             Ver Detalhes
                           </Button>
                         </Link>

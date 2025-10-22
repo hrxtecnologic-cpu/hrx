@@ -64,6 +64,22 @@ CREATE TABLE public.contractors (
   CONSTRAINT contractors_pkey PRIMARY KEY (id),
   CONSTRAINT contractors_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
 );
+CREATE TABLE public.document_validations (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  professional_id uuid NOT NULL,
+  document_type character varying NOT NULL CHECK (document_type::text = ANY (ARRAY['rg_front'::character varying, 'rg_back'::character varying, 'cpf'::character varying, 'proof_of_address'::character varying, 'cnh_photo'::character varying, 'nr10'::character varying, 'nr35'::character varying, 'drt'::character varying, 'cnv'::character varying, 'portfolio'::character varying]::text[])),
+  document_url text NOT NULL,
+  status character varying NOT NULL DEFAULT 'pending'::character varying CHECK (status::text = ANY (ARRAY['pending'::character varying, 'approved'::character varying, 'rejected'::character varying]::text[])),
+  reviewed_by uuid,
+  rejection_reason text,
+  reviewed_at timestamp with time zone,
+  version integer NOT NULL DEFAULT 1,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT document_validations_pkey PRIMARY KEY (id),
+  CONSTRAINT document_validations_professional_id_fkey FOREIGN KEY (professional_id) REFERENCES public.professionals(id),
+  CONSTRAINT document_validations_reviewed_by_fkey FOREIGN KEY (reviewed_by) REFERENCES public.users(id)
+);
 CREATE TABLE public.email_logs (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   recipient_email character varying NOT NULL,
@@ -131,6 +147,21 @@ CREATE TABLE public.notifications (
   created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT notifications_pkey PRIMARY KEY (id)
 );
+CREATE TABLE public.professional_history (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  professional_id uuid NOT NULL,
+  action_type character varying NOT NULL,
+  action_by uuid,
+  field_changed character varying,
+  old_value text,
+  new_value text,
+  description text,
+  metadata jsonb,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT professional_history_pkey PRIMARY KEY (id),
+  CONSTRAINT professional_history_professional_id_fkey FOREIGN KEY (professional_id) REFERENCES public.professionals(id),
+  CONSTRAINT professional_history_action_by_fkey FOREIGN KEY (action_by) REFERENCES public.users(id)
+);
 CREATE TABLE public.professionals (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
   user_id uuid,
@@ -171,6 +202,15 @@ CREATE TABLE public.professionals (
   documents jsonb DEFAULT '{}'::jsonb,
   portfolio jsonb DEFAULT '[]'::jsonb,
   clerk_id character varying,
+  rejection_reason text,
+  cnh_number character varying,
+  cnh_validity date,
+  cnv_validity date,
+  nr10_validity date,
+  nr35_validity date,
+  drt_validity date,
+  latitude numeric,
+  longitude numeric,
   CONSTRAINT professionals_pkey PRIMARY KEY (id),
   CONSTRAINT professionals_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
   CONSTRAINT professionals_approved_by_fkey FOREIGN KEY (approved_by) REFERENCES public.users(id)
@@ -216,5 +256,6 @@ CREATE TABLE public.users (
   status character varying DEFAULT 'active'::character varying CHECK (status::text = ANY (ARRAY['active'::character varying, 'inactive'::character varying, 'deleted'::character varying]::text[])),
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
+  role character varying DEFAULT 'user'::character varying CHECK (role::text = ANY (ARRAY['user'::character varying, 'admin'::character varying]::text[])),
   CONSTRAINT users_pkey PRIMARY KEY (id)
 );

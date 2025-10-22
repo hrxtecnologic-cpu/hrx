@@ -75,8 +75,78 @@ export async function DELETE(
     const { id } = await params;
     const supabase = await createClient();
 
-    // TODO: Verificar se tipo de evento está em uso antes de deletar
+    // ========== Buscar nome do tipo de evento antes de deletar ==========
+    const { data: eventType, error: fetchError } = await supabase
+      .from('event_types')
+      .select('name')
+      .eq('id', id)
+      .single();
 
+    if (fetchError || !eventType) {
+      return NextResponse.json(
+        { error: 'Tipo de evento não encontrado' },
+        { status: 404 }
+      );
+    }
+
+    // ========== Verificar se tipo de evento está em uso ==========
+    // Event type é usado nas tabelas: contractor_requests e requests
+
+    // Verificar contractor_requests
+    const { data: contractorRequests, error: checkContractorError } = await supabase
+      .from('contractor_requests')
+      .select('id, event_name, event_type')
+      .eq('event_type', eventType.name)
+      .limit(1);
+
+    if (checkContractorError) {
+      throw checkContractorError;
+    }
+
+    // Verificar requests
+    const { data: requests, error: checkRequestsError } = await supabase
+      .from('requests')
+      .select('id, event_name, event_type')
+      .eq('event_type', eventType.name)
+      .limit(1);
+
+    if (checkRequestsError) {
+      throw checkRequestsError;
+    }
+
+    const isInUse = (contractorRequests && contractorRequests.length > 0) ||
+                    (requests && requests.length > 0);
+
+    if (isInUse) {
+      // Contar total de usos
+      const { count: contractorCount } = await supabase
+        .from('contractor_requests')
+        .select('*', { count: 'exact', head: true })
+        .eq('event_type', eventType.name);
+
+      const { count: requestsCount } = await supabase
+        .from('requests')
+        .select('*', { count: 'exact', head: true })
+        .eq('event_type', eventType.name);
+
+      const totalUses = (contractorCount || 0) + (requestsCount || 0);
+
+      return NextResponse.json(
+        {
+          error: 'Tipo de evento em uso',
+          message: `Este tipo de evento não pode ser deletado pois está sendo usado em ${totalUses} solicitação(ões).`,
+          details: {
+            totalUses,
+            contractorRequests: contractorCount || 0,
+            requests: requestsCount || 0,
+            eventTypeName: eventType.name,
+          }
+        },
+        { status: 409 }
+      );
+    }
+
+    // ========== Deletar tipo de evento (não está em uso) ==========
     const { error } = await supabase
       .from('event_types')
       .delete()
@@ -86,7 +156,10 @@ export async function DELETE(
       throw error;
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({
+      success: true,
+      message: `Tipo de evento "${eventType.name}" deletado com sucesso`
+    });
   } catch (error) {
     console.error('Erro ao deletar tipo de evento:', error);
     return NextResponse.json(

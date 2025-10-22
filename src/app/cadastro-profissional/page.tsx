@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { professionalSchema, type ProfessionalFormData, CATEGORIES } from '@/lib/validations/professional';
+import { validateDocumentsForCategories, formatDocumentValidationErrorList } from '@/lib/validations/documents';
 import { formatCPF, formatPhone, formatCEP, fetchAddressByCEP } from '@/lib/format';
 import { uploadDocument, uploadPortfolioPhotos, type DocumentType } from '@/lib/supabase/storage';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { DocumentUpload } from '@/components/DocumentUpload';
 import { PortfolioUpload } from '@/components/PortfolioUpload';
 import { AlertCircle, XCircle } from 'lucide-react';
+import { Professional, DocumentValidations, DocumentValidation } from '@/types';
 
 export default function CadastroProfissionalPage() {
   const router = useRouter();
@@ -33,8 +35,8 @@ export default function CadastroProfissionalPage() {
   const [uploadedDocuments, setUploadedDocuments] = useState<Record<string, string>>({});
   const [portfolioUrls, setPortfolioUrls] = useState<string[]>([]);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [professionalData, setProfessionalData] = useState<any>(null);
-  const [documentValidations, setDocumentValidations] = useState<any>({});
+  const [professionalData, setProfessionalData] = useState<Professional | null>(null);
+  const [documentValidations, setDocumentValidations] = useState<DocumentValidations>({});
   const [isLoadingData, setIsLoadingData] = useState(true);
 
   // Campos específicos de documentos
@@ -83,7 +85,7 @@ export default function CadastroProfissionalPage() {
 
       try {
         // Buscar dados do profissional
-        const response = await fetch('/api/professional/profile');
+        const response = await fetch('/api/professionals/me');
 
         if (response.ok) {
           const data = await response.json();
@@ -142,7 +144,7 @@ export default function CadastroProfissionalPage() {
 
           // Buscar validações de documentos
           if (data.id) {
-            const validationsResponse = await fetch(`/api/professional/document-validations`);
+            const validationsResponse = await fetch(`/api/professionals/me/documents`);
             if (validationsResponse.ok) {
               const validationsData = await validationsResponse.json();
               setDocumentValidations(validationsData.validations || {});
@@ -226,6 +228,41 @@ export default function CadastroProfissionalPage() {
     setIsSubmitting(true);
 
     try {
+      // ========== Validar Documentos ANTES de enviar ==========
+      const validityFields = {
+        cnh_validity: cnhValidity || null,
+        cnv_validity: cnvValidity || null,
+        nr10_validity: nr10Validity || null,
+        nr35_validity: nr35Validity || null,
+        drt_validity: drtValidity || null,
+      };
+
+      const documentValidation = validateDocumentsForCategories(
+        data.categories,
+        uploadedDocuments,
+        validityFields
+      );
+
+      if (!documentValidation.valid) {
+        const errorList = formatDocumentValidationErrorList(documentValidation);
+        const errorMessage = errorList.join('\n');
+
+        console.error('❌ [VALIDAÇÃO] Documentos inválidos:', {
+          errors: documentValidation.errors,
+          missingRequired: documentValidation.missingRequired,
+          missingValidity: documentValidation.missingValidity,
+        });
+
+        alert(`Documentos inválidos ou incompletos:\n\n${errorMessage}`);
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Log de avisos (não bloqueia envio, mas informa o usuário)
+      if (documentValidation.warnings && documentValidation.warnings.length > 0) {
+        console.warn('⚠️ [VALIDAÇÃO] Avisos de documentos:', documentValidation.warnings);
+      }
+
       // Incluir URLs dos documentos no payload
       const payload = {
         ...data,
@@ -249,21 +286,22 @@ export default function CadastroProfissionalPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Erro ao salvar cadastro');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro ao salvar cadastro');
       }
 
       // Redirecionar para página de sucesso
       router.push('/cadastro-profissional/sucesso');
     } catch (error) {
       console.error('Erro:', error);
-      alert('Erro ao salvar cadastro. Tente novamente.');
+      alert(error instanceof Error ? error.message : 'Erro ao salvar cadastro. Tente novamente.');
       setIsSubmitting(false);
     }
   }
 
   // Verificar se há documentos rejeitados
   const hasRejectedDocs = Object.values(documentValidations).some(
-    (validation: any) => validation.status === 'rejected'
+    (validation: DocumentValidation) => validation.status === 'rejected'
   );
 
   if (isLoadingData) {

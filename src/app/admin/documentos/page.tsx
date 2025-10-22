@@ -15,11 +15,11 @@ export default async function DocumentosPage() {
     .order('created_at', { ascending: true });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-white mb-2">Validação de Documentos</h1>
-        <p className="text-zinc-400">
+        <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">Validação de Documentos</h1>
+        <p className="text-sm sm:text-base text-zinc-400">
           {professionals?.length || 0} profissionais aguardando validação
         </p>
       </div>
@@ -27,11 +27,11 @@ export default async function DocumentosPage() {
       {/* Alert se houver pendências */}
       {professionals && professionals.length > 0 && (
         <Card className="bg-yellow-500/10 border-yellow-500/20">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <AlertCircle className="h-5 w-5 text-yellow-500 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-yellow-500">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-start sm:items-center gap-2 sm:gap-3">
+              <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-500 flex-shrink-0 mt-0.5 sm:mt-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs sm:text-sm font-medium text-yellow-500">
                   Atenção! Existem {professionals.length} profissionais aguardando validação
                 </p>
                 <p className="text-xs text-yellow-500/70 mt-1">
@@ -48,20 +48,20 @@ export default async function DocumentosPage() {
         {professionals && professionals.length > 0 ? (
           professionals.map((prof) => (
             <Card key={prof.id} className="bg-zinc-900 border-zinc-800">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex gap-4 flex-1">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                  <div className="flex gap-3 sm:gap-4 flex-1 min-w-0">
                     {/* Avatar */}
-                    <div className="h-12 w-12 rounded-full bg-zinc-800 flex items-center justify-center flex-shrink-0">
-                      <User className="h-6 w-6 text-zinc-500" />
+                    <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-zinc-800 flex items-center justify-center flex-shrink-0">
+                      <User className="h-5 w-5 sm:h-6 sm:w-6 text-zinc-500" />
                     </div>
 
                     {/* Info */}
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-white mb-1">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-base sm:text-lg font-semibold text-white mb-1 truncate">
                         {prof.full_name}
                       </h3>
-                      <p className="text-sm text-zinc-400 mb-2">{prof.email}</p>
+                      <p className="text-xs sm:text-sm text-zinc-400 mb-2 truncate">{prof.email}</p>
 
                       <div className="flex flex-wrap gap-2 mb-3">
                         {prof.categories?.map((cat: string) => (
@@ -74,24 +74,24 @@ export default async function DocumentosPage() {
                         ))}
                       </div>
 
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-                        <div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 text-xs">
+                        <div className="min-w-0">
                           <span className="text-zinc-500">CPF:</span>
-                          <p className="text-white">{prof.cpf}</p>
+                          <p className="text-white truncate">{prof.cpf}</p>
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <span className="text-zinc-500">Telefone:</span>
-                          <p className="text-white">{prof.phone}</p>
+                          <p className="text-white truncate">{prof.phone}</p>
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <span className="text-zinc-500">Cidade:</span>
-                          <p className="text-white">
+                          <p className="text-white truncate">
                             {prof.city}, {prof.state}
                           </p>
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <span className="text-zinc-500">Cadastro:</span>
-                          <p className="text-white">
+                          <p className="text-white truncate">
                             {new Date(prof.created_at).toLocaleDateString('pt-BR')}
                           </p>
                         </div>
@@ -135,10 +135,11 @@ export default async function DocumentosPage() {
                   </div>
 
                   {/* Action Button */}
-                  <Link href={`/admin/profissionais/${prof.id}`}>
-                    <Button className="bg-red-600 hover:bg-red-500 text-white ml-4">
+                  <Link href={`/admin/profissionais/${prof.id}`} className="w-full lg:w-auto">
+                    <Button className="bg-red-600 hover:bg-red-500 text-white w-full lg:w-auto text-sm sm:text-base">
                       <FileCheck className="h-4 w-4 mr-2" />
-                      Validar Documentos
+                      <span className="hidden sm:inline">Validar Documentos</span>
+                      <span className="sm:hidden">Validar</span>
                     </Button>
                   </Link>
                 </div>
@@ -147,12 +148,12 @@ export default async function DocumentosPage() {
           ))
         ) : (
           <Card className="bg-zinc-900 border-zinc-800">
-            <CardContent className="p-12 text-center">
-              <FileCheck className="h-12 w-12 text-zinc-700 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-white mb-2">
+            <CardContent className="p-8 sm:p-12 text-center">
+              <FileCheck className="h-10 w-10 sm:h-12 sm:w-12 text-zinc-700 mx-auto mb-4" />
+              <h3 className="text-base sm:text-lg font-semibold text-white mb-2">
                 Tudo em dia!
               </h3>
-              <p className="text-zinc-400">
+              <p className="text-sm sm:text-base text-zinc-400">
                 Não há documentos pendentes de validação no momento
               </p>
             </CardContent>

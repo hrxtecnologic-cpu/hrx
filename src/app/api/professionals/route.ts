@@ -2,8 +2,19 @@ import { NextResponse } from 'next/server';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { createClient } from '@supabase/supabase-js';
 import { professionalSchema } from '@/lib/validations/professional';
+import { validateDocumentsForCategories, formatDocumentValidationErrors } from '@/lib/validations/documents';
 import { sendProfessionalRegistrationEmails } from '@/lib/resend/emails';
 import { rateLimit, RateLimitPresets, createRateLimitError } from '@/lib/rate-limit';
+import {
+  unauthorizedResponse,
+  notFoundResponse,
+  forbiddenResponse,
+  successResponse,
+  createdResponse,
+  badRequestResponse,
+  internalErrorResponse,
+} from '@/lib/api-response';
+import { logger } from '@/lib/logger';
 
 // IMPORTANTE: Força Node.js runtime para usar Resend
 export const runtime = 'nodejs';
@@ -18,7 +29,7 @@ export async function POST(req: Request) {
     // Verificar autenticação
     const { userId } = await auth();
     if (!userId) {
-      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+      return unauthorizedResponse();
     }
 
     // 🔒 SECURITY: Rate limiting - 3 cadastros por hora
@@ -40,18 +51,15 @@ export async function POST(req: Request) {
     // Obter usuário do Clerk
     const user = await currentUser();
     if (!user) {
-      return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
+      return notFoundResponse('Usuário não encontrado');
     }
 
     // Verificar se o userType é 'professional'
     const userType = user.publicMetadata?.userType;
-    console.log('🔍 [API] userType do metadata:', userType);
+    logger.debug('userType do metadata', { userType, userId });
 
     if (userType !== 'professional') {
-      return NextResponse.json(
-        { error: 'Apenas profissionais podem acessar esta rota' },
-        { status: 403 }
-      );
+      return forbiddenResponse('Apenas profissionais podem acessar esta rota');
     }
 
     // Obter dados do body
@@ -60,8 +68,11 @@ export async function POST(req: Request) {
     // Extrair documentos, portfolio e validades de documentos separadamente
     const { documents, portfolio, cnh_number, cnh_validity, cnv_validity, nr10_validity, nr35_validity, drt_validity, ...formData } = body;
 
-    console.log('📦 [API] Documentos recebidos:', documents);
-    console.log('📦 [API] Documentos (JSON):', JSON.stringify(documents, null, 2));
+    logger.debug('Documentos recebidos', {
+      userId,
+      documentTypes: documents ? Object.keys(documents) : [],
+      documentCount: documents ? Object.keys(documents).length : 0
+    });
 
     // Validar com Zod
     const validatedData = professionalSchema.parse(formData);
@@ -74,97 +85,94 @@ export async function POST(req: Request) {
       .single();
 
     if (userError || !userData) {
-      console.error('Erro ao buscar usuário:', userError);
-      return NextResponse.json(
-        { error: 'Usuário não encontrado no banco de dados' },
-        { status: 404 }
-      );
+      logger.error('Erro ao buscar usuário no banco', userError, { userId });
+      return notFoundResponse('Usuário não encontrado no banco de dados');
     }
 
     // Verificar se já existe cadastro para este usuário
-    // Primeiro tenta por user_id, depois por clerk_id como fallback
-    let existingProfessional = null;
-
-    const { data: profByUserId } = await supabase
+    const { data: existingProfessional } = await supabase
       .from('professionals')
-      .select('*')
+      .select('id')
       .eq('user_id', userData.id)
       .maybeSingle();
 
-    if (profByUserId) {
-      existingProfessional = profByUserId;
-      console.log('🔍 [API] Profissional encontrado por user_id');
-    } else {
-      // Fallback: buscar por clerk_id
-      const { data: profByClerkId } = await supabase
-        .from('professionals')
-        .select('*')
-        .eq('clerk_id', userId)
-        .maybeSingle();
-
-      if (profByClerkId) {
-        existingProfessional = profByClerkId;
-        console.log('🔍 [API] Profissional encontrado por clerk_id');
-      } else {
-        // Último fallback: buscar por CPF (para evitar duplicate key error)
-        const { data: profByCPF } = await supabase
-          .from('professionals')
-          .select('*')
-          .eq('cpf', validatedData.cpf)
-          .maybeSingle();
-
-        if (profByCPF) {
-          existingProfessional = profByCPF;
-          console.log('🔍 [API] Profissional encontrado por CPF - atualizando registro');
-        }
-      }
-    }
-
-    // Se já existe, sempre permite atualizar (usado no formulário de edição)
     if (existingProfessional) {
-      console.log('✏️ [API] Profissional encontrado, atualizando cadastro...', {
-        id: existingProfessional.id,
-        status: existingProfessional.status,
-        user_id: existingProfessional.user_id
+      logger.warn('Tentativa de criar profissional duplicado', {
+        professionalId: existingProfessional.id,
+        userId
+      });
+      return badRequestResponse(
+        'Já existe um cadastro para este usuário. Use PATCH /api/professionals/me para atualizar.'
+      );
+    }
+
+    // Verificar duplicação por CPF
+    const { data: professionalByCPF } = await supabase
+      .from('professionals')
+      .select('id')
+      .eq('cpf', validatedData.cpf)
+      .maybeSingle();
+
+    if (professionalByCPF) {
+      logger.warn('Tentativa de criar profissional com CPF duplicado', {
+        cpf: validatedData.cpf.substring(0, 3) + '***',
+        userId
+      });
+      return badRequestResponse('Já existe um cadastro com este CPF');
+    }
+
+    // ========== Validar Documentos Obrigatórios ==========
+    const validityFields = {
+      cnh_validity,
+      cnv_validity,
+      nr10_validity,
+      nr35_validity,
+      drt_validity,
+    };
+
+    const documentValidation = validateDocumentsForCategories(
+      validatedData.categories,
+      documents || {},
+      validityFields
+    );
+
+    if (!documentValidation.valid) {
+      const errorMessage = formatDocumentValidationErrors(documentValidation);
+
+      logger.warn('Validação de documentos falhou', {
+        userId,
+        categories: validatedData.categories,
+        missingRequired: documentValidation.missingRequired,
+        missingValidity: documentValidation.missingValidity,
+        errorCount: documentValidation.errors.length
       });
 
-      // Remover campos que não existem na tabela
-      const { acceptsNotifications, acceptsTerms, ...dataToUpdate } = validatedData as any;
+      return badRequestResponse(
+        `Documentos inválidos ou incompletos: ${errorMessage}`,
+        {
+          validation: {
+            errors: documentValidation.errors,
+            warnings: documentValidation.warnings,
+            missingRequired: documentValidation.missingRequired,
+            missingValidity: documentValidation.missingValidity,
+          }
+        }
+      );
+    }
 
-      // Atualizar cadastro existente
-      const { data: updatedProfessional, error: updateError } = await supabase
-        .from('professionals')
-        .update({
-          ...dataToUpdate,
-          documents,
-          portfolio: portfolio || null,
-          cnh_number: cnh_number || null,
-          cnh_validity: cnh_validity || null,
-          cnv_validity: cnv_validity || null,
-          nr10_validity: nr10_validity || null,
-          nr35_validity: nr35_validity || null,
-          drt_validity: drt_validity || null,
-          accepts_notifications: acceptsNotifications ?? true,
-          status: 'pending', // Sempre volta para pendente após atualização
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', existingProfessional.id)
-        .select()
-        .single();
-
-      if (updateError) {
-        console.error('Erro ao atualizar profissional:', updateError);
-        throw updateError;
-      }
-
-      console.log('✅ [API] Cadastro atualizado com sucesso para reanálise');
-
-      return NextResponse.json({
-        success: true,
-        professional: updatedProfessional,
-        message: 'Cadastro atualizado e enviado para nova análise!',
+    // Log de avisos (documentos expirados, recomendados faltando)
+    if (documentValidation.warnings && documentValidation.warnings.length > 0) {
+      logger.info('Avisos de validação de documentos', {
+        userId,
+        warnings: documentValidation.warnings.map(w => `${w.label}: ${w.reason}`)
       });
     }
+
+    logger.info('Validação de documentos aprovada', {
+      userId,
+      categories: validatedData.categories,
+      documentCount: documents ? Object.keys(documents).length : 0
+    });
 
     // Inserir profissional no banco
     const { data: professional, error: insertError } = await supabase
@@ -223,15 +231,15 @@ export async function POST(req: Request) {
       .single();
 
     if (insertError) {
-      console.error('Erro ao inserir profissional:', insertError);
-      return NextResponse.json(
-        { error: 'Erro ao salvar cadastro' },
-        { status: 500 }
-      );
+      logger.error('Erro ao inserir profissional', insertError, { userId });
+      return internalErrorResponse('Erro ao salvar cadastro');
     }
 
-    console.log(`✅ Profissional cadastrado: ${validatedData.email}`);
-    console.log('📄 [API] Documentos salvos no banco:', professional.documents);
+    logger.info('Profissional cadastrado com sucesso', {
+      professionalId: professional.id,
+      userId,
+      documentCount: professional.documents ? Object.keys(professional.documents).length : 0
+    });
 
     // Enviar emails de confirmação (não bloquear a resposta)
     sendProfessionalRegistrationEmails({
@@ -254,33 +262,30 @@ export async function POST(req: Request) {
       },
     }).then((result) => {
       if (result.errors.length > 0) {
-        console.error('Erros ao enviar emails:', result.errors);
+        logger.error('Erros ao enviar emails de cadastro', undefined, {
+          professionalId: professional.id,
+          errorCount: result.errors.length
+        });
       } else {
-        console.log('✅ Emails enviados com sucesso');
+        logger.info('Emails de cadastro enviados com sucesso', {
+          professionalId: professional.id
+        });
       }
     });
 
-    return NextResponse.json(
-      {
-        success: true,
-        message: 'Cadastro realizado com sucesso',
-        professionalId: professional.id,
-      },
-      { status: 201 }
+    return createdResponse(
+      { professionalId: professional.id },
+      'Cadastro realizado com sucesso'
     );
   } catch (error) {
-    console.error('Erro no POST /api/professionals:', error);
+    logger.error('Erro no POST /api/professionals', error instanceof Error ? error : undefined, {
+      errorName: error instanceof Error ? error.name : 'unknown'
+    });
 
     if (error instanceof Error && error.name === 'ZodError') {
-      return NextResponse.json(
-        { error: 'Dados inválidos', details: error },
-        { status: 400 }
-      );
+      return badRequestResponse('Dados inválidos');
     }
 
-    return NextResponse.json(
-      { error: 'Erro interno do servidor' },
-      { status: 500 }
-    );
+    return internalErrorResponse('Erro interno do servidor');
   }
 }

@@ -66,37 +66,43 @@ export function DocumentUpload({
   return (
     <div className="space-y-3">
       <div>
-        <label className="text-zinc-300 text-sm font-medium mb-1 block">
+        <label className="text-zinc-300 text-sm sm:text-base font-medium mb-1 block">
           {label} {required && <span className="text-red-500">*</span>}
         </label>
-        {description && <p className="text-zinc-500 text-xs mb-3">{description}</p>}
+        {description && <p className="text-zinc-500 text-xs sm:text-sm mb-3">{description}</p>}
       </div>
 
-      <div className="border-2 border-dashed border-zinc-700 rounded-lg p-6 bg-zinc-800/30 hover:bg-zinc-800/50 transition">
-        {/* Preview da imagem */}
+      <div className="border-2 border-dashed border-zinc-700 rounded-lg p-4 sm:p-6 bg-zinc-800/30 hover:bg-zinc-800/50 transition">
+        {/* Preview da imagem - com aspect ratio fixo */}
         {preview && (
-          <div className="mb-4">
-            <img src={preview} alt="Preview" className="max-h-40 rounded-lg mx-auto" />
+          <div className="mb-4 w-full max-w-xs mx-auto">
+            <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden bg-zinc-900">
+              <img
+                src={preview}
+                alt="Preview"
+                className="absolute inset-0 w-full h-full object-contain"
+              />
+            </div>
           </div>
         )}
 
         {/* Info do arquivo */}
         {file && (
-          <div className="mb-4 p-3 bg-zinc-900 rounded-lg border border-zinc-700">
-            <div className="flex items-center justify-between">
+          <div className="mb-4 p-2 sm:p-3 bg-zinc-900 rounded-lg border border-zinc-700">
+            <div className="flex items-center justify-between gap-2">
               <div className="flex-1 min-w-0">
-                <p className="text-sm text-white truncate">{file.name}</p>
+                <p className="text-xs sm:text-sm text-white truncate">{file.name}</p>
                 <p className="text-xs text-zinc-500">{formatFileSize(file.size)}</p>
               </div>
               {uploading && (
-                <div className="ml-3">
-                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-zinc-700 border-t-red-600" />
+                <div className="ml-2 sm:ml-3 flex-shrink-0">
+                  <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-2 border-zinc-700 border-t-red-600" />
                 </div>
               )}
               {!uploading && (
-                <div className="ml-3">
+                <div className="ml-2 sm:ml-3 flex-shrink-0">
                   <svg
-                    className="h-5 w-5 text-green-500"
+                    className="h-4 w-4 sm:h-5 sm:w-5 text-green-500"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -129,17 +135,18 @@ export function DocumentUpload({
             onClick={handleButtonClick}
             disabled={uploading}
             variant="outline"
-            className="border-zinc-600 hover:bg-zinc-700 text-zinc-300"
+            size="sm"
+            className="w-full sm:w-auto border-zinc-600 hover:bg-zinc-700 text-zinc-300 text-xs sm:text-sm"
           >
             {file ? 'Trocar arquivo' : 'Escolher arquivo'}
           </Button>
-          <p className="text-xs text-zinc-500 mt-2">
+          <p className="text-xs text-zinc-500 mt-2 px-2">
             PDF ou imagem (JPG, PNG, WEBP) - Máx. 10MB
           </p>
         </div>
 
         {/* Erro */}
-        {error && <p className="text-red-500 text-sm mt-3 text-center">{error}</p>}
+        {error && <p className="text-red-500 text-xs sm:text-sm mt-3 text-center px-2">{error}</p>}
       </div>
     </div>
   );

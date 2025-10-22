@@ -22,11 +22,13 @@ import {
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Search, Plus, Edit, Trash2, Building2, Mail, Phone } from 'lucide-react';
+import { Plus, Edit, Trash2, Building2, Mail, Phone } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
+import { useSupplierSearch } from '@/hooks/useSupplierSearch';
+import { SupplierSearch } from '@/components/admin/SupplierSearch';
 
 // Tipos de equipamentos disponíveis - Lista completa e profissional
 const EQUIPMENT_TYPES = [
@@ -118,14 +120,18 @@ interface Supplier {
 
 export default function FornecedoresPage() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [filteredSuppliers, setFilteredSuppliers] = useState<Supplier[]>([]);
-  const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedEquipmentTypes, setSelectedEquipmentTypes] = useState<string[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Hook de busca avançada
+  const {
+    results: searchResults,
+    total: searchTotal,
+    isLoading: searchLoading,
+    search,
+  } = useSupplierSearch();
 
   const {
     register,
@@ -144,66 +150,41 @@ export default function FornecedoresPage() {
 
   const watchedEquipmentTypes = watch('equipment_types');
 
-  // Buscar fornecedores
+  // Buscar fornecedores (mantido para estatísticas)
   const fetchSuppliers = async () => {
     try {
-      setLoading(true);
       setErrorMessage(null);
       const response = await fetch('/api/admin/suppliers');
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.error('Erro na API:', response.status, errorData);
-
         const errorMsg = errorData.hint
           ? `${errorData.error}\n\n${errorData.hint}`
           : errorData.error || 'Erro ao buscar fornecedores';
-
         setErrorMessage(errorMsg);
         throw new Error(errorMsg);
       }
       const data = await response.json();
       setSuppliers(data);
-      setFilteredSuppliers(data);
     } catch (error: any) {
       toast.error('Erro ao carregar fornecedores');
       console.error('Erro ao buscar fornecedores:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchSuppliers();
+    fetchSuppliers(); // Buscar para estatísticas
   }, []);
-
-  // Filtrar fornecedores
-  useEffect(() => {
-    let filtered = [...suppliers];
-
-    // Filtro de status
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter((s) => s.status === statusFilter);
-    }
-
-    // Filtro de busca
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        (s) =>
-          s.company_name.toLowerCase().includes(term) ||
-          s.contact_name.toLowerCase().includes(term) ||
-          s.email.toLowerCase().includes(term)
-      );
-    }
-
-    setFilteredSuppliers(filtered);
-  }, [suppliers, statusFilter, searchTerm]);
 
   // Estatísticas
   const stats = {
     total: suppliers.length,
     active: suppliers.filter((s) => s.status === 'active').length,
     inactive: suppliers.filter((s) => s.status === 'inactive').length,
+  };
+
+  // Handler de busca
+  const handleSearch = (filters: any) => {
+    search(filters);
   };
 
   // Abrir dialog para adicionar
@@ -250,6 +231,7 @@ export default function FornecedoresPage() {
 
       toast.success('Fornecedor deletado com sucesso');
       fetchSuppliers();
+      search(); // Atualizar busca
     } catch (error: any) {
       toast.error(error.message);
       console.error(error);
@@ -284,6 +266,7 @@ export default function FornecedoresPage() {
 
       setIsDialogOpen(false);
       fetchSuppliers();
+      search(); // Atualizar busca
     } catch (error: any) {
       toast.error(error.message);
       console.error(error);
@@ -365,49 +348,29 @@ export default function FornecedoresPage() {
         </Card>
       </div>
 
-      {/* Filters */}
-      <Card className="bg-zinc-900 border-zinc-800">
-        <CardContent className="p-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-zinc-400" />
-              <Input
-                placeholder="Buscar por empresa, contato ou email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-zinc-800 border-zinc-700 text-white"
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full md:w-[200px] bg-zinc-800 border-zinc-700 text-white">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="active">Ativos</SelectItem>
-                <SelectItem value="inactive">Inativos</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Busca Avançada */}
+      <SupplierSearch
+        onSearch={handleSearch}
+        totalResults={searchTotal}
+        isLoading={searchLoading}
+      />
 
       {/* Suppliers List */}
       <div className="grid grid-cols-1 gap-4">
-        {loading ? (
+        {searchLoading ? (
           <Card className="bg-zinc-900 border-zinc-800">
             <CardContent className="p-8 text-center text-zinc-400">
-              Carregando...
+              Buscando fornecedores...
             </CardContent>
           </Card>
-        ) : filteredSuppliers.length === 0 ? (
+        ) : searchResults.length === 0 ? (
           <Card className="bg-zinc-900 border-zinc-800">
             <CardContent className="p-8 text-center text-zinc-400">
-              Nenhum fornecedor encontrado
+              Nenhum fornecedor encontrado com os filtros selecionados
             </CardContent>
           </Card>
         ) : (
-          filteredSuppliers.map((supplier) => (
+          searchResults.map((supplier) => (
             <Card key={supplier.id} className="bg-zinc-900 border-zinc-800">
               <CardContent className="p-6">
                 <div className="flex justify-between items-start">

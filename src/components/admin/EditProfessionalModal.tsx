@@ -13,9 +13,10 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Edit, Save, AlertCircle, CheckCircle } from 'lucide-react';
+import { Professional } from '@/types';
 
 interface EditProfessionalModalProps {
-  professional: any;
+  professional: Professional;
   onUpdate?: () => void;
 }
 

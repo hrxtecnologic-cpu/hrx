@@ -16,8 +16,9 @@ import {
   X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAdminCounts } from '@/hooks/useAdminCounts';
 
-const menuItems = [
+const getMenuItems = (documentCount: number, requestCount: number) => [
   {
     title: 'Principal',
     items: [
@@ -30,8 +31,8 @@ const menuItems = [
     items: [
       { icon: Users, label: 'Profissionais', href: '/admin/profissionais', badge: null },
       { icon: Building2, label: 'Fornecedores', href: '/admin/fornecedores', badge: null },
-      { icon: FileCheck, label: 'Documentos', href: '/admin/documentos', badge: 12 },
-      { icon: ClipboardList, label: 'Solicitações', href: '/admin/solicitacoes', badge: 5 },
+      { icon: FileCheck, label: 'Documentos', href: '/admin/documentos', badge: documentCount > 0 ? documentCount : null },
+      { icon: ClipboardList, label: 'Solicitações', href: '/admin/solicitacoes', badge: requestCount > 0 ? requestCount : null },
       { icon: Calendar, label: 'Eventos', href: '/admin/eventos', badge: null },
     ],
   },
@@ -52,6 +53,9 @@ interface AdminSidebarProps {
 
 export function AdminSidebar({ mobileMenuOpen = false, setMobileMenuOpen }: AdminSidebarProps) {
   const pathname = usePathname();
+  const { counts } = useAdminCounts();
+
+  const menuItems = getMenuItems(counts.documents, counts.requests);
 
   const SidebarContent = () => (
     <div className="flex flex-col flex-grow bg-zinc-900 border-r border-zinc-800 overflow-y-auto">

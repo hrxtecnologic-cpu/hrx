@@ -75,9 +75,47 @@ export async function DELETE(
     const { id } = await params;
     const supabase = await createClient();
 
-    // TODO: Verificar se categoria está em uso antes de deletar
-    // e talvez impedir a deleção ou avisar o admin
+    // ========== Buscar nome da categoria antes de deletar ==========
+    const { data: category, error: fetchError } = await supabase
+      .from('categories')
+      .select('name')
+      .eq('id', id)
+      .single();
 
+    if (fetchError || !category) {
+      return NextResponse.json(
+        { error: 'Categoria não encontrada' },
+        { status: 404 }
+      );
+    }
+
+    // ========== Verificar se categoria está em uso ==========
+    // Categories é um JSONB array, precisamos verificar se algum profissional usa essa categoria
+    const { data: professionalsUsingCategory, error: checkError } = await supabase
+      .from('professionals')
+      .select('id, full_name, categories')
+      .contains('categories', [category.name]);
+
+    if (checkError) {
+      throw checkError;
+    }
+
+    if (professionalsUsingCategory && professionalsUsingCategory.length > 0) {
+      return NextResponse.json(
+        {
+          error: 'Categoria em uso',
+          message: `Esta categoria não pode ser deletada pois está sendo usada por ${professionalsUsingCategory.length} profissional(is).`,
+          details: {
+            professionalsCount: professionalsUsingCategory.length,
+            categoryName: category.name,
+            // Não retornar lista completa por privacidade, apenas count
+          }
+        },
+        { status: 409 }
+      );
+    }
+
+    // ========== Deletar categoria (não está em uso) ==========
     const { error } = await supabase
       .from('categories')
       .delete()
@@ -87,7 +125,10 @@ export async function DELETE(
       throw error;
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({
+      success: true,
+      message: `Categoria "${category.name}" deletada com sucesso`
+    });
   } catch (error) {
     console.error('Erro ao deletar categoria:', error);
     return NextResponse.json(

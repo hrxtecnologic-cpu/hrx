@@ -1,6 +1,13 @@
 import { auth } from '@clerk/nextjs/server';
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import {
+  unauthorizedResponse,
+  notFoundResponse,
+  successResponse,
+  internalErrorResponse,
+} from '@/lib/api-response';
+import { logger } from '@/lib/logger';
 
 /**
  * GET: Buscar dados do profissional logado
@@ -9,7 +16,7 @@ export async function GET() {
   try {
     const { userId } = await auth();
     if (!userId) {
-      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+      return unauthorizedResponse();
     }
 
     const supabase = await createClient();
@@ -22,10 +29,7 @@ export async function GET() {
       .single();
 
     if (!userData) {
-      return NextResponse.json(
-        { error: 'Usuário não encontrado' },
-        { status: 404 }
-      );
+      return notFoundResponse('Usuário não encontrado');
     }
 
     // Buscar dados do profissional
@@ -36,19 +40,13 @@ export async function GET() {
       .single();
 
     if (error || !professional) {
-      return NextResponse.json(
-        { error: 'Perfil profissional não encontrado' },
-        { status: 404 }
-      );
+      return notFoundResponse('Perfil profissional não encontrado');
     }
 
-    return NextResponse.json(professional);
+    return successResponse(professional);
   } catch (error) {
-    console.error('Erro ao buscar perfil:', error);
-    return NextResponse.json(
-      { error: 'Erro ao buscar perfil' },
-      { status: 500 }
-    );
+    logger.error('Erro ao buscar perfil profissional', error instanceof Error ? error : undefined);
+    return internalErrorResponse('Erro ao buscar perfil');
   }
 }
 
@@ -59,7 +57,7 @@ export async function PATCH(req: Request) {
   try {
     const { userId } = await auth();
     if (!userId) {
-      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+      return unauthorizedResponse();
     }
 
     const body = await req.json();
@@ -68,7 +66,6 @@ export async function PATCH(req: Request) {
       phone,
       cpf,
       birth_date,
-      gender,
       street,
       number,
       complement,
@@ -93,10 +90,7 @@ export async function PATCH(req: Request) {
       .single();
 
     if (!userData) {
-      return NextResponse.json(
-        { error: 'Usuário não encontrado' },
-        { status: 404 }
-      );
+      return notFoundResponse('Usuário não encontrado');
     }
 
     // Atualizar perfil profissional
@@ -107,7 +101,6 @@ export async function PATCH(req: Request) {
         phone,
         cpf,
         birth_date,
-        gender,
         street,
         number,
         complement,
@@ -129,17 +122,19 @@ export async function PATCH(req: Request) {
       .single();
 
     if (error) {
-      console.error('Erro ao atualizar perfil:', error);
+      logger.error('Erro ao atualizar perfil profissional', error, {
+        userId: userData.id
+      });
       throw error;
     }
 
-    console.log(`✅ Perfil atualizado: ${professional.email}`);
-    return NextResponse.json({ success: true, professional });
+    logger.info('Perfil profissional atualizado com sucesso', {
+      professionalId: professional.id,
+      userId: userData.id
+    });
+    return successResponse({ professional });
   } catch (error) {
-    console.error('Erro ao atualizar perfil:', error);
-    return NextResponse.json(
-      { error: 'Erro ao atualizar perfil' },
-      { status: 500 }
-    );
+    logger.error('Erro ao atualizar perfil profissional', error instanceof Error ? error : undefined);
+    return internalErrorResponse('Erro ao atualizar perfil');
   }
 }

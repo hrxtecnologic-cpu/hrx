@@ -3,6 +3,15 @@ import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { isAdmin } from '@/lib/auth';
 import { sendProfessionalRejectionEmail } from '@/lib/resend/emails';
+import {
+  unauthorizedResponse,
+  forbiddenResponse,
+  notFoundResponse,
+  badRequestResponse,
+  successResponse,
+  handleError,
+} from '@/lib/api-response';
+import { logger } from '@/lib/logger';
 
 export async function POST(
   req: Request,
@@ -11,26 +20,20 @@ export async function POST(
   try {
     const { userId } = await auth();
     if (!userId) {
-      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+      return unauthorizedResponse();
     }
 
     // Verificar se é admin
     const { isAdmin: userIsAdmin } = await isAdmin();
     if (!userIsAdmin) {
-      return NextResponse.json(
-        { error: 'Acesso negado. Apenas administradores podem rejeitar profissionais.' },
-        { status: 403 }
-      );
+      return forbiddenResponse('Acesso negado. Apenas administradores podem rejeitar profissionais.');
     }
 
     const { id } = await params;
     const { reason, documentsWithIssues } = await req.json();
 
     if (!reason) {
-      return NextResponse.json(
-        { error: 'Motivo da rejeição é obrigatório' },
-        { status: 400 }
-      );
+      return badRequestResponse('Motivo da rejeição é obrigatório');
     }
 
     const supabase = await createClient();
@@ -43,11 +46,8 @@ export async function POST(
       .single();
 
     if (fetchError || !professional) {
-      console.error('❌ Erro ao buscar profissional:', fetchError);
-      return NextResponse.json(
-        { error: 'Profissional não encontrado' },
-        { status: 404 }
-      );
+      logger.error('Erro ao buscar profissional para rejeição', fetchError, { professionalId: id });
+      return notFoundResponse('Profissional não encontrado');
     }
 
     // Atualizar status do profissional
@@ -73,18 +73,21 @@ export async function POST(
     });
 
     if (!emailResult.success) {
-      console.error('❌ Erro ao enviar email de rejeição:', emailResult.error);
+      logger.error('Erro ao enviar email de rejeição', undefined, {
+        professionalId: id,
+        error: emailResult.error
+      });
       // Não falhar a operação se o email não for enviado
     } else {
-      console.log(`✅ Profissional rejeitado e email enviado para: ${professional.email}`);
+      logger.info('Profissional rejeitado e email enviado', {
+        professionalId: id,
+        reason: reason
+      });
     }
 
-    return NextResponse.json({ success: true });
+    return successResponse(undefined, 'Profissional rejeitado com sucesso');
   } catch (error) {
-    console.error('Erro ao rejeitar profissional:', error);
-    return NextResponse.json(
-      { error: 'Erro ao rejeitar profissional' },
-      { status: 500 }
-    );
+    logger.error('Erro ao rejeitar profissional', error instanceof Error ? error : undefined, { professionalId: id });
+    return handleError(error, 'Erro ao rejeitar profissional');
   }
 }

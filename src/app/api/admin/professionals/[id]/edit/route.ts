@@ -2,6 +2,13 @@ import { auth } from '@clerk/nextjs/server';
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { isAdmin } from '@/lib/auth';
+import {
+  unauthorizedResponse,
+  forbiddenResponse,
+  successResponse,
+  handleError,
+} from '@/lib/api-response';
+import { logger, logDataChange } from '@/lib/logger';
 
 /**
  * PATCH: Admin edita dados de um profissional
@@ -13,12 +20,12 @@ export async function PATCH(
   try {
     const { userId } = await auth();
     if (!userId) {
-      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+      return unauthorizedResponse();
     }
 
     const { isAdmin: userIsAdmin } = await isAdmin();
     if (!userIsAdmin) {
-      return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
+      return forbiddenResponse();
     }
 
     const { id } = await params;
@@ -76,7 +83,7 @@ export async function PATCH(
       .eq('id', id);
 
     if (updateError) {
-      console.error('Erro ao atualizar profissional:', updateError);
+      logger.error('Erro ao atualizar profissional', updateError, { professionalId: id });
       throw updateError;
     }
 
@@ -101,14 +108,15 @@ export async function PATCH(
           fields: changedFields,
         },
       });
+
+      logDataChange('professional', id, adminUser?.id || userId, {
+        fields: changedFields
+      });
     }
 
-    return NextResponse.json({ success: true });
+    return successResponse(undefined, 'Profissional atualizado com sucesso');
   } catch (error) {
-    console.error('Erro ao editar profissional:', error);
-    return NextResponse.json(
-      { error: 'Erro ao editar profissional' },
-      { status: 500 }
-    );
+    logger.error('Erro ao editar profissional', error instanceof Error ? error : undefined, { professionalId: id });
+    return handleError(error, 'Erro ao editar profissional');
   }
 }
