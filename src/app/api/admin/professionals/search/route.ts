@@ -223,11 +223,8 @@ async function searchProfessionals(params: SearchParams): Promise<SearchResult> 
 
   // Experiência
   if (params.hasExperience !== undefined) {
-    if (params.hasExperience) {
-      query = query.gt('years_experience', 0);
-    } else {
-      query = query.or('years_experience.is.null,years_experience.eq.0');
-    }
+    // Usar o campo booleano has_experience
+    query = query.eq('has_experience', params.hasExperience);
     logger.debug('Filtro de experiência aplicado', { hasExperience: params.hasExperience });
   }
 
@@ -401,7 +398,7 @@ function getSortField(sortBy: string): string {
   const fieldMap: Record<string, string> = {
     name: 'full_name',
     createdAt: 'created_at',
-    experience: 'years_experience',
+    experience: 'has_experience', // Campo booleano de experiência
     distance: 'full_name', // Distância é calculada separadamente
   };
 
