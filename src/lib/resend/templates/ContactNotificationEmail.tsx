@@ -9,6 +9,7 @@ import {
   Hr,
   Link,
 } from '@react-email/components';
+import { HRX_CONTACT_INFO } from './EmailFooter';
 
 interface ContactNotificationEmailProps {
   name: string;
@@ -105,7 +106,9 @@ export default function ContactNotificationEmail({
           <Hr style={hr} />
           <Section>
             <Text style={footer}>
-              Este é um email automático do sistema HRX.
+              Este é um email automático do sistema {HRX_CONTACT_INFO.nomeEmpresa}.
+              <br />
+              {HRX_CONTACT_INFO.site}
               <br />
               Gerado em: {new Date().toLocaleString('pt-BR')}
             </Text>

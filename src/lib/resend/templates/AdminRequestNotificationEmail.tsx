@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { HRX_CONTACT_INFO } from './EmailFooter';
 
 interface Professional {
   category: string;
@@ -478,7 +479,10 @@ export const AdminRequestNotificationEmail: React.FC<AdminRequestNotificationEma
           {/* Footer */}
           <div className="footer">
             <p style={{ margin: '0 0 5px 0' }}>
-              🤖 Email automático gerado pelo sistema HRX
+              🤖 Email automático gerado pelo sistema {HRX_CONTACT_INFO.nomeEmpresa}
+            </p>
+            <p style={{ margin: '5px 0', fontSize: '12px' }}>
+              {HRX_CONTACT_INFO.site}
             </p>
             <p style={{ margin: 0, fontSize: '12px' }}>
               {new Date(props.createdAt).toLocaleString('pt-BR')}

@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { HRX_CONTACT_INFO } from './EmailFooter';
 
 interface PendingDocumentsEmailProps {
   professionalName: string;
@@ -246,7 +247,9 @@ export const PendingDocumentsEmail: React.FC<PendingDocumentsEmailProps> = ({
         {/* Contact */}
         <div className="contact">
           <p><strong>Precisa de ajuda?</strong></p>
-          <p>📧 Email: atendimento@hrxeventos.com.br</p>
+          <p>🌐 Site: <a href={HRX_CONTACT_INFO.siteUrl} style={{ color: '#DC2626', textDecoration: 'none' }}>{HRX_CONTACT_INFO.site}</a></p>
+          <p>📧 Email: <a href={`mailto:${HRX_CONTACT_INFO.email}`} style={{ color: '#DC2626', textDecoration: 'none' }}>{HRX_CONTACT_INFO.email}</a></p>
+          <p>📱 WhatsApp: <a href={`https://wa.me/${HRX_CONTACT_INFO.telefoneWhatsApp}`} style={{ color: '#DC2626', textDecoration: 'none' }}>{HRX_CONTACT_INFO.telefone}</a></p>
           <p style={{ marginTop: '10px', fontSize: '12px', color: '#6b7280' }}>
             Respondemos em até 2 horas úteis
           </p>
@@ -258,7 +261,10 @@ export const PendingDocumentsEmail: React.FC<PendingDocumentsEmailProps> = ({
             Este email foi enviado para <span className="highlight">{professionalEmail}</span>
           </p>
           <p style={{ marginTop: '10px' }}>
-            © 2025 HRX - Plataforma de Profissionais para Eventos
+            © {HRX_CONTACT_INFO.ano} {HRX_CONTACT_INFO.nomeEmpresa} - Plataforma de Profissionais para Eventos
+          </p>
+          <p style={{ marginTop: '5px', fontSize: '12px', color: '#9ca3af' }}>
+            {HRX_CONTACT_INFO.site}
           </p>
         </div>
       </div>

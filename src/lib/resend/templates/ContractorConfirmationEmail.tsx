@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { HRX_CONTACT_INFO } from './EmailFooter';
 
 interface Professional {
   category: string;
@@ -307,15 +308,16 @@ export const ContractorConfirmationEmail: React.FC<ContractorConfirmationEmailPr
             <div className="contact-box">
               <h3>📞 Contato Direto</h3>
               <div className="contact-info">
+                <strong>Site:</strong>{' '}
+                <a href={HRX_CONTACT_INFO.siteUrl}>{HRX_CONTACT_INFO.site}</a>
+              </div>
+              <div className="contact-info">
                 <strong>WhatsApp:</strong>{' '}
-                <a href="https://wa.me/5521999999999">(21) 99999-9999</a>
+                <a href={`https://wa.me/${HRX_CONTACT_INFO.telefoneWhatsApp}`}>{HRX_CONTACT_INFO.telefone}</a>
               </div>
               <div className="contact-info">
                 <strong>Email:</strong>{' '}
-                <a href="mailto:comercial@hrx.com.br">comercial@hrx.com.br</a>
-              </div>
-              <div className="contact-info">
-                <strong>Telefone:</strong> (21) 3333-3333
+                <a href={`mailto:${HRX_CONTACT_INFO.email}`}>{HRX_CONTACT_INFO.email}</a>
               </div>
             </div>
           </div>
@@ -324,11 +326,12 @@ export const ContractorConfirmationEmail: React.FC<ContractorConfirmationEmailPr
           <div className="footer">
             <p style={{ margin: '0 0 10px 0' }}>
               Atenciosamente,<br />
-              <strong>Equipe HRX</strong><br />
+              <strong>Equipe {HRX_CONTACT_INFO.nomeEmpresa}</strong><br />
               Soluções Completas para Eventos
             </p>
             <p style={{ margin: '10px 0 0 0', fontSize: '12px', opacity: 0.8 }}>
-              © 2025 HRX - Plataforma de Profissionais para Eventos
+              © {HRX_CONTACT_INFO.ano} {HRX_CONTACT_INFO.nomeEmpresa} - Plataforma de Profissionais para Eventos<br />
+              {HRX_CONTACT_INFO.site}
             </p>
           </div>
         </div>

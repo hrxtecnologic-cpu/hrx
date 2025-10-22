@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, ChevronDown, Package, Users, Search, Send, Building2, Mail, Phone, MapPin, Loader2 } from 'lucide-react';
+import { Plus, ChevronDown, Package, Users, Search, Send, Building2, Mail, Phone, MapPin, Loader2, Briefcase } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
@@ -30,15 +30,29 @@ import { EQUIPMENT_CATEGORIES } from '@/lib/equipment-types';
 // NOTA: Categorias de profissionais devem vir do arquivo central
 // Vamos importar CATEGORIES_WITH_SUBCATEGORIES no topo do arquivo
 
+interface ProjectInfo {
+  event_name: string;
+  event_date: string | null;
+  event_type: string;
+  venue_name: string | null;
+  venue_city: string;
+  venue_state: string;
+  expected_attendance: number | null;
+  internal_notes?: string | null;
+  additional_notes?: string | null;
+}
+
 interface AddTeamMemberButtonProps {
   projectId: string;
+  project?: ProjectInfo;
   onSuccess?: () => void;
 }
 
-export function AddTeamMemberButton({ projectId, onSuccess }: AddTeamMemberButtonProps) {
+export function AddTeamMemberButton({ projectId, project, onSuccess }: AddTeamMemberButtonProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [geolocationEnabled, setGeolocationEnabled] = useState(true);
   const [searchingProfessionals, setSearchingProfessionals] = useState(false);
   const [nearbyProfessionals, setNearbyProfessionals] = useState<any[]>([]);
   const [selectedProfessional, setSelectedProfessional] = useState<any>(null);
@@ -53,9 +67,27 @@ export function AddTeamMemberButton({ projectId, onSuccess }: AddTeamMemberButto
     notes: '',
   });
 
+  // Extrair profissionais solicitados das notas internas
+  const getRequestedProfessionals = () => {
+    if (!project?.internal_notes) return [];
+
+    try {
+      const match = project.internal_notes.match(/Profissionais solicitados:\s*(\[[\s\S]*?\])/);
+      if (match) {
+        const professionalsArray = JSON.parse(match[1]);
+        return professionalsArray;
+      }
+    } catch (error) {
+      console.error('Erro ao parsear profissionais:', error);
+    }
+    return [];
+  };
+
+  const requestedProfessionals = getRequestedProfessionals();
+
   // Buscar profissionais próximos quando categoria muda
   const searchNearbyProfessionals = async (category: string) => {
-    if (!category) return;
+    if (!category || !geolocationEnabled) return;
 
     setSearchingProfessionals(true);
     try {
@@ -139,7 +171,86 @@ export function AddTeamMemberButton({ projectId, onSuccess }: AddTeamMemberButto
             </DialogDescription>
           </DialogHeader>
 
+          {/* Toggle de Geolocalização */}
+          <div className="pb-4 border-b border-zinc-800">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={geolocationEnabled}
+                onChange={(e) => {
+                  setGeolocationEnabled(e.target.checked);
+                  setNearbyProfessionals([]);
+                }}
+                className="w-4 h-4 text-red-600 bg-zinc-800 border-zinc-700 rounded focus:ring-red-600 focus:ring-2"
+              />
+              <div className="flex-1">
+                <span className="text-sm font-medium text-zinc-200">
+                  Buscar profissionais próximos ao local do evento
+                </span>
+                <p className="text-xs text-zinc-500 mt-0.5">
+                  {geolocationEnabled
+                    ? 'Sistema buscará automaticamente profissionais próximos ao selecionar categoria'
+                    : 'Modo manual - adicione profissionais sem busca por localização'}
+                </p>
+              </div>
+            </label>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Profissionais Solicitados (apenas quando geolocation desabilitado) */}
+            {!geolocationEnabled && requestedProfessionals.length > 0 && (
+              <div className="p-4 bg-blue-950/20 border border-blue-900/50 rounded-lg">
+                <div className="flex items-center gap-2 mb-3">
+                  <Users className="h-4 w-4 text-blue-400" />
+                  <Label className="text-sm font-medium text-blue-200">
+                    Profissionais Solicitados pelo Cliente
+                  </Label>
+                </div>
+                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+                  {requestedProfessionals.map((prof: any, index: number) => (
+                    <div
+                      key={index}
+                      className="p-3 bg-zinc-800/50 border border-zinc-700/50 rounded-md"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex items-center justify-center w-6 h-6 bg-blue-600 text-white text-xs font-bold rounded-full flex-shrink-0">
+                              {prof.quantity}
+                            </span>
+                            <span className="text-zinc-200 font-medium text-sm">
+                              {prof.category}
+                            </span>
+                          </div>
+                          {prof.category_group && (
+                            <p className="text-xs text-zinc-400 mt-1 ml-8">
+                              Grupo: {prof.category_group}
+                            </p>
+                          )}
+                          {prof.requirements && (
+                            <p className="text-xs text-zinc-300 mt-2 ml-8 italic">
+                              Requisitos: {prof.requirements}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {project?.event_date && (
+                  <div className="mt-3 pt-3 border-t border-blue-900/30">
+                    <p className="text-xs text-zinc-400">
+                      <MapPin className="h-3 w-3 inline mr-1" />
+                      {new Date(project.event_date).toLocaleDateString('pt-BR')} • {project.venue_city}, {project.venue_state}
+                    </p>
+                  </div>
+                )}
+                <p className="text-xs text-blue-300 mt-3 pt-2 border-t border-blue-900/30">
+                  💡 Use esta lista como referência para montar a equipe do evento
+                </p>
+              </div>
+            )}
+
             {/* Informações Básicas */}
             <div className="space-y-5">
               <div className="grid grid-cols-2 gap-4">
@@ -376,13 +487,15 @@ export function AddTeamMemberButton({ projectId, onSuccess }: AddTeamMemberButto
 
 interface AddEquipmentButtonProps {
   projectId: string;
+  project?: ProjectInfo;
   onSuccess?: () => void;
 }
 
-export function AddEquipmentButton({ projectId, onSuccess }: AddEquipmentButtonProps) {
+export function AddEquipmentButton({ projectId, project, onSuccess }: AddEquipmentButtonProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [geolocationEnabled, setGeolocationEnabled] = useState(true);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [searchingSuppliers, setSearchingSuppliers] = useState(false);
   const [nearbySuppliers, setNearbySuppliers] = useState<any[]>([]);
@@ -396,6 +509,27 @@ export function AddEquipmentButton({ projectId, onSuccess }: AddEquipmentButtonP
     duration_days: 1,
     notes: '',
   });
+
+  // Extrair equipamentos solicitados das notas internas
+  const getRequestedEquipment = () => {
+    if (!project?.internal_notes) return [];
+
+    try {
+      const match = project.internal_notes.match(/Equipamentos:\s*([^\n]+)/);
+      if (match) {
+        const equipmentList = match[1]
+          .split(',')
+          .map(item => item.trim())
+          .filter(item => item && item !== 'Nenhuma');
+        return equipmentList;
+      }
+    } catch (error) {
+      console.error('Erro ao parsear equipamentos:', error);
+    }
+    return [];
+  };
+
+  const requestedEquipment = getRequestedEquipment();
 
   const toggleCategory = (categoryName: string) => {
     setExpandedCategories((prev) => {
@@ -411,7 +545,7 @@ export function AddEquipmentButton({ projectId, onSuccess }: AddEquipmentButtonP
 
   // Buscar fornecedores próximos quando categoria de equipamento muda
   const searchNearbySuppliers = async (equipmentType: string) => {
-    if (!equipmentType) return;
+    if (!equipmentType || !geolocationEnabled) return;
 
     setSearchingSuppliers(true);
     try {
@@ -495,7 +629,68 @@ export function AddEquipmentButton({ projectId, onSuccess }: AddEquipmentButtonP
             </DialogDescription>
           </DialogHeader>
 
+          {/* Toggle de Geolocalização */}
+          <div className="pb-4 border-b border-zinc-800">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={geolocationEnabled}
+                onChange={(e) => {
+                  setGeolocationEnabled(e.target.checked);
+                  setNearbySuppliers([]);
+                }}
+                className="w-4 h-4 text-red-600 bg-zinc-800 border-zinc-700 rounded focus:ring-red-600 focus:ring-2"
+              />
+              <div className="flex-1">
+                <span className="text-sm font-medium text-zinc-200">
+                  Buscar fornecedores próximos ao local do evento
+                </span>
+                <p className="text-xs text-zinc-500 mt-0.5">
+                  {geolocationEnabled
+                    ? 'Sistema buscará automaticamente fornecedores próximos ao selecionar categoria'
+                    : 'Modo manual - adicione equipamentos sem busca por localização'}
+                </p>
+              </div>
+            </label>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Equipamentos Solicitados (apenas quando geolocation desabilitado) */}
+            {!geolocationEnabled && requestedEquipment.length > 0 && (
+              <div className="p-4 bg-orange-950/20 border border-orange-900/50 rounded-lg">
+                <div className="flex items-center gap-2 mb-3">
+                  <Package className="h-4 w-4 text-orange-400" />
+                  <Label className="text-sm font-medium text-orange-200">
+                    Equipamentos Solicitados pelo Cliente ({requestedEquipment.length})
+                  </Label>
+                </div>
+                <div className="max-h-[300px] overflow-y-auto pr-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    {requestedEquipment.map((equipment: string, index: number) => (
+                      <div
+                        key={index}
+                        className="flex items-center gap-2 p-2 bg-zinc-800/50 border border-zinc-700/50 rounded text-sm"
+                      >
+                        <span className="text-orange-400">▪</span>
+                        <span className="text-zinc-200 text-xs">{equipment}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {project?.event_date && (
+                  <div className="mt-3 pt-3 border-t border-orange-900/30">
+                    <p className="text-xs text-zinc-400">
+                      <MapPin className="h-3 w-3 inline mr-1" />
+                      {new Date(project.event_date).toLocaleDateString('pt-BR')} • {project.venue_city}, {project.venue_state}
+                    </p>
+                  </div>
+                )}
+                <p className="text-xs text-orange-300 mt-3 pt-2 border-t border-orange-900/30">
+                  💡 Use esta lista como referência para cotar e adicionar equipamentos ao projeto
+                </p>
+              </div>
+            )}
+
             {/* Seleção por Categoria - Accordion */}
             <div className="pt-4 border-t border-zinc-800">
               <Label className="text-sm font-medium text-zinc-200">

@@ -7,8 +7,10 @@ import {
   Text,
   Section,
   Hr,
+  Link,
 } from '@react-email/components';
 import * as React from 'react';
+import { HRX_CONTACT_INFO } from './EmailFooter';
 
 interface SimpleWelcomeEmailProps {
   professionalName: string;
@@ -87,9 +89,11 @@ export const SimpleWelcomeEmail: React.FC<SimpleWelcomeEmailProps> = ({
         <Section style={styles.contact}>
           <Text style={styles.contactTitle}>Precisa de ajuda?</Text>
           <Text style={styles.text}>
-            📧 Email: hrxtecnologic@gmail.com
+            🌐 Site: <Link href={HRX_CONTACT_INFO.siteUrl} style={styles.link}>{HRX_CONTACT_INFO.site}</Link>
             <br />
-            📱 WhatsApp: (21) 99999-9999
+            📧 Email: <Link href={`mailto:${HRX_CONTACT_INFO.email}`} style={styles.link}>{HRX_CONTACT_INFO.email}</Link>
+            <br />
+            📱 WhatsApp: <Link href={`https://wa.me/${HRX_CONTACT_INFO.telefoneWhatsApp}`} style={styles.link}>{HRX_CONTACT_INFO.telefone}</Link>
           </Text>
         </Section>
 
@@ -100,7 +104,10 @@ export const SimpleWelcomeEmail: React.FC<SimpleWelcomeEmailProps> = ({
           Este email foi enviado para <strong>{professionalEmail}</strong>
         </Text>
         <Text style={styles.footer}>
-          © 2025 HRX - Plataforma de Profissionais para Eventos
+          © {HRX_CONTACT_INFO.ano} {HRX_CONTACT_INFO.nomeEmpresa} - Plataforma de Profissionais para Eventos
+        </Text>
+        <Text style={styles.footer}>
+          {HRX_CONTACT_INFO.site}
         </Text>
       </Container>
     </Body>

@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { HRX_CONTACT_INFO } from './EmailFooter';
 
 interface AdminNotificationEmailProps {
   professionalName: string;
@@ -258,8 +259,11 @@ export const AdminNotificationEmail: React.FC<AdminNotificationEmailProps> = ({
 
         {/* Footer */}
         <div className="footer">
-          <p>📧 Sistema de Notificações HRX</p>
-          <p style={{ marginTop: '10px', fontSize: '12px' }}>
+          <p>📧 Sistema de Notificações {HRX_CONTACT_INFO.nomeEmpresa}</p>
+          <p style={{ marginTop: '5px', fontSize: '12px' }}>
+            {HRX_CONTACT_INFO.site}
+          </p>
+          <p style={{ marginTop: '5px', fontSize: '12px' }}>
             Este email é apenas para administradores da plataforma.
           </p>
         </div>

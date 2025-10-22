@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { HRX_CONTACT_INFO } from './EmailFooter';
 
 interface QuoteAcceptedEmailProps {
   supplierName: string;
@@ -267,9 +268,12 @@ export const QuoteAcceptedEmail: React.FC<QuoteAcceptedEmailProps> = ({
 
         {/* Footer */}
         <div className="footer">
-          <p>📧 HRX Tecnologia em Eventos</p>
-          <p style={{ marginTop: '10px', fontSize: '12px' }}>
-            Estamos ansiosos para trabalhar com você neste projeto.
+          <p>📧 {HRX_CONTACT_INFO.nomeEmpresa}</p>
+          <p style={{ marginTop: '5px', fontSize: '12px' }}>
+            {HRX_CONTACT_INFO.email} | {HRX_CONTACT_INFO.telefone}
+          </p>
+          <p style={{ marginTop: '5px', fontSize: '12px' }}>
+            {HRX_CONTACT_INFO.site}
           </p>
         </div>
       </div>

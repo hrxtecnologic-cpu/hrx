@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { EmailFooter, HRX_CONTACT_INFO, EMAIL_FOOTER_STYLES } from './EmailFooter';
 
 interface ProfessionalWelcomeEmailProps {
   professionalName: string;
@@ -122,6 +123,7 @@ export const ProfessionalWelcomeEmail: React.FC<ProfessionalWelcomeEmailProps> =
           color: #DC2626;
           font-weight: 600;
         }
+        ${EMAIL_FOOTER_STYLES}
       `}</style>
     </head>
     <body>
@@ -170,26 +172,9 @@ export const ProfessionalWelcomeEmail: React.FC<ProfessionalWelcomeEmailProps> =
           </ul>
         </div>
 
-        {/* Contact */}
-        <div className="contact">
-          <p><strong>Precisa de ajuda?</strong></p>
-          <p>📧 Email: {ADMIN_EMAIL}</p>
-          <p>📱 WhatsApp: (21) 99999-9999</p>
-        </div>
-
-        {/* Footer */}
-        <div className="footer">
-          <p>
-            Este email foi enviado para <span className="highlight">{professionalEmail}</span>
-          </p>
-          <p style={{ marginTop: '10px' }}>
-            © 2025 HRX - Plataforma de Profissionais para Eventos
-          </p>
-        </div>
+        {/* Contact & Footer */}
+        <EmailFooter recipientEmail={professionalEmail} showContact={true} />
       </div>
     </body>
   </html>
 );
-
-// Valores padrão para variáveis não importadas
-const ADMIN_EMAIL = process.env.RESEND_ADMIN_EMAIL || 'contato@hrx.com.br';

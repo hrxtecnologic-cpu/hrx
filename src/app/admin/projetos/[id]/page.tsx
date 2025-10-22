@@ -102,6 +102,51 @@ export default async function ProjetoDetailPage({
     }).format(value);
   };
 
+  // Extrair profissionais solicitados das notas internas
+  const getRequestedProfessionals = () => {
+    if (!project.internal_notes) return [];
+
+    try {
+      const match = project.internal_notes.match(/Profissionais solicitados:\s*(\[[\s\S]*?\])/);
+      if (match) {
+        return JSON.parse(match[1]);
+      }
+    } catch (error) {
+      console.error('Erro ao parsear profissionais:', error);
+    }
+    return [];
+  };
+
+  // Extrair equipamentos solicitados das notas internas
+  const getRequestedEquipment = () => {
+    if (!project.internal_notes) return [];
+
+    try {
+      const match = project.internal_notes.match(/Equipamentos:\s*([^\n]+)/);
+      if (match) {
+        return match[1]
+          .split(',')
+          .map(item => item.trim())
+          .filter(item => item && item !== 'Nenhuma');
+      }
+    } catch (error) {
+      console.error('Erro ao parsear equipamentos:', error);
+    }
+    return [];
+  };
+
+  // Extrair observações sobre equipamentos
+  const getEquipmentNotes = () => {
+    if (!project.internal_notes) return null;
+
+    const match = project.internal_notes.match(/Observações sobre equipamentos:\s*([^\n]+)/);
+    return match && match[1] !== 'Nenhuma' ? match[1] : null;
+  };
+
+  const requestedProfessionals = getRequestedProfessionals();
+  const requestedEquipment = getRequestedEquipment();
+  const equipmentNotes = getEquipmentNotes();
+
   // Função para obter badge de status
   const getStatusBadge = (status: string) => {
     const statusConfig = {
@@ -364,7 +409,20 @@ export default async function ProjetoDetailPage({
                   <Users className="h-5 w-5 text-red-600" />
                   Equipe do Projeto ({team?.length || 0})
                 </CardTitle>
-                <AddTeamMemberButton projectId={id} />
+                <AddTeamMemberButton
+                  projectId={id}
+                  project={{
+                    event_name: project.event_name,
+                    event_date: project.event_date,
+                    event_type: project.event_type,
+                    venue_name: project.venue_name,
+                    venue_city: project.venue_city,
+                    venue_state: project.venue_state,
+                    expected_attendance: project.expected_attendance,
+                    internal_notes: project.internal_notes,
+                    additional_notes: project.additional_notes,
+                  }}
+                />
               </div>
             </CardHeader>
             <CardContent>
@@ -422,7 +480,20 @@ export default async function ProjetoDetailPage({
                   <Package className="h-5 w-5 text-red-600" />
                   Equipamentos ({equipment?.length || 0})
                 </CardTitle>
-                <AddEquipmentButton projectId={id} />
+                <AddEquipmentButton
+                  projectId={id}
+                  project={{
+                    event_name: project.event_name,
+                    event_date: project.event_date,
+                    event_type: project.event_type,
+                    venue_name: project.venue_name,
+                    venue_city: project.venue_city,
+                    venue_state: project.venue_state,
+                    expected_attendance: project.expected_attendance,
+                    internal_notes: project.internal_notes,
+                    additional_notes: project.additional_notes,
+                  }}
+                />
               </div>
             </CardHeader>
             <CardContent>
@@ -682,30 +753,100 @@ export default async function ProjetoDetailPage({
             </Card>
           )}
 
-          {/* Observações */}
-          {(project.additional_notes || project.internal_notes) && (
+          {/* Solicitação do Cliente */}
+          {(requestedProfessionals.length > 0 || requestedEquipment.length > 0 || project.additional_notes) && (
             <Card className="bg-zinc-900 border-zinc-800">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <FileText className="h-5 w-5 text-red-600" />
-                  Observações
+                  Solicitação do Cliente
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
+                {/* Observações do Cliente */}
                 {project.additional_notes && (
-                  <div>
-                    <p className="text-xs text-zinc-500 mb-1">Observações do Cliente</p>
-                    <p className="text-sm text-white whitespace-pre-wrap">
+                  <div className="p-4 bg-blue-950/20 border border-blue-900/50 rounded-lg">
+                    <p className="text-sm font-medium text-blue-200 mb-2">💬 Observações Gerais</p>
+                    <p className="text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed">
                       {project.additional_notes}
                     </p>
                   </div>
                 )}
-                {project.internal_notes && (
-                  <div className="pt-4 border-t border-zinc-800">
-                    <p className="text-xs text-zinc-500 mb-1">Notas Internas</p>
-                    <p className="text-sm text-white whitespace-pre-wrap">
-                      {project.internal_notes}
-                    </p>
+
+                {/* Profissionais Solicitados */}
+                {requestedProfessionals.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Users className="h-4 w-4 text-red-600" />
+                      <p className="text-sm font-semibold text-white">
+                        Profissionais Solicitados ({requestedProfessionals.length})
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {requestedProfessionals.map((prof: any, index: number) => (
+                        <div
+                          key={index}
+                          className="p-4 bg-zinc-800/50 border border-zinc-700/50 rounded-lg hover:border-zinc-600 transition-colors"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="flex-shrink-0">
+                              <span className="inline-flex items-center justify-center w-8 h-8 bg-red-600 text-white text-sm font-bold rounded-full">
+                                {prof.quantity}
+                              </span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-white truncate">
+                                {prof.category}
+                              </p>
+                              {prof.category_group && (
+                                <p className="text-xs text-zinc-400 mt-1">
+                                  {prof.category_group}
+                                </p>
+                              )}
+                              {prof.requirements && (
+                                <div className="mt-2 pt-2 border-t border-zinc-700">
+                                  <p className="text-xs text-zinc-500 mb-0.5">Requisitos:</p>
+                                  <p className="text-xs text-zinc-300 italic">
+                                    {prof.requirements}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Equipamentos Solicitados */}
+                {requestedEquipment.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Package className="h-4 w-4 text-red-600" />
+                      <p className="text-sm font-semibold text-white">
+                        Equipamentos Solicitados ({requestedEquipment.length})
+                      </p>
+                    </div>
+                    <div className="p-4 bg-zinc-800/30 border border-zinc-700/50 rounded-lg">
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        {requestedEquipment.map((equipment: string, index: number) => (
+                          <div
+                            key={index}
+                            className="flex items-center gap-2 px-3 py-2 bg-zinc-800/80 rounded-md hover:bg-zinc-700/80 transition-colors"
+                          >
+                            <span className="text-red-500 text-xs">▪</span>
+                            <span className="text-xs text-zinc-200">{equipment}</span>
+                          </div>
+                        ))}
+                      </div>
+                      {equipmentNotes && (
+                        <div className="mt-3 pt-3 border-t border-zinc-700">
+                          <p className="text-xs text-zinc-400 mb-1">Observações:</p>
+                          <p className="text-xs text-zinc-300 italic">{equipmentNotes}</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </CardContent>

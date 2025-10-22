@@ -9,6 +9,7 @@ import {
   Hr,
   Link,
 } from '@react-email/components';
+import { HRX_CONTACT_INFO } from './EmailFooter';
 
 interface ContactConfirmationEmailProps {
   name: string;
@@ -62,21 +63,21 @@ export default function ContactConfirmationEmail({
 
             <Section style={contactBox}>
               <Text style={contactItem}>
+                🌐 <strong>Site:</strong>{' '}
+                <Link href={HRX_CONTACT_INFO.siteUrl} style={link}>
+                  {HRX_CONTACT_INFO.site}
+                </Link>
+              </Text>
+              <Text style={contactItem}>
                 📱 <strong>WhatsApp:</strong>{' '}
-                <Link href="https://wa.me/5521999999999" style={link}>
-                  (21) 99999-9999
+                <Link href={`https://wa.me/${HRX_CONTACT_INFO.telefoneWhatsApp}`} style={link}>
+                  {HRX_CONTACT_INFO.telefone}
                 </Link>
               </Text>
               <Text style={contactItem}>
                 📧 <strong>Email:</strong>{' '}
-                <Link href="mailto:contato@hrx.com.br" style={link}>
-                  contato@hrx.com.br
-                </Link>
-              </Text>
-              <Text style={contactItem}>
-                📞 <strong>Telefone:</strong>{' '}
-                <Link href="tel:+552133333333" style={link}>
-                  (21) 3333-3333
+                <Link href={`mailto:${HRX_CONTACT_INFO.email}`} style={link}>
+                  {HRX_CONTACT_INFO.email}
                 </Link>
               </Text>
             </Section>
@@ -90,7 +91,7 @@ export default function ContactConfirmationEmail({
             </Text>
 
             <Section style={ctaSection}>
-              <Link href="https://hrx.com.br/solicitar-equipe" style={button}>
+              <Link href={`${HRX_CONTACT_INFO.siteUrl}/solicitar-equipe`} style={button}>
                 Solicitar Equipe Agora
               </Link>
             </Section>
@@ -102,7 +103,7 @@ export default function ContactConfirmationEmail({
             </Text>
 
             <Section style={ctaSection}>
-              <Link href="https://hrx.com.br/cadastrar-profissional" style={buttonSecondary}>
+              <Link href={`${HRX_CONTACT_INFO.siteUrl}/cadastrar-profissional`} style={buttonSecondary}>
                 Cadastrar como Profissional
               </Link>
             </Section>
@@ -112,21 +113,22 @@ export default function ContactConfirmationEmail({
           <Hr style={hr} />
           <Section style={footer}>
             <Text style={footerText}>
-              <strong>HRX Profissionais</strong>
+              <strong>{HRX_CONTACT_INFO.nomeEmpresa}</strong>
               <br />
               Conectando eventos a profissionais qualificados
               <br />
               <br />
-              📍 Rio de Janeiro, RJ
+              📧 {HRX_CONTACT_INFO.email}
               <br />
-              📧 contato@hrx.com.br
-              <br />
-              📱 (21) 99999-9999
+              📱 {HRX_CONTACT_INFO.telefone}
               <br />
               <br />
-              <Link href="https://hrx.com.br" style={link}>
-                www.hrx.com.br
+              <Link href={HRX_CONTACT_INFO.siteUrl} style={link}>
+                {HRX_CONTACT_INFO.site}
               </Link>
+              <br />
+              <br />
+              © {HRX_CONTACT_INFO.ano} {HRX_CONTACT_INFO.nomeEmpresa} - Plataforma de Profissionais para Eventos
             </Text>
           </Section>
         </Container>
