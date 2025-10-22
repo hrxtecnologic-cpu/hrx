@@ -116,10 +116,10 @@ export default async function Home() {
                   SOU PROFISSIONAL
                 </Link>
                 <Link
-                  href="/solicitar-equipe"
+                  href="/solicitar-evento"
                   className="w-full sm:w-auto px-8 py-4 bg-transparent border-2 border-zinc-300 hover:border-red-600 text-zinc-300 hover:text-white font-semibold rounded-lg transition-all hover:scale-105 active:scale-95 text-center"
                 >
-                  PRECISO CONTRATAR
+                  SOLICITAR EVENTO
                 </Link>
               </>
             ) : (
@@ -180,10 +180,10 @@ export default async function Home() {
 
           <div className="text-center mt-12">
             <Link
-              href="/solicitar-equipe"
+              href="/solicitar-evento"
               className="inline-block px-8 py-3 bg-red-600 hover:bg-red-500 text-white font-semibold rounded-lg transition-all hover:scale-105"
             >
-              Solicite Sua Equipe
+              Solicitar Evento
             </Link>
           </div>
         </div>
@@ -280,10 +280,10 @@ export default async function Home() {
               </div>
               <div className="mt-8 text-center">
                 <Link
-                  href="/solicitar-equipe"
+                  href="/solicitar-evento"
                   className="inline-block px-6 py-3 bg-red-600 hover:bg-red-500 text-white font-semibold rounded-lg transition-all"
                 >
-                  Solicitar Equipe
+                  Solicitar Evento
                 </Link>
               </div>
             </div>
@@ -370,10 +370,10 @@ export default async function Home() {
               Cadastrar como Profissional
             </Link>
             <Link
-              href="/solicitar-equipe"
+              href="/solicitar-evento"
               className="w-full sm:w-auto px-10 py-4 bg-transparent border-2 border-red-600 hover:bg-red-600 text-red-600 hover:text-white font-semibold rounded-lg transition-all hover:scale-105 text-lg"
             >
-              Solicitar Equipe
+              Solicitar Evento
             </Link>
           </div>
 
@@ -406,8 +406,8 @@ export default async function Home() {
                   </Link>
                 </li>
                 <li>
-                  <Link href="/solicitar-equipe" className="text-zinc-400 hover:text-red-500 transition-colors">
-                    Solicitar Equipe
+                  <Link href="/solicitar-evento" className="text-zinc-400 hover:text-red-500 transition-colors">
+                    Solicitar Evento
                   </Link>
                 </li>
                 <li>

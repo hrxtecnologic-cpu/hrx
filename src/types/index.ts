@@ -82,6 +82,80 @@ export {
 } from './document';
 
 // =====================================================
+// Event Project Types (Unified Architecture)
+// =====================================================
+
+export type {
+  // Main types
+  EventProject,
+  EventProjectSummary,
+  EventProjectFull,
+  EventProjectWithDetails,
+
+  // Related entities
+  ProjectTeamMember,
+  ProjectTeamMemberWithProfessional,
+  ProjectEquipment,
+  ProjectEquipmentWithQuotations,
+  SupplierQuotation,
+  ProjectEmail,
+
+  // DTOs (Data Transfer Objects)
+  CreateEventProjectData,
+  UpdateEventProjectData,
+  AddTeamMemberData,
+  RequestEquipmentQuotesData,
+  SubmitQuotationData,
+
+  // Status types
+  ProjectStatus,
+  TeamMemberStatus,
+  EquipmentStatus,
+  QuotationStatus,
+  EmailRecipientType,
+  EmailType,
+  EmailStatus,
+
+  // Business types
+  ProfitMargin,
+
+  // Filters & Pagination
+  EventProjectFilters,
+  EventProjectListResponse,
+} from './event-project';
+
+export {
+  // Helper functions
+  getProfitMargin,
+  calculateHRXPrice,
+  calculateProfit,
+  canEditProject,
+  canCancelProject,
+  getNextAllowedStatuses,
+
+  // Labels
+  PROJECT_STATUS_LABELS,
+  TEAM_STATUS_LABELS,
+  EQUIPMENT_STATUS_LABELS,
+  QUOTATION_STATUS_LABELS,
+} from './event-project';
+
+// =====================================================
+// Quote Types (DEPRECATED - Use EventProject instead)
+// =====================================================
+
+export type {
+  QuoteRequest,
+  QuoteRequestItem,
+  QuoteRequestWithDetails,
+  QuoteRequestSummary,
+  SupplierQuote,
+  QuoteEmail,
+  CreateQuoteRequestData,
+  SendQuoteRequestBody,
+} from './quote';
+
+// =====================================================
 // API Types
 // =====================================================
 

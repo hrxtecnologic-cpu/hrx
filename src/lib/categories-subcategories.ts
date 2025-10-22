@@ -27,186 +27,181 @@ export interface CategoryConfig {
 
 /**
  * Mapeamento completo de categorias e subcategorias para eventos
+ * ORDENADO ALFABETICAMENTE por categoria e subcategoria
  */
 export const CATEGORIES_WITH_SUBCATEGORIES: CategoryConfig[] = [
   // ===========================
-  // 1. PRODUÇÃO E COORDENAÇÃO
+  // 1. ALIMENTAÇÃO E BEBIDAS
   // ===========================
   {
-    name: 'Produção e Coordenação',
-    label: 'Produção e Coordenação',
+    name: 'Alimentação e Bebidas',
+    label: 'Alimentação e Bebidas',
     subcategories: [
       {
-        name: 'produtor_executivo',
-        label: 'Produtor Executivo',
+        name: 'auxiliar_cozinha',
+        label: 'Auxiliar de Cozinha',
         requiredDocuments: [],
-        description: 'Coordenação geral do evento'
+        description: 'Apoio na cozinha'
       },
       {
-        name: 'coordenador_evento',
-        label: 'Coordenador de Evento',
+        name: 'barman',
+        label: 'Barman/Bartender',
         requiredDocuments: [],
-        description: 'Coordenação operacional do evento'
+        description: 'Preparo de bebidas'
       },
       {
-        name: 'assistente_producao',
-        label: 'Assistente de Produção',
-        requiredDocuments: [],
-        description: 'Apoio à produção'
+        name: 'chef',
+        label: 'Chef de Cozinha',
+        requiredDocuments: ['portfolio'],
+        description: 'Responsável pela cozinha'
       },
       {
-        name: 'supervisor_operacional',
-        label: 'Supervisor Operacional',
+        name: 'copeiro',
+        label: 'Copeiro(a)',
         requiredDocuments: [],
-        description: 'Supervisão de equipes operacionais'
+        description: 'Serviços de copa'
+      },
+      {
+        name: 'cozinheiro',
+        label: 'Cozinheiro(a)',
+        requiredDocuments: [],
+        description: 'Preparo de alimentos'
+      },
+      {
+        name: 'garcom',
+        label: 'Garçom/Garçonete',
+        requiredDocuments: [],
+        description: 'Serviço de mesa'
       }
     ]
   },
 
   // ===========================
-  // 2. SEGURANÇA E CONTROLE DE ACESSO
+  // 2. ANIMAÇÃO E ENTRETENIMENTO
   // ===========================
   {
-    name: 'Segurança',
-    label: 'Segurança e Controle de Acesso',
+    name: 'Entretenimento',
+    label: 'Animação e Entretenimento',
     subcategories: [
       {
-        name: 'vigilante',
-        label: 'Vigilante',
-        requiredDocuments: ['cnv'],
-        description: 'Vigilante com CNV (Carteira Nacional de Vigilante)'
-      },
-      {
-        name: 'seguranca_patrimonial',
-        label: 'Segurança Patrimonial',
+        name: 'animador',
+        label: 'Animador(a)',
         requiredDocuments: [],
-        description: 'Segurança desarmado'
+        description: 'Animação de eventos'
       },
       {
-        name: 'controlador_acesso',
-        label: 'Controlador de Acesso',
+        name: 'dj',
+        label: 'DJ',
+        requiredDocuments: ['portfolio'],
+        description: 'Disc Jockey'
+      },
+      {
+        name: 'mc',
+        label: 'MC/Apresentador',
         requiredDocuments: [],
-        description: 'Controle de entrada e saída'
+        description: 'Mestre de cerimônias'
       },
       {
-        name: 'porteiro',
-        label: 'Porteiro',
-        requiredDocuments: [],
-        description: 'Portaria e recepção de acessos'
+        name: 'musico',
+        label: 'Músico',
+        requiredDocuments: ['portfolio'],
+        description: 'Performance musical'
       },
       {
-        name: 'seguranca_pessoal',
-        label: 'Segurança Pessoal',
-        requiredDocuments: ['cnv'],
-        description: 'Proteção de pessoas VIP'
+        name: 'performer',
+        label: 'Performer',
+        requiredDocuments: ['portfolio'],
+        description: 'Performance artística'
       }
     ]
   },
 
   // ===========================
-  // 3. RECEPÇÃO E CREDENCIAMENTO
+  // 3. APOIO OPERACIONAL
   // ===========================
   {
-    name: 'Recepção e Credenciamento',
-    label: 'Recepção e Credenciamento',
+    name: 'Apoio Operacional',
+    label: 'Apoio Operacional',
     subcategories: [
       {
-        name: 'recepcionista',
-        label: 'Recepcionista',
+        name: 'fiscal_sala',
+        label: 'Fiscal de Sala',
         requiredDocuments: [],
-        description: 'Recepção e atendimento'
+        description: 'Organização de salas'
       },
       {
-        name: 'credenciador',
-        label: 'Credenciador',
+        name: 'orientador',
+        label: 'Orientador(a)',
         requiredDocuments: [],
-        description: 'Credenciamento de participantes'
+        description: 'Orientação de público'
       },
       {
-        name: 'hostess',
-        label: 'Hostess/Host',
+        name: 'runner',
+        label: 'Runner',
         requiredDocuments: [],
-        description: 'Recepção e orientação de convidados'
+        description: 'Execução rápida de tarefas'
       },
       {
-        name: 'concierge',
-        label: 'Concierge',
+        name: 'staff_geral',
+        label: 'Staff Geral',
         requiredDocuments: [],
-        description: 'Atendimento VIP e informações'
+        description: 'Apoio operacional geral'
       }
     ]
   },
 
   // ===========================
-  // 4. MONTAGEM E DESMONTAGEM
+  // 4. DECORAÇÃO E AMBIENTAÇÃO
   // ===========================
   {
-    name: 'Montagem e Desmontagem',
-    label: 'Montagem e Desmontagem',
+    name: 'Decoração',
+    label: 'Decoração e Ambientação',
     subcategories: [
       {
-        name: 'montador',
-        label: 'Montador',
+        name: 'decorador',
+        label: 'Decorador(a)',
         requiredDocuments: [],
-        description: 'Montagem de estruturas'
+        description: 'Decoração de ambientes'
       },
       {
-        name: 'montador_nr35',
-        label: 'Montador (NR35)',
-        requiredDocuments: ['nr35'],
-        description: 'Montador com trabalho em altura'
+        name: 'florista',
+        label: 'Florista',
+        requiredDocuments: [],
+        description: 'Arranjos florais'
       },
       {
-        name: 'carpinteiro',
-        label: 'Carpinteiro',
+        name: 'montador_decoracao',
+        label: 'Montador de Decoração',
         requiredDocuments: [],
-        description: 'Serviços de carpintaria'
-      },
-      {
-        name: 'ajudante_geral',
-        label: 'Ajudante Geral',
-        requiredDocuments: [],
-        description: 'Apoio geral em montagem'
+        description: 'Montagem de decoração'
       }
     ]
   },
 
   // ===========================
-  // 5. TÉCNICOS AUDIOVISUAIS
+  // 5. ELETRICIDADE E ENERGIA
   // ===========================
   {
-    name: 'Técnicos Audiovisuais',
-    label: 'Técnicos Audiovisuais',
+    name: 'Eletricidade',
+    label: 'Eletricidade e Energia',
     subcategories: [
       {
-        name: 'tec_som',
-        label: 'Técnico de Som',
-        requiredDocuments: ['drt'],
-        description: 'Operação de equipamentos de áudio'
-      },
-      {
-        name: 'tec_iluminacao',
-        label: 'Técnico de Iluminação',
-        requiredDocuments: ['drt'],
-        description: 'Operação de equipamentos de iluminação'
-      },
-      {
-        name: 'tec_video',
-        label: 'Técnico de Vídeo',
-        requiredDocuments: ['drt'],
-        description: 'Operação de câmeras e vídeo'
-      },
-      {
-        name: 'operador_projetor',
-        label: 'Operador de Projetor',
+        name: 'eletricista',
+        label: 'Eletricista',
         requiredDocuments: [],
-        description: 'Operação de projetores'
+        description: 'Instalações elétricas'
       },
       {
-        name: 'streaming_operator',
-        label: 'Operador de Streaming',
+        name: 'eletricista_nr10',
+        label: 'Eletricista (NR10)',
+        requiredDocuments: ['nr10'],
+        description: 'Trabalho em alta tensão'
+      },
+      {
+        name: 'gerador_operador',
+        label: 'Operador de Gerador',
         requiredDocuments: [],
-        description: 'Transmissão online de eventos'
+        description: 'Operação de geradores'
       }
     ]
   },
@@ -225,12 +220,6 @@ export const CATEGORIES_WITH_SUBCATEGORIES: CategoryConfig[] = [
         description: 'Fotografia profissional'
       },
       {
-        name: 'videomaker',
-        label: 'Videomaker',
-        requiredDocuments: ['portfolio'],
-        description: 'Captação e edição de vídeo'
-      },
-      {
         name: 'camera_operator',
         label: 'Operador de Câmera',
         requiredDocuments: [],
@@ -241,12 +230,130 @@ export const CATEGORIES_WITH_SUBCATEGORIES: CategoryConfig[] = [
         label: 'Piloto de Drone',
         requiredDocuments: ['certificado_anac'],
         description: 'Filmagem aérea com drone'
+      },
+      {
+        name: 'videomaker',
+        label: 'Videomaker',
+        requiredDocuments: ['portfolio'],
+        description: 'Captação e edição de vídeo'
       }
     ]
   },
 
   // ===========================
-  // 7. PALCO E CENOGRAFIA
+  // 7. GESTÃO DE RESÍDUOS
+  // ===========================
+  {
+    name: 'Gestão de Resíduos',
+    label: 'Gestão de Resíduos',
+    subcategories: [
+      {
+        name: 'coletor_residuos',
+        label: 'Coletor de Resíduos',
+        requiredDocuments: [],
+        description: 'Coleta de lixo e reciclagem'
+      },
+      {
+        name: 'supervisor_ambiental',
+        label: 'Supervisor Ambiental',
+        requiredDocuments: [],
+        description: 'Supervisão de gestão ambiental'
+      }
+    ]
+  },
+
+  // ===========================
+  // 8. INFORMÁTICA E TI
+  // ===========================
+  {
+    name: 'TI',
+    label: 'Informática e TI',
+    subcategories: [
+      {
+        name: 'operador_sistemas',
+        label: 'Operador de Sistemas',
+        requiredDocuments: [],
+        description: 'Operação de sistemas'
+      },
+      {
+        name: 'suporte_ti',
+        label: 'Suporte de TI',
+        requiredDocuments: [],
+        description: 'Suporte técnico de informática'
+      },
+      {
+        name: 'tecnico_informatica',
+        label: 'Técnico de Informática',
+        requiredDocuments: [],
+        description: 'Manutenção de equipamentos'
+      }
+    ]
+  },
+
+  // ===========================
+  // 9. LIMPEZA E CONSERVAÇÃO
+  // ===========================
+  {
+    name: 'Limpeza',
+    label: 'Limpeza e Conservação',
+    subcategories: [
+      {
+        name: 'auxiliar_limpeza',
+        label: 'Auxiliar de Limpeza',
+        requiredDocuments: [],
+        description: 'Limpeza geral'
+      },
+      {
+        name: 'gari',
+        label: 'Gari',
+        requiredDocuments: [],
+        description: 'Limpeza de áreas externas'
+      },
+      {
+        name: 'supervisor_limpeza',
+        label: 'Supervisor de Limpeza',
+        requiredDocuments: [],
+        description: 'Supervisão de equipe de limpeza'
+      }
+    ]
+  },
+
+  // ===========================
+  // 10. MONTAGEM E DESMONTAGEM
+  // ===========================
+  {
+    name: 'Montagem e Desmontagem',
+    label: 'Montagem e Desmontagem',
+    subcategories: [
+      {
+        name: 'ajudante_geral',
+        label: 'Ajudante Geral',
+        requiredDocuments: [],
+        description: 'Apoio geral em montagem'
+      },
+      {
+        name: 'carpinteiro',
+        label: 'Carpinteiro',
+        requiredDocuments: [],
+        description: 'Serviços de carpintaria'
+      },
+      {
+        name: 'montador',
+        label: 'Montador',
+        requiredDocuments: [],
+        description: 'Montagem de estruturas'
+      },
+      {
+        name: 'montador_nr35',
+        label: 'Montador (NR35)',
+        requiredDocuments: ['nr35'],
+        description: 'Montador com trabalho em altura'
+      }
+    ]
+  },
+
+  // ===========================
+  // 11. PALCO E CENOGRAFIA
   // ===========================
   {
     name: 'Palco e Cenografia',
@@ -280,86 +387,274 @@ export const CATEGORIES_WITH_SUBCATEGORIES: CategoryConfig[] = [
   },
 
   // ===========================
-  // 8. ALIMENTAÇÃO E BEBIDAS
+  // 12. PRODUÇÃO E COORDENAÇÃO
   // ===========================
   {
-    name: 'Alimentação e Bebidas',
-    label: 'Alimentação e Bebidas',
+    name: 'Produção e Coordenação',
+    label: 'Produção e Coordenação',
     subcategories: [
       {
-        name: 'chef',
-        label: 'Chef de Cozinha',
-        requiredDocuments: ['portfolio'],
-        description: 'Responsável pela cozinha'
+        name: 'assistente_producao',
+        label: 'Assistente de Produção',
+        requiredDocuments: [],
+        description: 'Apoio à produção'
       },
       {
-        name: 'cozinheiro',
-        label: 'Cozinheiro(a)',
+        name: 'coordenador_evento',
+        label: 'Coordenador de Evento',
         requiredDocuments: [],
-        description: 'Preparo de alimentos'
+        description: 'Coordenação operacional do evento'
       },
       {
-        name: 'auxiliar_cozinha',
-        label: 'Auxiliar de Cozinha',
+        name: 'produtor_executivo',
+        label: 'Produtor Executivo',
         requiredDocuments: [],
-        description: 'Apoio na cozinha'
+        description: 'Coordenação geral do evento'
       },
       {
-        name: 'garcom',
-        label: 'Garçom/Garçonete',
+        name: 'supervisor_operacional',
+        label: 'Supervisor Operacional',
         requiredDocuments: [],
-        description: 'Serviço de mesa'
-      },
-      {
-        name: 'barman',
-        label: 'Barman/Bartender',
-        requiredDocuments: [],
-        description: 'Preparo de bebidas'
-      },
-      {
-        name: 'copeiro',
-        label: 'Copeiro(a)',
-        requiredDocuments: [],
-        description: 'Serviços de copa'
+        description: 'Supervisão de equipes operacionais'
       }
     ]
   },
 
   // ===========================
-  // 9. LIMPEZA E CONSERVAÇÃO
+  // 13. PROMOTORES E DEMONSTRADORES
   // ===========================
   {
-    name: 'Limpeza',
-    label: 'Limpeza e Conservação',
+    name: 'Promotores',
+    label: 'Promotores e Demonstradores',
     subcategories: [
       {
-        name: 'supervisor_limpeza',
-        label: 'Supervisor de Limpeza',
+        name: 'demonstrador',
+        label: 'Demonstrador(a)',
         requiredDocuments: [],
-        description: 'Supervisão de equipe de limpeza'
+        description: 'Demonstração de produtos'
       },
       {
-        name: 'auxiliar_limpeza',
-        label: 'Auxiliar de Limpeza',
+        name: 'panfleteiro',
+        label: 'Panfleteiro(a)',
         requiredDocuments: [],
-        description: 'Limpeza geral'
+        description: 'Distribuição de material'
       },
       {
-        name: 'gari',
-        label: 'Gari',
+        name: 'promotor_vendas',
+        label: 'Promotor(a) de Vendas',
         requiredDocuments: [],
-        description: 'Limpeza de áreas externas'
+        description: 'Promoção de produtos'
+      },
+      {
+        name: 'repositor',
+        label: 'Repositor(a)',
+        requiredDocuments: [],
+        description: 'Reposição de produtos'
       }
     ]
   },
 
   // ===========================
-  // 10. TRANSPORTE E LOGÍSTICA
+  // 14. RECEPÇÃO E CREDENCIAMENTO
+  // ===========================
+  {
+    name: 'Recepção e Credenciamento',
+    label: 'Recepção e Credenciamento',
+    subcategories: [
+      {
+        name: 'concierge',
+        label: 'Concierge',
+        requiredDocuments: [],
+        description: 'Atendimento VIP e informações'
+      },
+      {
+        name: 'credenciador',
+        label: 'Credenciador',
+        requiredDocuments: [],
+        description: 'Credenciamento de participantes'
+      },
+      {
+        name: 'hostess',
+        label: 'Hostess/Host',
+        requiredDocuments: [],
+        description: 'Recepção e orientação de convidados'
+      },
+      {
+        name: 'recepcionista',
+        label: 'Recepcionista',
+        requiredDocuments: [],
+        description: 'Recepção e atendimento'
+      }
+    ]
+  },
+
+  // ===========================
+  // 15. SAÚDE E SEGURANÇA DO TRABALHO
+  // ===========================
+  {
+    name: 'Saúde',
+    label: 'Saúde e Segurança do Trabalho',
+    subcategories: [
+      {
+        name: 'brigadista',
+        label: 'Brigadista',
+        requiredDocuments: ['nr23'],
+        description: 'Brigada de incêndio'
+      },
+      {
+        name: 'enfermeiro',
+        label: 'Enfermeiro(a)',
+        requiredDocuments: ['coren'],
+        description: 'Atendimento de enfermagem'
+      },
+      {
+        name: 'medico',
+        label: 'Médico(a)',
+        requiredDocuments: ['crm'],
+        description: 'Atendimento médico'
+      },
+      {
+        name: 'socorrista',
+        label: 'Socorrista',
+        requiredDocuments: ['curso_primeiros_socorros'],
+        description: 'Primeiros socorros'
+      },
+      {
+        name: 'tecnico_enfermagem',
+        label: 'Técnico de Enfermagem',
+        requiredDocuments: ['coren'],
+        description: 'Suporte de enfermagem'
+      }
+    ]
+  },
+
+  // ===========================
+  // 16. SEGURANÇA E CONTROLE DE ACESSO
+  // ===========================
+  {
+    name: 'Segurança',
+    label: 'Segurança e Controle de Acesso',
+    subcategories: [
+      {
+        name: 'controlador_acesso',
+        label: 'Controlador de Acesso',
+        requiredDocuments: [],
+        description: 'Controle de entrada e saída'
+      },
+      {
+        name: 'porteiro',
+        label: 'Porteiro',
+        requiredDocuments: [],
+        description: 'Portaria e recepção de acessos'
+      },
+      {
+        name: 'seguranca_patrimonial',
+        label: 'Segurança Patrimonial',
+        requiredDocuments: [],
+        description: 'Segurança desarmado'
+      },
+      {
+        name: 'seguranca_pessoal',
+        label: 'Segurança Pessoal',
+        requiredDocuments: ['cnv'],
+        description: 'Proteção de pessoas VIP'
+      },
+      {
+        name: 'vigilante',
+        label: 'Vigilante',
+        requiredDocuments: ['cnv'],
+        description: 'Vigilante com CNV (Carteira Nacional de Vigilante)'
+      }
+    ]
+  },
+
+  // ===========================
+  // 17. TÉCNICOS AUDIOVISUAIS
+  // ===========================
+  {
+    name: 'Técnicos Audiovisuais',
+    label: 'Técnicos Audiovisuais',
+    subcategories: [
+      {
+        name: 'operador_projetor',
+        label: 'Operador de Projetor',
+        requiredDocuments: [],
+        description: 'Operação de projetores'
+      },
+      {
+        name: 'streaming_operator',
+        label: 'Operador de Streaming',
+        requiredDocuments: [],
+        description: 'Transmissão online de eventos'
+      },
+      {
+        name: 'tec_iluminacao',
+        label: 'Técnico de Iluminação',
+        requiredDocuments: ['drt'],
+        description: 'Operação de equipamentos de iluminação'
+      },
+      {
+        name: 'tec_som',
+        label: 'Técnico de Som',
+        requiredDocuments: ['drt'],
+        description: 'Operação de equipamentos de áudio'
+      },
+      {
+        name: 'tec_video',
+        label: 'Técnico de Vídeo',
+        requiredDocuments: ['drt'],
+        description: 'Operação de câmeras e vídeo'
+      }
+    ]
+  },
+
+  // ===========================
+  // 18. TRADUÇÃO E INTERPRETAÇÃO
+  // ===========================
+  {
+    name: 'Tradução',
+    label: 'Tradução e Interpretação',
+    subcategories: [
+      {
+        name: 'interprete_libras',
+        label: 'Intérprete de LIBRAS',
+        requiredDocuments: ['certificado_libras'],
+        description: 'Tradução para língua de sinais'
+      },
+      {
+        name: 'interprete_simultaneo',
+        label: 'Intérprete Simultâneo',
+        requiredDocuments: ['certificado_traducao'],
+        description: 'Tradução simultânea'
+      },
+      {
+        name: 'tradutor',
+        label: 'Tradutor',
+        requiredDocuments: [],
+        description: 'Tradução de textos'
+      }
+    ]
+  },
+
+  // ===========================
+  // 19. TRANSPORTE E LOGÍSTICA
   // ===========================
   {
     name: 'Transporte e Logística',
     label: 'Transporte e Logística',
     subcategories: [
+      {
+        name: 'auxiliar_logistica',
+        label: 'Auxiliar de Logística',
+        requiredDocuments: [],
+        description: 'Apoio logístico'
+      },
+      {
+        name: 'manobrista',
+        label: 'Manobrista',
+        requiredDocuments: ['cnh'],
+        description: 'Serviço de valet'
+      },
       {
         name: 'motorista_cat_b',
         label: 'Motorista (Cat. B)',
@@ -379,299 +674,21 @@ export const CATEGORIES_WITH_SUBCATEGORIES: CategoryConfig[] = [
         description: 'Caminhões e carretas'
       },
       {
-        name: 'manobrista',
-        label: 'Manobrista',
-        requiredDocuments: ['cnh'],
-        description: 'Serviço de valet'
-      },
-      {
         name: 'operador_empilhadeira',
         label: 'Operador de Empilhadeira',
         requiredDocuments: ['cnh', 'curso_empilhadeira'],
         description: 'Operação de empilhadeira'
-      },
-      {
-        name: 'auxiliar_logistica',
-        label: 'Auxiliar de Logística',
-        requiredDocuments: [],
-        description: 'Apoio logístico'
       }
     ]
   },
 
   // ===========================
-  // 11. SAÚDE E SEGURANÇA DO TRABALHO
-  // ===========================
-  {
-    name: 'Saúde',
-    label: 'Saúde e Segurança do Trabalho',
-    subcategories: [
-      {
-        name: 'enfermeiro',
-        label: 'Enfermeiro(a)',
-        requiredDocuments: ['coren'],
-        description: 'Atendimento de enfermagem'
-      },
-      {
-        name: 'tecnico_enfermagem',
-        label: 'Técnico de Enfermagem',
-        requiredDocuments: ['coren'],
-        description: 'Suporte de enfermagem'
-      },
-      {
-        name: 'socorrista',
-        label: 'Socorrista',
-        requiredDocuments: ['curso_primeiros_socorros'],
-        description: 'Primeiros socorros'
-      },
-      {
-        name: 'brigadista',
-        label: 'Brigadista',
-        requiredDocuments: ['nr23'],
-        description: 'Brigada de incêndio'
-      },
-      {
-        name: 'medico',
-        label: 'Médico(a)',
-        requiredDocuments: ['crm'],
-        description: 'Atendimento médico'
-      }
-    ]
-  },
-
-  // ===========================
-  // 12. ELETRICIDADE E ENERGIA
-  // ===========================
-  {
-    name: 'Eletricidade',
-    label: 'Eletricidade e Energia',
-    subcategories: [
-      {
-        name: 'eletricista_nr10',
-        label: 'Eletricista (NR10)',
-        requiredDocuments: ['nr10'],
-        description: 'Trabalho em alta tensão'
-      },
-      {
-        name: 'eletricista',
-        label: 'Eletricista',
-        requiredDocuments: [],
-        description: 'Instalações elétricas'
-      },
-      {
-        name: 'gerador_operador',
-        label: 'Operador de Gerador',
-        requiredDocuments: [],
-        description: 'Operação de geradores'
-      }
-    ]
-  },
-
-  // ===========================
-  // 13. TRADUÇÃO E INTERPRETAÇÃO
-  // ===========================
-  {
-    name: 'Tradução',
-    label: 'Tradução e Interpretação',
-    subcategories: [
-      {
-        name: 'interprete_simultaneo',
-        label: 'Intérprete Simultâneo',
-        requiredDocuments: ['certificado_traducao'],
-        description: 'Tradução simultânea'
-      },
-      {
-        name: 'interprete_libras',
-        label: 'Intérprete de LIBRAS',
-        requiredDocuments: ['certificado_libras'],
-        description: 'Tradução para língua de sinais'
-      },
-      {
-        name: 'tradutor',
-        label: 'Tradutor',
-        requiredDocuments: [],
-        description: 'Tradução de textos'
-      }
-    ]
-  },
-
-  // ===========================
-  // 14. PROMOTORES E DEMONSTRADORES
-  // ===========================
-  {
-    name: 'Promotores',
-    label: 'Promotores e Demonstradores',
-    subcategories: [
-      {
-        name: 'promotor_vendas',
-        label: 'Promotor(a) de Vendas',
-        requiredDocuments: [],
-        description: 'Promoção de produtos'
-      },
-      {
-        name: 'demonstrador',
-        label: 'Demonstrador(a)',
-        requiredDocuments: [],
-        description: 'Demonstração de produtos'
-      },
-      {
-        name: 'panfleteiro',
-        label: 'Panfleteiro(a)',
-        requiredDocuments: [],
-        description: 'Distribuição de material'
-      },
-      {
-        name: 'repositor',
-        label: 'Repositor(a)',
-        requiredDocuments: [],
-        description: 'Reposição de produtos'
-      }
-    ]
-  },
-
-  // ===========================
-  // 15. ANIMAÇÃO E ENTRETENIMENTO
-  // ===========================
-  {
-    name: 'Entretenimento',
-    label: 'Animação e Entretenimento',
-    subcategories: [
-      {
-        name: 'animador',
-        label: 'Animador(a)',
-        requiredDocuments: [],
-        description: 'Animação de eventos'
-      },
-      {
-        name: 'mc',
-        label: 'MC/Apresentador',
-        requiredDocuments: [],
-        description: 'Mestre de cerimônias'
-      },
-      {
-        name: 'dj',
-        label: 'DJ',
-        requiredDocuments: ['portfolio'],
-        description: 'Disc Jockey'
-      },
-      {
-        name: 'musico',
-        label: 'Músico',
-        requiredDocuments: ['portfolio'],
-        description: 'Performance musical'
-      },
-      {
-        name: 'performer',
-        label: 'Performer',
-        requiredDocuments: ['portfolio'],
-        description: 'Performance artística'
-      }
-    ]
-  },
-
-  // ===========================
-  // 16. INFORMÁTICA E TI
-  // ===========================
-  {
-    name: 'TI',
-    label: 'Informática e TI',
-    subcategories: [
-      {
-        name: 'suporte_ti',
-        label: 'Suporte de TI',
-        requiredDocuments: [],
-        description: 'Suporte técnico de informática'
-      },
-      {
-        name: 'tecnico_informatica',
-        label: 'Técnico de Informática',
-        requiredDocuments: [],
-        description: 'Manutenção de equipamentos'
-      },
-      {
-        name: 'operador_sistemas',
-        label: 'Operador de Sistemas',
-        requiredDocuments: [],
-        description: 'Operação de sistemas'
-      }
-    ]
-  },
-
-  // ===========================
-  // 17. DECORAÇÃO E AMBIENTAÇÃO
-  // ===========================
-  {
-    name: 'Decoração',
-    label: 'Decoração e Ambientação',
-    subcategories: [
-      {
-        name: 'decorador',
-        label: 'Decorador(a)',
-        requiredDocuments: [],
-        description: 'Decoração de ambientes'
-      },
-      {
-        name: 'florista',
-        label: 'Florista',
-        requiredDocuments: [],
-        description: 'Arranjos florais'
-      },
-      {
-        name: 'montador_decoracao',
-        label: 'Montador de Decoração',
-        requiredDocuments: [],
-        description: 'Montagem de decoração'
-      }
-    ]
-  },
-
-  // ===========================
-  // 18. APOIO OPERACIONAL
-  // ===========================
-  {
-    name: 'Apoio Operacional',
-    label: 'Apoio Operacional',
-    subcategories: [
-      {
-        name: 'runner',
-        label: 'Runner',
-        requiredDocuments: [],
-        description: 'Execução rápida de tarefas'
-      },
-      {
-        name: 'staff_geral',
-        label: 'Staff Geral',
-        requiredDocuments: [],
-        description: 'Apoio operacional geral'
-      },
-      {
-        name: 'fiscal_sala',
-        label: 'Fiscal de Sala',
-        requiredDocuments: [],
-        description: 'Organização de salas'
-      },
-      {
-        name: 'orientador',
-        label: 'Orientador(a)',
-        requiredDocuments: [],
-        description: 'Orientação de público'
-      }
-    ]
-  },
-
-  // ===========================
-  // 19. VENDAS E BILHETERIA
+  // 20. VENDAS E BILHETERIA
   // ===========================
   {
     name: 'Vendas',
     label: 'Vendas e Bilheteria',
     subcategories: [
-      {
-        name: 'operador_caixa',
-        label: 'Operador(a) de Caixa',
-        requiredDocuments: [],
-        description: 'Operação de caixa'
-      },
       {
         name: 'bilheteiro',
         label: 'Bilheteiro(a)',
@@ -679,32 +696,16 @@ export const CATEGORIES_WITH_SUBCATEGORIES: CategoryConfig[] = [
         description: 'Venda de ingressos'
       },
       {
+        name: 'operador_caixa',
+        label: 'Operador(a) de Caixa',
+        requiredDocuments: [],
+        description: 'Operação de caixa'
+      },
+      {
         name: 'vendedor',
         label: 'Vendedor(a)',
         requiredDocuments: [],
         description: 'Vendas em geral'
-      }
-    ]
-  },
-
-  // ===========================
-  // 20. GESTÃO DE RESÍDUOS
-  // ===========================
-  {
-    name: 'Gestão de Resíduos',
-    label: 'Gestão de Resíduos',
-    subcategories: [
-      {
-        name: 'coletor_residuos',
-        label: 'Coletor de Resíduos',
-        requiredDocuments: [],
-        description: 'Coleta de lixo e reciclagem'
-      },
-      {
-        name: 'supervisor_ambiental',
-        label: 'Supervisor Ambiental',
-        requiredDocuments: [],
-        description: 'Supervisão de gestão ambiental'
       }
     ]
   }

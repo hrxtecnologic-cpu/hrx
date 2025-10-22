@@ -1,8 +1,8 @@
 # ✅ TASKLIST COMPLETA - HRX Platform
 
 > **Última Atualização:** 2025-10-22
-> **Total de Tarefas:** 25
-> **Progresso Geral:** 18/25 (72%)
+> **Total de Tarefas:** 26
+> **Progresso Geral:** 18/26 (69.2%)
 
 ---
 
@@ -12,11 +12,11 @@
 |-----------|------------|-------------|---------|
 | 🔥 **URGENTE** (Bloqueando trabalho) | 3 tarefas | 3-4 dias | ✅ 100% |
 | 🔴 **CRÍTICO** (Bugs em produção) | 3 tarefas | 4 horas | ✅ 100% |
-| 🟡 **ALTO** (Dívida técnica grave) | 7 tarefas | 4-5 dias | ✅ 100% |
+| 🟡 **ALTO** (Dívida técnica grave) | 8 tarefas | 5-6 dias | ████████░░ 87.5% |
 | 🟢 **MÉDIO** (Melhorias importantes) | 8 tarefas | 2 semanas | ██████░░░░ 62.5% |
 | ⚪ **BAIXO** (Nice to have) | 4 tarefas | 1 semana | ⬜ 0% |
 
-**TOTAL ESTIMADO:** 4-5 semanas de trabalho
+**TOTAL ESTIMADO:** 4-6 semanas de trabalho
 
 ---
 
@@ -752,7 +752,151 @@ Sistema de cache genérico e reutilizável para geocoding e outras funcionalidad
 
 ---
 
-### ⬜ #19 - Mapa Interativo
+### 🟡 #19 - Sistema de Orçamentos e Cotações
+**Prioridade:** 🟡 ALTO
+**Estimativa:** 3 dias
+**Impacto:** CRÍTICO - Core business da HRX
+**Status:** 🟡 80% CONCLUÍDO (Backend + APIs completos, falta reorganização de rotas)
+
+**Descrição:**
+Sistema completo de gerenciamento de orçamentos para eventos, com integração de fornecedores e cálculo automático de margem de lucro.
+
+**Modelo de Negócio HRX:**
+- HRX atua como **intermediário/facilitador** entre clientes e fornecedores
+- Pedidos **URGENTES**: margem de lucro de **80%** sobre custo do fornecedor
+- Pedidos **NORMAIS**: margem de lucro de **35%** sobre custo do fornecedor
+- Notificação **imediata por email** ao admin quando orçamento urgente é criado
+
+**Fluxo Completo:**
+1. Cliente solicita orçamento (data, local, itens necessários)
+2. Admin cria orçamento no sistema
+3. Sistema calcula automaticamente margem (35% ou 80%)
+4. Admin seleciona fornecedores e envia solicitação com prazo
+5. Fornecedores recebem email com detalhes e respondem com preços
+6. Admin analisa cotações recebidas
+7. Admin aceita/rejeita cotações
+8. Fornecedores são notificados da decisão
+
+**Database Schema Criada:**
+- ✅ `quote_requests` - Solicitações de orçamento dos clientes
+- ✅ `quote_request_items` - Itens solicitados (equipamentos, profissionais, serviços)
+- ✅ `supplier_quotes` - Cotações recebidas dos fornecedores
+- ✅ `quote_emails` - Log de emails enviados (auditoria)
+- ✅ Trigger automático para calcular margem de lucro (35% ou 80%)
+- ✅ View `quote_requests_summary` para listagem otimizada
+
+**Arquivos Criados:**
+
+**Backend (APIs):**
+- ✅ `supabase/migrations/010_create_quote_system.sql` - Schema completo
+- ✅ `src/types/quote.ts` - Types TypeScript completos
+- ✅ `src/app/api/admin/quotes/route.ts` - GET (listar), POST (criar)
+- ✅ `src/app/api/admin/quotes/[id]/route.ts` - GET (detalhes), PATCH (atualizar), DELETE (cancelar)
+- ✅ `src/app/api/admin/quotes/[id]/send/route.ts` - POST (enviar para fornecedores)
+
+**Email Templates:**
+- ✅ `src/lib/resend/templates/QuoteRequestEmail.tsx` - Email para fornecedores
+- ✅ `src/lib/resend/templates/UrgentQuoteAdminEmail.tsx` - Notificação urgente admin (80%)
+- ✅ `src/lib/resend/templates/QuoteAcceptedEmail.tsx` - Cotação aceita
+- ✅ `src/lib/resend/templates/QuoteRejectedEmail.tsx` - Cotação rejeitada
+- ✅ `src/lib/resend/emails.tsx` - 4 funções de envio adicionadas
+
+**Frontend (Admin UI):**
+- ✅ `src/app/admin/orcamentos/page.tsx` - Listagem de orçamentos com filtros
+- ✅ `src/app/admin/orcamentos/[id]/page.tsx` - Detalhes e gestão de orçamento
+- ✅ `src/app/admin/orcamentos/novo/page.tsx` - Criar novo orçamento
+
+**Funcionalidades Implementadas:**
+
+**1. Gestão de Orçamentos:**
+- ✅ Criar orçamento com múltiplos itens
+- ✅ Informações do cliente (nome, email, telefone)
+- ✅ Detalhes do evento (data, tipo, local, descrição)
+- ✅ Marcar como URGENTE (80% lucro) ou NORMAL (35% lucro)
+- ✅ Status: draft, sent, analyzing, finalized, cancelled
+- ✅ Filtros por status e urgência
+
+**2. Gestão de Itens:**
+- ✅ Tipos: equipment, professional, service, other
+- ✅ Campos: categoria, nome, descrição, quantidade, duração em dias
+- ✅ Múltiplos itens por orçamento
+- ✅ Especificações em JSONB
+
+**3. Envio para Fornecedores:**
+- ✅ Seleção múltipla de fornecedores ativos
+- ✅ Definir prazo (deadline) para resposta
+- ✅ Email automático com todos os detalhes
+- ✅ Criação automática de `supplier_quotes` (status: pending)
+- ✅ Log de emails enviados em `quote_emails`
+- ✅ Atualização de status para 'sent' após envio
+
+**4. Automações:**
+- ✅ Cálculo automático de margem via trigger SQL
+- ✅ Email urgente ao admin quando `is_urgent = true`
+- ✅ Atualização de status de cotações
+- ✅ Rastreamento completo de emails (Resend ID, status, erro)
+
+**5. Visual Pattern:**
+- ✅ Mantido padrão zinc + vermelho em todas as páginas
+- ✅ Badges animados para orçamentos urgentes
+- ✅ Cards responsivos
+- ✅ Modais para ações
+- ✅ Filtros em SelectContent com bg-zinc-900
+
+**Checklist:**
+- [x] Migration 010 com 4 tabelas + trigger + view
+- [x] Types TypeScript completos (`src/types/quote.ts`)
+- [x] 4 templates de email React
+- [x] API GET /api/admin/quotes (listar com filtros)
+- [x] API POST /api/admin/quotes (criar com validação)
+- [x] API GET /api/admin/quotes/[id] (detalhes completos)
+- [x] API PATCH /api/admin/quotes/[id] (atualizar)
+- [x] API DELETE /api/admin/quotes/[id] (cancelar)
+- [x] API POST /api/admin/quotes/[id]/send (enviar para fornecedores)
+- [x] Página de listagem com stats e filtros
+- [x] Página de detalhes com gestão de cotações
+- [x] Página de criação com form completo
+- [ ] **PENDENTE: Reorganizar rotas no frontend**
+- [ ] **PENDENTE: Adicionar link na navbar/sidebar**
+- [ ] **PENDENTE: Testar fluxo completo end-to-end**
+
+**Decisão Pendente - Organização de Rotas:**
+
+**Opção 1:** Nova seção "Cotações" na navbar
+- `/admin/cotacoes/orcamentos` - Orçamentos dos clientes
+- `/admin/cotacoes/fornecedores` - Cadastro de fornecedores
+- Vantagem: Tudo relacionado a cotação fica junto
+
+**Opção 2:** Sub-aba dentro de Fornecedores ⭐ **RECOMENDADA**
+- `/admin/fornecedores` - Lista de fornecedores (atual)
+- `/admin/fornecedores/orcamentos` - Orçamentos enviados para fornecedores
+- Vantagem: Lógico pois orçamento **depende** de fornecedores
+- Fluxo natural: Fornecedor → Orçamento → Cotação
+
+**Opção 3:** Manter separado mas adicionar na navbar
+- `/admin/fornecedores` - Gestão de fornecedores
+- `/admin/orcamentos` - Gestão de orçamentos
+- Adicionar ambos links na sidebar/navbar
+- Vantagem: Separação clara de responsabilidades
+
+**Próximos Passos:**
+1. Decidir organização final das rotas (Opção 2 recomendada)
+2. Mover/renomear páginas conforme decisão
+3. Adicionar links na navbar/sidebar
+4. Criar página para fornecedores responderem cotações (público)
+5. Testar fluxo completo
+6. Executar migration 010 no Supabase
+7. Atualizar GitHub
+
+**Performance Esperada:**
+- 📧 Email urgente enviado em <2s após criação
+- 📊 Listagem otimizada com view materializada
+- 🔄 Bulk email para múltiplos fornecedores
+- 📝 Auditoria completa de todas ações
+
+---
+
+### ⬜ #20 - Mapa Interativo
 **Prioridade:** 🟢 MÉDIO
 **Estimativa:** 1 dia
 **Status:** ⬜ Não iniciado
@@ -762,7 +906,7 @@ Mostrar profissionais em mapa (Google Maps / Mapbox)
 
 ---
 
-### ⬜ #20 - Filtros Salvos
+### ⬜ #21 - Filtros Salvos
 **Prioridade:** 🟢 MÉDIO
 **Estimativa:** 1 dia
 **Status:** ⬜ Não iniciado
@@ -772,7 +916,7 @@ Permitir salvar buscas frequentes
 
 ---
 
-### ⬜ #21 - Export de Resultados
+### ⬜ #22 - Export de Resultados
 **Prioridade:** 🟢 MÉDIO
 **Estimativa:** 1 dia
 **Status:** ⬜ Não iniciado
@@ -784,7 +928,7 @@ Exportar resultados de busca para CSV/Excel
 
 ## ⚪ BAIXO - Nice to Have (1 semana)
 
-### ⬜ #22 - Testes Automatizados
+### ⬜ #23 - Testes Automatizados
 **Prioridade:** ⚪ BAIXO
 **Estimativa:** 3 dias
 **Status:** ⬜ Não iniciado
@@ -793,7 +937,7 @@ Exportar resultados de busca para CSV/Excel
 
 ---
 
-### ⬜ #23 - Otimização de Queries N+1
+### ⬜ #24 - Otimização de Queries N+1
 **Prioridade:** ⚪ BAIXO
 **Estimativa:** 1 dia
 **Status:** ⬜ Não iniciado
@@ -802,7 +946,7 @@ Exportar resultados de busca para CSV/Excel
 
 ---
 
-### ⬜ #24 - Migration Consolidada
+### ⬜ #25 - Migration Consolidada
 **Prioridade:** ⚪ BAIXO
 **Estimativa:** 1 dia
 **Status:** ⬜ Não iniciado
@@ -811,7 +955,7 @@ Exportar resultados de busca para CSV/Excel
 
 ---
 
-### ⬜ #25 - CI/CD com GitHub Actions
+### ⬜ #26 - CI/CD com GitHub Actions
 **Prioridade:** ⚪ BAIXO
 **Estimativa:** 1 dia
 **Status:** ⬜ Não iniciado
@@ -878,20 +1022,29 @@ Exportar resultados de busca para CSV/Excel
 ```
 🔥 URGENTE:     ██████████ 3/3 (100%)
 🔴 CRÍTICO:     ██████████ 3/3 (100%)
-🟡 ALTO:        ██████████ 7/7 (100%)
+🟡 ALTO:        ████████░░ 7/8 (87.5%)  [#19 em andamento]
 🟢 MÉDIO:       ██████░░░░ 5/8 (62.5%)
 ⚪ BAIXO:       ░░░░░░░░░░ 0/4 (0%)
 
-TOTAL:          ███████░░░ 18/25 (72%)
+TOTAL:          ███████░░░ 18/26 (69.2%)
 ```
 
 ---
 
-## 🚀 COMEÇAR AGORA
+## 🚀 PRÓXIMA TAREFA
 
-**Primeira tarefa:** #1 - Sistema de Busca Avançada
+**Tarefa Atual:** #19 - Sistema de Orçamentos e Cotações (80% concluído)
 
-**Motivo:** É o que você mais precisa para trabalhar agora!
+**Faltando:**
+1. Decidir organização de rotas (Opção 2 recomendada)
+2. Mover páginas para estrutura final
+3. Adicionar links na navbar/sidebar
+4. Criar página pública para fornecedores responderem
+5. Testar fluxo end-to-end
+6. Executar migration 010 no Supabase
+7. Atualizar GitHub
+
+**Motivo:** Core business da HRX - sistema de intermediação e margens de lucro!
 
 ---
 
