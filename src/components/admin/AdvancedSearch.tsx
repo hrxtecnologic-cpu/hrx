@@ -30,6 +30,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { useAdvancedSearch, SearchFilters } from '@/hooks/useAdvancedSearch';
 import { RADIUS_PRESETS, formatDistance } from '@/lib/geo-utils';
+import { getAllCategoryNames } from '@/lib/categories-subcategories';
 import { cn } from '@/lib/utils';
 
 // =====================================================
@@ -54,22 +55,8 @@ const STATUS_OPTIONS = [
   { value: 'incomplete', label: 'Incompleto', color: 'bg-gray-500' },
 ] as const;
 
-// Category options (você pode mover isso para um arquivo de configuração)
-const CATEGORY_OPTIONS = [
-  'Motorista',
-  'Técnico de Iluminação',
-  'Técnico de Som',
-  'Técnico de Palco',
-  'Operador de Empilhadeira',
-  'Rigger',
-  'Eletricista',
-  'Segurança',
-  'Produtor',
-  'Assistente de Produção',
-  'Runner',
-  'Montador',
-  'Técnico de Vídeo',
-] as const;
+// Category options - importadas do sistema completo
+const CATEGORY_OPTIONS = getAllCategoryNames();
 
 // Brazilian states
 const STATES = [

@@ -6,9 +6,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { professionalSchema, type ProfessionalFormData, CATEGORIES } from '@/lib/validations/professional';
-import { validateDocumentsForCategories, formatDocumentValidationErrorList } from '@/lib/validations/documents';
 import { formatCPF, formatPhone, formatCEP, fetchAddressByCEP } from '@/lib/format';
-import { uploadDocument, uploadPortfolioPhotos, type DocumentType } from '@/lib/supabase/storage';
+import { uploadDocument, uploadPortfolioPhotos } from '@/lib/supabase/storage';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,10 +21,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { DocumentUpload } from '@/components/DocumentUpload';
 import { PortfolioUpload } from '@/components/PortfolioUpload';
+import { CategorySubcategorySelector } from '@/components/CategorySubcategorySelector';
 import { AlertCircle, XCircle } from 'lucide-react';
 import { Professional, DocumentValidations, DocumentValidation } from '@/types';
+import type { Subcategories, Certifications, Certification } from '@/types/certification';
 
 export default function CadastroProfissionalPage() {
   const router = useRouter();
@@ -39,13 +39,9 @@ export default function CadastroProfissionalPage() {
   const [documentValidations, setDocumentValidations] = useState<DocumentValidations>({});
   const [isLoadingData, setIsLoadingData] = useState(true);
 
-  // Campos específicos de documentos
-  const [cnhNumber, setCnhNumber] = useState('');
-  const [cnhValidity, setCnhValidity] = useState('');
-  const [cnvValidity, setCnvValidity] = useState('');
-  const [nr10Validity, setNr10Validity] = useState('');
-  const [nr35Validity, setNr35Validity] = useState('');
-  const [drtValidity, setDrtValidity] = useState('');
+  // Sistema de subcategorias e certificações
+  const [subcategories, setSubcategories] = useState<Subcategories>({});
+  const [certifications, setCertifications] = useState<Certifications>({});
 
   const {
     register,
@@ -75,8 +71,6 @@ export default function CadastroProfissionalPage() {
   const availability = watch('availability');
   const acceptsTerms = watch('acceptsTerms');
   const acceptsNotifications = watch('acceptsNotifications');
-  const isMotorista = selectedCategories.includes('Motorista' as any);
-  const isSeguranca = selectedCategories.includes('Segurança' as any);
 
   // Carregar dados existentes se profissional já cadastrado
   useEffect(() => {
@@ -134,13 +128,13 @@ export default function CadastroProfissionalPage() {
             setPortfolioUrls(data.portfolio);
           }
 
-          // Carregar campos de validades
-          setCnhNumber(data.cnh_number || '');
-          setCnhValidity(data.cnh_validity || '');
-          setCnvValidity(data.cnv_validity || '');
-          setNr10Validity(data.nr10_validity || '');
-          setNr35Validity(data.nr35_validity || '');
-          setDrtValidity(data.drt_validity || '');
+          // Carregar subcategorias e certificações
+          if (data.subcategories) {
+            setSubcategories(data.subcategories);
+          }
+          if (data.certifications) {
+            setCertifications(data.certifications);
+          }
 
           // Buscar validações de documentos
           if (data.id) {
@@ -178,7 +172,7 @@ export default function CadastroProfissionalPage() {
     }
   }
 
-  // Toggle categoria
+  // Toggle categoria (DEPRECATED - mantido para compatibilidade)
   function toggleCategory(category: string) {
     const current = selectedCategories;
     if (current.includes(category as any)) {
@@ -191,24 +185,56 @@ export default function CadastroProfissionalPage() {
     }
   }
 
-  // Upload de documento individual
-  async function handleDocumentUpload(file: File, documentType: DocumentType) {
-    if (!user?.id) return;
+  // Handler para mudança de subcategorias
+  const handleSubcategoriesChange = (newSubcategories: Subcategories) => {
+    setSubcategories(newSubcategories);
 
-    console.log(`🔼 [UPLOAD] Fazendo upload de: ${documentType}`);
-    const { url, error } = await uploadDocument(file, user.id, documentType);
+    // Atualizar também as categorias principais (para compatibilidade)
+    const categories = Object.keys(newSubcategories).filter(
+      (key) => newSubcategories[key].length > 0
+    );
+    setValue('categories', categories);
+  };
 
-    if (error) {
-      alert(error);
-      return;
+  // Handler para mudança de certificação individual
+  const handleCertificationChange = (certCode: string, cert: Partial<Certification>) => {
+    setCertifications((prev) => ({
+      ...prev,
+      [certCode]: {
+        ...prev[certCode],
+        ...cert,
+        status: cert.status || prev[certCode]?.status || 'pending',
+      },
+    }));
+  };
+
+  // Handler para upload de certificação
+  const handleCertificationUpload = async (
+    certCode: string,
+    file: File
+  ): Promise<{ url?: string; error?: string }> => {
+    if (!user?.id) {
+      return { error: 'Usuário não autenticado' };
     }
 
-    console.log(`✅ [UPLOAD] ${documentType} carregado:`, url);
-    setUploadedDocuments((prev) => ({
-      ...prev,
-      [documentType]: url,
-    }));
-  }
+    try {
+      console.log(`🔼 [UPLOAD CERT] Fazendo upload de: ${certCode}`);
+
+      // Usar a mesma função de upload de documentos
+      const { url, error } = await uploadDocument(file, user.id, certCode as any);
+
+      if (error) {
+        console.error(`❌ [UPLOAD CERT] Erro:`, error);
+        return { error };
+      }
+
+      console.log(`✅ [UPLOAD CERT] ${certCode} carregado:`, url);
+      return { url };
+    } catch (error) {
+      console.error(`❌ [UPLOAD CERT] Exceção:`, error);
+      return { error: 'Erro ao fazer upload do documento' };
+    }
+  };
 
   // Upload de fotos de portfólio
   async function handlePortfolioUpload(files: File[]) {
@@ -228,52 +254,14 @@ export default function CadastroProfissionalPage() {
     setIsSubmitting(true);
 
     try {
-      // ========== Validar Documentos ANTES de enviar ==========
-      const validityFields = {
-        cnh_validity: cnhValidity || null,
-        cnv_validity: cnvValidity || null,
-        nr10_validity: nr10Validity || null,
-        nr35_validity: nr35Validity || null,
-        drt_validity: drtValidity || null,
-      };
-
-      const documentValidation = validateDocumentsForCategories(
-        data.categories,
-        uploadedDocuments,
-        validityFields
-      );
-
-      if (!documentValidation.valid) {
-        const errorList = formatDocumentValidationErrorList(documentValidation);
-        const errorMessage = errorList.join('\n');
-
-        console.error('❌ [VALIDAÇÃO] Documentos inválidos:', {
-          errors: documentValidation.errors,
-          missingRequired: documentValidation.missingRequired,
-          missingValidity: documentValidation.missingValidity,
-        });
-
-        alert(`Documentos inválidos ou incompletos:\n\n${errorMessage}`);
-        setIsSubmitting(false);
-        return;
-      }
-
-      // Log de avisos (não bloqueia envio, mas informa o usuário)
-      if (documentValidation.warnings && documentValidation.warnings.length > 0) {
-        console.warn('⚠️ [VALIDAÇÃO] Avisos de documentos:', documentValidation.warnings);
-      }
-
       // Incluir URLs dos documentos no payload
       const payload = {
         ...data,
         documents: uploadedDocuments,
         portfolio: portfolioUrls,
-        cnh_number: isMotorista ? cnhNumber : undefined,
-        cnh_validity: cnhValidity || undefined,
-        cnv_validity: cnvValidity || undefined,
-        nr10_validity: nr10Validity || undefined,
-        nr35_validity: nr35Validity || undefined,
-        drt_validity: drtValidity || undefined,
+        // Sistema de subcategorias e certificações
+        subcategories,
+        certifications,
       };
 
       console.log('📦 [FORMULÁRIO] Enviando documentos:', uploadedDocuments);
@@ -306,17 +294,17 @@ export default function CadastroProfissionalPage() {
 
   if (isLoadingData) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-white text-center">
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+        <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
-          <p>Carregando...</p>
+          <p className="text-sm text-zinc-400">Carregando...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black py-12 px-4">
+    <div className="min-h-screen bg-zinc-950 py-12 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
@@ -393,20 +381,20 @@ export default function CadastroProfissionalPage() {
           {/* Dados Pessoais */}
           <Card className="bg-zinc-900 border-zinc-800">
             <CardHeader>
-              <CardTitle className="text-white">Dados Pessoais</CardTitle>
-              <CardDescription className="text-zinc-400">
+              <CardTitle className="text-sm font-medium text-zinc-200">Dados Pessoais</CardTitle>
+              <CardDescription className="text-xs text-zinc-400">
                 Informações básicas sobre você
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
-                <Label htmlFor="fullName" className="text-zinc-300 mb-2 block">
+                <Label htmlFor="fullName" className="text-sm font-medium text-zinc-200">
                   Nome Completo *
                 </Label>
                 <Input
                   id="fullName"
                   {...register('fullName')}
-                  className="bg-zinc-800 border-zinc-700 text-white h-11"
+                  className="bg-zinc-800 border-zinc-700 text-white mt-1.5"
                   placeholder="João da Silva"
                 />
                 {errors.fullName && (
@@ -416,7 +404,7 @@ export default function CadastroProfissionalPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <Label htmlFor="cpf" className="text-zinc-300 mb-2 block">
+                  <Label htmlFor="cpf" className="text-sm font-medium text-zinc-200">
                     CPF *
                   </Label>
                   <Input
@@ -426,7 +414,7 @@ export default function CadastroProfissionalPage() {
                       const formatted = formatCPF(e.target.value);
                       setValue('cpf', formatted);
                     }}
-                    className="bg-zinc-800 border-zinc-700 text-white h-11"
+                    className="bg-zinc-800 border-zinc-700 text-white mt-1.5"
                     placeholder="000.000.000-00"
                     maxLength={14}
                   />
@@ -436,14 +424,14 @@ export default function CadastroProfissionalPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="birthDate" className="text-zinc-300 mb-2 block">
+                  <Label htmlFor="birthDate" className="text-sm font-medium text-zinc-200">
                     Data de Nascimento *
                   </Label>
                   <Input
                     id="birthDate"
                     type="date"
                     {...register('birthDate')}
-                    className="bg-zinc-800 border-zinc-700 text-white h-11"
+                    className="bg-zinc-800 border-zinc-700 text-white mt-1.5"
                   />
                   {errors.birthDate && (
                     <p className="text-red-500 text-sm mt-2">{errors.birthDate.message}</p>
@@ -453,14 +441,14 @@ export default function CadastroProfissionalPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <Label htmlFor="email" className="text-zinc-300 mb-2 block">
+                  <Label htmlFor="email" className="text-sm font-medium text-zinc-200">
                     Email *
                   </Label>
                   <Input
                     id="email"
                     type="email"
                     {...register('email')}
-                    className="bg-zinc-800 border-zinc-700 text-white h-11"
+                    className="bg-zinc-800 border-zinc-700 text-white mt-1.5"
                     placeholder="joao@exemplo.com"
                   />
                   {errors.email && (
@@ -469,7 +457,7 @@ export default function CadastroProfissionalPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="phone" className="text-zinc-300 mb-2 block">
+                  <Label htmlFor="phone" className="text-sm font-medium text-zinc-200">
                     Telefone/WhatsApp *
                   </Label>
                   <Input
@@ -479,7 +467,7 @@ export default function CadastroProfissionalPage() {
                       const formatted = formatPhone(e.target.value);
                       setValue('phone', formatted);
                     }}
-                    className="bg-zinc-800 border-zinc-700 text-white h-11"
+                    className="bg-zinc-800 border-zinc-700 text-white mt-1.5"
                     placeholder="(00) 00000-0000"
                     maxLength={15}
                   />
@@ -494,15 +482,15 @@ export default function CadastroProfissionalPage() {
           {/* Endereço */}
           <Card className="bg-zinc-900 border-zinc-800">
             <CardHeader>
-              <CardTitle className="text-white">Endereço</CardTitle>
-              <CardDescription className="text-zinc-400">
+              <CardTitle className="text-sm font-medium text-zinc-200">Endereço</CardTitle>
+              <CardDescription className="text-xs text-zinc-400">
                 Onde você mora
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
-                  <Label htmlFor="cep" className="text-zinc-300 mb-2 block">
+                  <Label htmlFor="cep" className="text-sm font-medium text-zinc-200">
                     CEP *
                   </Label>
                   <Input
@@ -513,24 +501,24 @@ export default function CadastroProfissionalPage() {
                       setValue('cep', formatted);
                     }}
                     onBlur={(e) => handleCEPBlur(e.target.value)}
-                    className="bg-zinc-800 border-zinc-700 text-white h-11"
+                    className="bg-zinc-800 border-zinc-700 text-white mt-1.5"
                     placeholder="00000-000"
                     maxLength={9}
                   />
-                  {searchingCEP && <p className="text-zinc-500 text-sm mt-2">Buscando...</p>}
+                  {searchingCEP && <p className="text-xs text-zinc-400 mt-2">Buscando...</p>}
                   {errors.cep && (
                     <p className="text-red-500 text-sm mt-2">{errors.cep.message}</p>
                   )}
                 </div>
 
                 <div className="md:col-span-2">
-                  <Label htmlFor="street" className="text-zinc-300 mb-2 block">
+                  <Label htmlFor="street" className="text-sm font-medium text-zinc-200">
                     Rua *
                   </Label>
                   <Input
                     id="street"
                     {...register('street')}
-                    className="bg-zinc-800 border-zinc-700 text-white h-11"
+                    className="bg-zinc-800 border-zinc-700 text-white mt-1.5"
                     placeholder="Rua das Flores"
                   />
                   {errors.street && (
@@ -541,13 +529,13 @@ export default function CadastroProfissionalPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
-                  <Label htmlFor="number" className="text-zinc-300 mb-2 block">
+                  <Label htmlFor="number" className="text-sm font-medium text-zinc-200">
                     Número *
                   </Label>
                   <Input
                     id="number"
                     {...register('number')}
-                    className="bg-zinc-800 border-zinc-700 text-white h-11"
+                    className="bg-zinc-800 border-zinc-700 text-white mt-1.5"
                     placeholder="123"
                   />
                   {errors.number && (
@@ -556,13 +544,13 @@ export default function CadastroProfissionalPage() {
                 </div>
 
                 <div className="md:col-span-2">
-                  <Label htmlFor="complement" className="text-zinc-300 mb-2 block">
+                  <Label htmlFor="complement" className="text-sm font-medium text-zinc-200">
                     Complemento
                   </Label>
                   <Input
                     id="complement"
                     {...register('complement')}
-                    className="bg-zinc-800 border-zinc-700 text-white h-11"
+                    className="bg-zinc-800 border-zinc-700 text-white mt-1.5"
                     placeholder="Apto 101"
                   />
                 </div>
@@ -570,13 +558,13 @@ export default function CadastroProfissionalPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
-                  <Label htmlFor="neighborhood" className="text-zinc-300 mb-2 block">
+                  <Label htmlFor="neighborhood" className="text-sm font-medium text-zinc-200">
                     Bairro *
                   </Label>
                   <Input
                     id="neighborhood"
                     {...register('neighborhood')}
-                    className="bg-zinc-800 border-zinc-700 text-white h-11"
+                    className="bg-zinc-800 border-zinc-700 text-white mt-1.5"
                     placeholder="Centro"
                   />
                   {errors.neighborhood && (
@@ -585,13 +573,13 @@ export default function CadastroProfissionalPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="city" className="text-zinc-300 mb-2 block">
+                  <Label htmlFor="city" className="text-sm font-medium text-zinc-200">
                     Cidade *
                   </Label>
                   <Input
                     id="city"
                     {...register('city')}
-                    className="bg-zinc-800 border-zinc-700 text-white h-11"
+                    className="bg-zinc-800 border-zinc-700 text-white mt-1.5"
                     placeholder="São Paulo"
                   />
                   {errors.city && (
@@ -600,13 +588,13 @@ export default function CadastroProfissionalPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="state" className="text-zinc-300 mb-2 block">
+                  <Label htmlFor="state" className="text-sm font-medium text-zinc-200">
                     Estado *
                   </Label>
                   <Input
                     id="state"
                     {...register('state')}
-                    className="bg-zinc-800 border-zinc-700 text-white h-11"
+                    className="bg-zinc-800 border-zinc-700 text-white mt-1.5"
                     placeholder="SP"
                     maxLength={2}
                   />
@@ -618,46 +606,24 @@ export default function CadastroProfissionalPage() {
             </CardContent>
           </Card>
 
-          {/* Categorias */}
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader>
-              <CardTitle className="text-white">Categorias de Interesse</CardTitle>
-              <CardDescription className="text-zinc-400">
-                Selecione as áreas em que você deseja trabalhar
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {CATEGORIES.map((category) => (
-                  <div
-                    key={category}
-                    className="flex items-center space-x-2 p-3 bg-zinc-800/50 rounded-lg hover:bg-zinc-800 transition"
-                  >
-                    <Checkbox
-                      checked={selectedCategories.includes(category as any)}
-                      onCheckedChange={() => toggleCategory(category)}
-                      className="border-zinc-600"
-                    />
-                    <label
-                      className="text-sm text-zinc-300 cursor-pointer flex-1"
-                      onClick={() => toggleCategory(category)}
-                    >
-                      {category}
-                    </label>
-                  </div>
-                ))}
-              </div>
-              {errors.categories && (
-                <p className="text-red-500 text-sm mt-2">{errors.categories.message}</p>
-              )}
-            </CardContent>
-          </Card>
+          {/* Categorias e Subcategorias - Novo Organograma */}
+          <CategorySubcategorySelector
+            selectedSubcategories={subcategories}
+            certifications={certifications}
+            onSubcategoriesChange={handleSubcategoriesChange}
+            onCertificationChange={handleCertificationChange}
+            onCertificationUpload={handleCertificationUpload}
+            disabled={isSubmitting}
+          />
+          {errors.categories && (
+            <p className="text-red-500 text-sm mt-2 text-center">{errors.categories.message}</p>
+          )}
 
           {/* Experiência */}
           <Card className="bg-zinc-900 border-zinc-800">
             <CardHeader>
-              <CardTitle className="text-white">Experiência</CardTitle>
-              <CardDescription className="text-zinc-400">
+              <CardTitle className="text-sm font-medium text-zinc-200">Experiência</CardTitle>
+              <CardDescription className="text-xs text-zinc-400">
                 Conte sobre sua experiência profissional
               </CardDescription>
             </CardHeader>
@@ -666,9 +632,9 @@ export default function CadastroProfissionalPage() {
                 <Checkbox
                   checked={hasExperience}
                   onCheckedChange={(checked) => setValue('hasExperience', checked as boolean)}
-                  className="border-zinc-600"
+                  className="border-zinc-700 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
                 />
-                <label className="text-zinc-300 cursor-pointer">
+                <label className="text-sm text-zinc-200 cursor-pointer">
                   Tenho experiência anterior em eventos
                 </label>
               </div>
@@ -676,14 +642,14 @@ export default function CadastroProfissionalPage() {
               {hasExperience && (
                 <>
                   <div>
-                    <Label htmlFor="yearsOfExperience" className="text-zinc-300 mb-2 block">
+                    <Label htmlFor="yearsOfExperience" className="text-sm font-medium text-zinc-200">
                       Anos de experiência
                     </Label>
                     <Select onValueChange={(value) => setValue('yearsOfExperience', value as any)}>
-                      <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white h-11">
+                      <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white mt-1.5">
                         <SelectValue placeholder="Selecione" />
                       </SelectTrigger>
-                      <SelectContent className="bg-zinc-800 border-zinc-700">
+                      <SelectContent className="bg-zinc-900 border-zinc-800 text-white">
                         <SelectItem value="<1">Menos de 1 ano</SelectItem>
                         <SelectItem value="1-3">1 a 3 anos</SelectItem>
                         <SelectItem value="3-5">3 a 5 anos</SelectItem>
@@ -694,13 +660,13 @@ export default function CadastroProfissionalPage() {
                   </div>
 
                   <div>
-                    <Label htmlFor="experienceDescription" className="text-zinc-300 mb-2 block">
+                    <Label htmlFor="experienceDescription" className="text-sm font-medium text-zinc-200">
                       Descreva sua experiência *
                     </Label>
                     <Textarea
                       id="experienceDescription"
                       {...register('experienceDescription')}
-                      className="bg-zinc-800 border-zinc-700 text-white min-h-[120px]"
+                      className="bg-zinc-800 border-zinc-700 text-white min-h-[120px] mt-1.5"
                       placeholder="Conte um pouco sobre sua experiência em eventos..."
                       rows={4}
                     />
@@ -718,52 +684,52 @@ export default function CadastroProfissionalPage() {
           {/* Disponibilidade */}
           <Card className="bg-zinc-900 border-zinc-800">
             <CardHeader>
-              <CardTitle className="text-white">Disponibilidade</CardTitle>
-              <CardDescription className="text-zinc-400">
+              <CardTitle className="text-sm font-medium text-zinc-200">Disponibilidade</CardTitle>
+              <CardDescription className="text-xs text-zinc-400">
                 Quando você pode trabalhar? Selecione todas as opções que se aplicam
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center space-x-3 p-4 bg-zinc-800/50 rounded-lg hover:bg-zinc-800/70 transition">
+              <div className="space-y-3">
+                <div className="flex items-center space-x-3 p-3 bg-zinc-800/50 rounded-lg hover:bg-zinc-700/50 transition">
                   <Checkbox
                     checked={availability?.weekdays || false}
                     onCheckedChange={(checked) => setValue('availability.weekdays', checked as boolean)}
-                    className="border-zinc-600"
+                    className="border-zinc-700 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
                   />
-                  <label className="text-zinc-300 flex-1">Segunda a Sexta</label>
+                  <label className="text-sm text-zinc-200 flex-1 cursor-pointer">Segunda a Sexta</label>
                 </div>
-                <div className="flex items-center space-x-3 p-4 bg-zinc-800/50 rounded-lg hover:bg-zinc-800/70 transition">
+                <div className="flex items-center space-x-3 p-3 bg-zinc-800/50 rounded-lg hover:bg-zinc-700/50 transition">
                   <Checkbox
                     checked={availability?.weekends || false}
                     onCheckedChange={(checked) => setValue('availability.weekends', checked as boolean)}
-                    className="border-zinc-600"
+                    className="border-zinc-700 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
                   />
-                  <label className="text-zinc-300 flex-1">Finais de Semana</label>
+                  <label className="text-sm text-zinc-200 flex-1 cursor-pointer">Finais de Semana</label>
                 </div>
-                <div className="flex items-center space-x-3 p-4 bg-zinc-800/50 rounded-lg hover:bg-zinc-800/70 transition">
+                <div className="flex items-center space-x-3 p-3 bg-zinc-800/50 rounded-lg hover:bg-zinc-700/50 transition">
                   <Checkbox
                     checked={availability?.holidays || false}
                     onCheckedChange={(checked) => setValue('availability.holidays', checked as boolean)}
-                    className="border-zinc-600"
+                    className="border-zinc-700 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
                   />
-                  <label className="text-zinc-300 flex-1">Feriados</label>
+                  <label className="text-sm text-zinc-200 flex-1 cursor-pointer">Feriados</label>
                 </div>
-                <div className="flex items-center space-x-3 p-4 bg-zinc-800/50 rounded-lg hover:bg-zinc-800/70 transition">
+                <div className="flex items-center space-x-3 p-3 bg-zinc-800/50 rounded-lg hover:bg-zinc-700/50 transition">
                   <Checkbox
                     checked={availability?.night || false}
                     onCheckedChange={(checked) => setValue('availability.night', checked as boolean)}
-                    className="border-zinc-600"
+                    className="border-zinc-700 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
                   />
-                  <label className="text-zinc-300 flex-1">Período Noturno</label>
+                  <label className="text-sm text-zinc-200 flex-1 cursor-pointer">Período Noturno</label>
                 </div>
-                <div className="flex items-center space-x-3 p-4 bg-zinc-800/50 rounded-lg hover:bg-zinc-800/70 transition">
+                <div className="flex items-center space-x-3 p-3 bg-zinc-800/50 rounded-lg hover:bg-zinc-700/50 transition">
                   <Checkbox
                     checked={availability?.travel || false}
                     onCheckedChange={(checked) => setValue('availability.travel', checked as boolean)}
-                    className="border-zinc-600"
+                    className="border-zinc-700 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
                   />
-                  <label className="text-zinc-300 flex-1">Disponível para viagens</label>
+                  <label className="text-sm text-zinc-200 flex-1 cursor-pointer">Disponível para viagens</label>
                 </div>
               </div>
               {errors.availability && (
@@ -772,313 +738,33 @@ export default function CadastroProfissionalPage() {
             </CardContent>
           </Card>
 
-          {/* Documentos */}
+          {/* Portfólio */}
           <Card className="bg-zinc-900 border-zinc-800">
             <CardHeader>
-              <CardTitle className="text-white">Documentação</CardTitle>
-              <CardDescription className="text-zinc-400">
-                Envie seus documentos para validação. Documentos obrigatórios estão marcados com *
+              <CardTitle className="text-sm font-medium text-zinc-200">Portfólio</CardTitle>
+              <CardDescription className="text-xs text-zinc-400">
+                Adicione fotos dos seus trabalhos anteriores para aumentar suas chances de contratação
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-8">
-              {/* Documentos Pessoais */}
-              <div>
-                <h3 className="text-lg font-semibold text-white mb-4">Documentos Pessoais</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <DocumentUpload
-                    label="RG (Frente)"
-                    description="Foto ou PDF do RG - frente"
-                    documentType="rg_front"
-                    onUpload={(file) => handleDocumentUpload(file, 'rg_front')}
-                    currentUrl={uploadedDocuments.rg_front}
-                    required
-                  />
-                  <DocumentUpload
-                    label="RG (Verso)"
-                    description="Foto ou PDF do RG - verso"
-                    documentType="rg_back"
-                    onUpload={(file) => handleDocumentUpload(file, 'rg_back')}
-                    currentUrl={uploadedDocuments.rg_back}
-                    required
-                  />
-                  <DocumentUpload
-                    label="CPF"
-                    description="Foto ou PDF do CPF"
-                    documentType="cpf"
-                    onUpload={(file) => handleDocumentUpload(file, 'cpf')}
-                    currentUrl={uploadedDocuments.cpf}
-                    required
-                  />
-                  <DocumentUpload
-                    label="Comprovante de Residência"
-                    description="Conta de luz, água ou telefone"
-                    documentType="proof_of_address"
-                    onUpload={(file) => handleDocumentUpload(file, 'proof_of_address')}
-                    currentUrl={uploadedDocuments.proof_of_address}
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* CNH - Obrigatório para Motoristas */}
-              {isMotorista && (
-                <div className="p-6 bg-yellow-500/10 border-2 border-yellow-500/30 rounded-lg">
-                  <h3 className="text-lg font-semibold text-yellow-500 mb-2 flex items-center gap-2">
-                    <span>🚗</span>
-                    CNH - Obrigatório para Motoristas
-                  </h3>
-                  <p className="text-sm text-zinc-400 mb-6">
-                    Como você selecionou a categoria "Motorista", é obrigatório enviar o número, validade e a foto da sua CNH (Carteira Nacional de Habilitação).
-                  </p>
-
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <Label htmlFor="cnhNumber" className="text-zinc-300 mb-2 block">
-                          Número da CNH *
-                        </Label>
-                        <Input
-                          id="cnhNumber"
-                          value={cnhNumber}
-                          onChange={(e) => setCnhNumber(e.target.value)}
-                          className="bg-zinc-800 border-zinc-700 text-white h-11"
-                          placeholder="00000000000"
-                          maxLength={20}
-                          required={isMotorista}
-                        />
-                        <p className="text-xs text-zinc-500 mt-2">
-                          Digite o número da sua CNH sem espaços ou pontos
-                        </p>
-                      </div>
-
-                      <div>
-                        <Label htmlFor="cnhValidity" className="text-zinc-300 mb-2 block">
-                          Validade da CNH *
-                        </Label>
-                        <Input
-                          id="cnhValidity"
-                          type="date"
-                          value={cnhValidity}
-                          onChange={(e) => setCnhValidity(e.target.value)}
-                          className="bg-zinc-800 border-zinc-700 text-white h-11"
-                          required={isMotorista}
-                          min={new Date().toISOString().split('T')[0]}
-                        />
-                        <p className="text-xs text-zinc-500 mt-2">
-                          A CNH deve estar válida para aprovação
-                        </p>
-                      </div>
-                    </div>
-
-                    <DocumentUpload
-                      label="Foto da CNH"
-                      description="Foto ou PDF da frente da CNH"
-                      documentType="cnh_photo"
-                      onUpload={(file) => handleDocumentUpload(file, 'cnh_photo')}
-                      currentUrl={uploadedDocuments.cnh_photo}
-                      required
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* CNV - Obrigatório para Seguranças */}
-              {isSeguranca && (
-                <div className="p-6 bg-blue-500/10 border-2 border-blue-500/30 rounded-lg">
-                  <h3 className="text-lg font-semibold text-blue-500 mb-2 flex items-center gap-2">
-                    <span>🛡️</span>
-                    CNV - Obrigatório para Seguranças
-                  </h3>
-                  <p className="text-sm text-zinc-400 mb-6">
-                    Como você selecionou a categoria "Segurança", é obrigatório enviar a foto e a data de validade da sua CNV (Carteira Nacional de Vigilante).
-                  </p>
-
-                  <div className="space-y-6">
-                    <div>
-                      <Label htmlFor="cnvValidity" className="text-zinc-300 mb-2 block">
-                        Data de Validade da CNV *
-                      </Label>
-                      <Input
-                        id="cnvValidity"
-                        type="date"
-                        value={cnvValidity}
-                        onChange={(e) => setCnvValidity(e.target.value)}
-                        className="bg-zinc-800 border-zinc-700 text-white h-11"
-                        required={isSeguranca}
-                        min={new Date().toISOString().split('T')[0]}
-                      />
-                      <p className="text-xs text-zinc-500 mt-2">
-                        A CNV deve estar válida para aprovação do cadastro
-                      </p>
-                    </div>
-
-                    <DocumentUpload
-                      label="Foto da CNV"
-                      description="Foto ou PDF da Carteira Nacional de Vigilante"
-                      documentType="cnv"
-                      onUpload={(file) => handleDocumentUpload(file, 'cnv')}
-                      currentUrl={uploadedDocuments.cnv}
-                      required
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Certificações (Opcional) */}
-              <div>
-                <h3 className="text-lg font-semibold text-white mb-2">
-                  Certificações e Habilitações (Opcional)
-                </h3>
-                <p className="text-sm text-zinc-500 mb-4">
-                  Envie o certificado e a data de validade. Isso aumenta suas chances de contratação.
-                </p>
-                <div className="space-y-6">
-                  {/* NR-10 */}
-                  <div className="p-4 bg-zinc-800/30 rounded-lg space-y-4">
-                    <h4 className="text-white font-medium">NR-10 - Segurança em Eletricidade</h4>
-                    <DocumentUpload
-                      label="Certificado NR-10"
-                      description="Foto ou PDF do certificado"
-                      documentType="nr10"
-                      onUpload={(file) => handleDocumentUpload(file, 'nr10')}
-                      currentUrl={uploadedDocuments.nr10}
-                    />
-                    {uploadedDocuments.nr10 && (
-                      <div>
-                        <Label htmlFor="nr10Validity" className="text-zinc-300 mb-2 block">
-                          Validade do NR-10
-                        </Label>
-                        <Input
-                          id="nr10Validity"
-                          type="date"
-                          value={nr10Validity}
-                          onChange={(e) => setNr10Validity(e.target.value)}
-                          className="bg-zinc-800 border-zinc-700 text-white h-11"
-                          min={new Date().toISOString().split('T')[0]}
-                        />
-                        <p className="text-xs text-zinc-500 mt-2">
-                          Informe a data de validade do certificado
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* NR-35 */}
-                  <div className="p-4 bg-zinc-800/30 rounded-lg space-y-4">
-                    <h4 className="text-white font-medium">NR-35 - Trabalho em Altura</h4>
-                    <DocumentUpload
-                      label="Certificado NR-35"
-                      description="Foto ou PDF do certificado"
-                      documentType="nr35"
-                      onUpload={(file) => handleDocumentUpload(file, 'nr35')}
-                      currentUrl={uploadedDocuments.nr35}
-                    />
-                    {uploadedDocuments.nr35 && (
-                      <div>
-                        <Label htmlFor="nr35Validity" className="text-zinc-300 mb-2 block">
-                          Validade do NR-35
-                        </Label>
-                        <Input
-                          id="nr35Validity"
-                          type="date"
-                          value={nr35Validity}
-                          onChange={(e) => setNr35Validity(e.target.value)}
-                          className="bg-zinc-800 border-zinc-700 text-white h-11"
-                          min={new Date().toISOString().split('T')[0]}
-                        />
-                        <p className="text-xs text-zinc-500 mt-2">
-                          Informe a data de validade do certificado
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* DRT */}
-                  <div className="p-4 bg-zinc-800/30 rounded-lg space-y-4">
-                    <h4 className="text-white font-medium">DRT - Registro Profissional</h4>
-                    <DocumentUpload
-                      label="DRT"
-                      description="Foto ou PDF do registro profissional"
-                      documentType="drt"
-                      onUpload={(file) => handleDocumentUpload(file, 'drt')}
-                      currentUrl={uploadedDocuments.drt}
-                    />
-                    {uploadedDocuments.drt && (
-                      <div>
-                        <Label htmlFor="drtValidity" className="text-zinc-300 mb-2 block">
-                          Validade do DRT
-                        </Label>
-                        <Input
-                          id="drtValidity"
-                          type="date"
-                          value={drtValidity}
-                          onChange={(e) => setDrtValidity(e.target.value)}
-                          className="bg-zinc-800 border-zinc-700 text-white h-11"
-                          min={new Date().toISOString().split('T')[0]}
-                        />
-                        <p className="text-xs text-zinc-500 mt-2">
-                          Informe a data de validade do registro
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* CNV só aparece aqui se NÃO for Segurança (para Segurança é obrigatório acima) */}
-                  {!isSeguranca && (
-                    <div className="p-4 bg-zinc-800/30 rounded-lg space-y-4">
-                      <h4 className="text-white font-medium">CNV - Carteira Nacional de Vigilante</h4>
-                      <DocumentUpload
-                        label="CNV"
-                        description="Foto ou PDF da Carteira Nacional de Vigilante"
-                        documentType="cnv"
-                        onUpload={(file) => handleDocumentUpload(file, 'cnv')}
-                        currentUrl={uploadedDocuments.cnv}
-                      />
-                      {uploadedDocuments.cnv && (
-                        <div>
-                          <Label htmlFor="cnvValidityOptional" className="text-zinc-300 mb-2 block">
-                            Validade da CNV
-                          </Label>
-                          <Input
-                            id="cnvValidityOptional"
-                            type="date"
-                            value={cnvValidity}
-                            onChange={(e) => setCnvValidity(e.target.value)}
-                            className="bg-zinc-800 border-zinc-700 text-white h-11"
-                            min={new Date().toISOString().split('T')[0]}
-                          />
-                          <p className="text-xs text-zinc-500 mt-2">
-                            Informe a data de validade da CNV
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Portfólio */}
-              <div>
-                <h3 className="text-lg font-semibold text-white mb-4">Portfólio de Trabalhos</h3>
-                <PortfolioUpload
-                  onUpload={handlePortfolioUpload}
-                  currentUrls={portfolioUrls}
-                  maxFiles={10}
-                />
-              </div>
+            <CardContent>
+              <PortfolioUpload
+                onUpload={handlePortfolioUpload}
+                currentUrls={portfolioUrls}
+                maxFiles={10}
+              />
             </CardContent>
           </Card>
 
           {/* Termos */}
           <Card className="bg-zinc-900 border-zinc-800">
-            <CardContent className="pt-6 space-y-6">
-              <div className="flex items-start space-x-3 p-4 bg-zinc-800/50 rounded-lg">
+            <CardContent className="pt-6 space-y-4">
+              <div className="flex items-start space-x-3 p-3 bg-zinc-800/50 rounded-lg">
                 <Checkbox
                   checked={acceptsTerms || false}
                   onCheckedChange={(checked) => setValue('acceptsTerms', checked as boolean)}
-                  className="border-zinc-600 mt-1"
+                  className="border-zinc-700 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600 mt-1"
                 />
-                <label className="text-zinc-300 text-sm leading-relaxed cursor-pointer">
+                <label className="text-sm text-zinc-200 leading-relaxed cursor-pointer">
                   Li e aceito os{' '}
                   <a href="/termos" className="text-red-500 hover:underline" target="_blank">
                     termos de uso
@@ -1094,13 +780,13 @@ export default function CadastroProfissionalPage() {
                 <p className="text-red-500 text-sm mt-2">{errors.acceptsTerms.message}</p>
               )}
 
-              <div className="flex items-start space-x-3 p-4 bg-zinc-800/50 rounded-lg">
+              <div className="flex items-start space-x-3 p-3 bg-zinc-800/50 rounded-lg">
                 <Checkbox
                   checked={acceptsNotifications ?? true}
                   onCheckedChange={(checked) => setValue('acceptsNotifications', checked as boolean)}
-                  className="border-zinc-600 mt-1"
+                  className="border-zinc-700 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600 mt-1"
                 />
-                <label className="text-zinc-300 text-sm leading-relaxed cursor-pointer">
+                <label className="text-sm text-zinc-200 leading-relaxed cursor-pointer">
                   Aceito receber notificações de oportunidades por WhatsApp e Email
                 </label>
               </div>
@@ -1112,7 +798,7 @@ export default function CadastroProfissionalPage() {
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="bg-red-600 hover:bg-red-500 text-white px-12 py-6 text-lg"
+              className="bg-red-600 hover:bg-red-700 text-white px-12 py-6 text-lg"
             >
               {isSubmitting
                 ? 'Salvando...'

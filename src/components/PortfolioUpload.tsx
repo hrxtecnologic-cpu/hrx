@@ -68,30 +68,21 @@ export function PortfolioUpload({
   }
 
   return (
-    <div className="space-y-4">
-      <div>
-        <label className="text-zinc-300 text-sm font-medium mb-1 block">
-          Fotos do Portfólio (Opcional)
-        </label>
-        <p className="text-zinc-500 text-xs">
-          Adicione fotos de trabalhos anteriores. Máximo {maxFiles} fotos.
-        </p>
-      </div>
-
+    <div className="space-y-3">
       {/* Grid de previews */}
       {previews.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           {previews.map((preview, index) => (
             <div key={index} className="relative group">
               <img
                 src={preview}
                 alt={`Portfolio ${index + 1}`}
-                className="w-full h-32 object-cover rounded-lg border-2 border-zinc-700"
+                className="w-full h-32 object-cover rounded-md border border-zinc-700"
               />
               <button
                 type="button"
                 onClick={() => removePreview(index)}
-                className="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
+                className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
               >
                 <svg
                   className="h-4 w-4"
@@ -114,7 +105,7 @@ export function PortfolioUpload({
 
       {/* Upload area */}
       {previews.length < maxFiles && (
-        <div className="border-2 border-dashed border-zinc-700 rounded-lg p-8 bg-zinc-800/30 hover:bg-zinc-800/50 transition text-center">
+        <div className="border-2 border-dashed border-zinc-700 rounded-md p-6 bg-zinc-800/50 hover:bg-zinc-700/50 transition text-center">
           <input
             ref={inputRef}
             type="file"
@@ -148,11 +139,11 @@ export function PortfolioUpload({
                 onClick={handleButtonClick}
                 disabled={uploading}
                 variant="outline"
-                className="border-zinc-600 hover:bg-zinc-700 text-zinc-300"
+                className="border-zinc-700 hover:bg-zinc-700 text-white"
               >
                 {uploading ? 'Enviando...' : 'Adicionar fotos'}
               </Button>
-              <p className="text-xs text-zinc-500 mt-2">
+              <p className="text-xs text-zinc-400 mt-2">
                 Imagens JPG, PNG ou WEBP - Máx. 10MB cada
               </p>
             </div>
@@ -174,7 +165,7 @@ export function PortfolioUpload({
       )}
 
       {/* Contador */}
-      <p className="text-xs text-zinc-500 text-center">
+      <p className="text-xs text-zinc-400 text-center">
         {previews.length} de {maxFiles} fotos
       </p>
     </div>

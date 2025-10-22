@@ -21,6 +21,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { EQUIPMENT_CATEGORIES } from '@/lib/equipment-types';
 
 // =====================================================
 // Types
@@ -42,61 +43,6 @@ const STATUS_OPTIONS = [
   { value: 'inactive', label: 'Inativo', color: 'bg-gray-500' },
 ] as const;
 
-// Equipment types (mesma lista do formulário)
-const EQUIPMENT_TYPES = [
-  // Som
-  'Sistema de Som',
-  'Microfones',
-  'Mesa de Som',
-  'Caixas de Som',
-  'Subwoofers',
-  'Monitores de Retorno',
-  // Iluminação
-  'Iluminação Geral',
-  'Iluminação Cênica',
-  'Moving Lights',
-  'Refletores LED',
-  'Strobo',
-  'Máquina de Fumaça',
-  'Laser',
-  // Audiovisual
-  'Projetores',
-  'Telões',
-  'TVs/Monitores',
-  'Câmeras',
-  'Transmissão ao Vivo',
-  // Estrutura
-  'Palco/Tablado',
-  'Tendas',
-  'Barracas',
-  'Camarotes',
-  'Grades',
-  'Fechamento',
-  // Mobiliário
-  'Mesas',
-  'Cadeiras',
-  'Sofás',
-  'Puffs',
-  'Bistrôs',
-  'Longarinas',
-  // Decoração
-  'Decoração Temática',
-  'Flores/Arranjos',
-  'Tapetes',
-  'Painéis',
-  'Backdrop',
-  'Balões',
-  // Energia e Infraestrutura
-  'Geradores',
-  'Distribuição Elétrica',
-  'Ar Condicionado',
-  'Ventiladores',
-  // Outros
-  'Banheiros Químicos',
-  'Seguranças/Equipe',
-  'Outros Equipamentos',
-] as const;
-
 // =====================================================
 // Main Component
 // =====================================================
@@ -111,6 +57,7 @@ export function SupplierSearch({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<'all' | 'active' | 'inactive'>('all');
   const [selectedEquipmentTypes, setSelectedEquipmentTypes] = useState<string[]>([]);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
   // Auto-buscar ao carregar
   useEffect(() => {
@@ -137,6 +84,26 @@ export function SupplierSearch({
     setSelectedEquipmentTypes(prev =>
       prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
     );
+  };
+
+  // Toggle categoria do accordion
+  const toggleCategory = (categoryName: string) => {
+    setExpandedCategories(prev => {
+      const next = new Set(prev);
+      if (next.has(categoryName)) {
+        next.delete(categoryName);
+      } else {
+        next.add(categoryName);
+      }
+      return next;
+    });
+  };
+
+  // Contar quantos equipamentos selecionados por categoria
+  const getSelectedCountByCategory = (categoryName: string): number => {
+    const category = EQUIPMENT_CATEGORIES.find(c => c.name === categoryName);
+    if (!category) return 0;
+    return category.subtypes.filter(s => selectedEquipmentTypes.includes(s.label)).length;
   };
 
   // Contar filtros ativos
@@ -249,29 +216,78 @@ export function SupplierSearch({
             </div>
           </div>
 
-          {/* Equipment Types Filter */}
+          {/* Equipment Types Filter - Accordion */}
           <div>
             <Label className="text-sm font-medium text-zinc-200 mb-3 block">
               Tipos de Equipamento
             </Label>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {EQUIPMENT_TYPES.map(type => (
-                <div key={type} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`equipment-${type}`}
-                    checked={selectedEquipmentTypes.includes(type)}
-                    onCheckedChange={() => toggleEquipmentType(type)}
-                    className="border-zinc-700 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
-                  />
-                  <label
-                    htmlFor={`equipment-${type}`}
-                    className="text-sm text-zinc-300 cursor-pointer select-none"
+
+            <div className="space-y-2 max-h-[350px] overflow-y-auto pr-2">
+              {EQUIPMENT_CATEGORIES.map((category) => {
+                const isExpanded = expandedCategories.has(category.name);
+                const selectedCount = getSelectedCountByCategory(category.name);
+
+                return (
+                  <div
+                    key={category.name}
+                    className="border border-zinc-800 bg-zinc-800/50 rounded-md overflow-hidden"
                   >
-                    {type}
-                  </label>
-                </div>
-              ))}
+                    {/* Header da categoria */}
+                    <button
+                      type="button"
+                      onClick={() => toggleCategory(category.name)}
+                      className="w-full px-3 py-2 flex items-center justify-between hover:bg-zinc-700/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-2 flex-1">
+                        <ChevronDown
+                          className={cn(
+                            'h-4 w-4 text-zinc-400 transition-transform',
+                            isExpanded && 'rotate-180'
+                          )}
+                        />
+                        <span className="text-sm font-medium text-zinc-200">
+                          {category.label}
+                        </span>
+                        <span className="text-xs text-zinc-500">
+                          ({category.subtypes.length})
+                        </span>
+                      </div>
+
+                      {selectedCount > 0 && (
+                        <Badge className="bg-red-600 text-white text-xs px-2 py-0.5">
+                          {selectedCount}
+                        </Badge>
+                      )}
+                    </button>
+
+                    {/* Conteúdo expandido */}
+                    {isExpanded && (
+                      <div className="border-t border-zinc-700 px-3 py-2 bg-zinc-900/50">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          {category.subtypes.map((subtype) => (
+                            <div key={subtype.name} className="flex items-start space-x-2">
+                              <Checkbox
+                                id={`equipment-search-${category.name}-${subtype.name}`}
+                                checked={selectedEquipmentTypes.includes(subtype.label)}
+                                onCheckedChange={() => toggleEquipmentType(subtype.label)}
+                                className="border-zinc-700 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600 mt-0.5"
+                              />
+                              <label
+                                htmlFor={`equipment-search-${category.name}-${subtype.name}`}
+                                className="text-sm text-zinc-300 cursor-pointer select-none flex-1"
+                              >
+                                {subtype.label}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
+
             {selectedEquipmentTypes.length > 0 && (
               <p className="text-xs text-zinc-500 mt-3">
                 {selectedEquipmentTypes.length} tipo{selectedEquipmentTypes.length > 1 ? 's' : ''} selecionado{selectedEquipmentTypes.length > 1 ? 's' : ''}

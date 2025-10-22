@@ -4,6 +4,9 @@ import { CheckCircle2, ArrowRight, FileText, LayoutDashboard } from 'lucide-reac
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
+// Force dynamic route
+export const dynamic = 'force-dynamic';
+
 export default function CadastroContratanteSucessoPage() {
 
   return (

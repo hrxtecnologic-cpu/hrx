@@ -97,6 +97,8 @@ export async function PATCH(req: Request) {
       nr35_validity,
       drt_validity,
       portfolio,
+      subcategories,
+      certifications,
     } = body;
 
     const supabase = await createClient();
@@ -144,6 +146,8 @@ export async function PATCH(req: Request) {
         nr35_validity,
         drt_validity,
         portfolio,
+        subcategories,
+        certifications,
         // Se foi rejeitado, voltar para pending após edição
         status: 'pending',
         updated_at: new Date().toISOString(),

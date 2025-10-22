@@ -49,7 +49,7 @@ export async function PUT(
 
     const { id } = await params;
     const body = await req.json();
-    const { company_name, contact_name, email, phone, equipment_types, proposed_budget, notes, status } = body;
+    const { company_name, contact_name, email, phone, equipment_types, pricing, notes, status } = body;
 
     // Validations
     if (!company_name || !contact_name || !email || !phone || !equipment_types) {
@@ -91,7 +91,7 @@ export async function PUT(
         email,
         phone,
         equipment_types,
-        proposed_budget: proposed_budget || null,
+        pricing: pricing || {},
         notes: notes || null,
         status: status || 'active',
       })

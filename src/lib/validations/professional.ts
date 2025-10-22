@@ -1,28 +1,13 @@
 import { z } from 'zod';
+import { getAllCategoryNames } from '@/lib/categories-subcategories';
 
 // Validações customizadas
 const cpfRegex = /^\d{3}\.\d{3}\.\d{3}-\d{2}$/;
 const phoneRegex = /^\(\d{2}\)\s\d{4,5}-\d{4}$/;
 const cepRegex = /^\d{5}-\d{3}$/;
 
-// Categorias disponíveis
-export const CATEGORIES = [
-  'Segurança',
-  'Bombeiro/Brigadista',
-  'Socorrista',
-  'Enfermagem',
-  'Logística/Staff',
-  'Limpeza',
-  'Barman',
-  'Barback',
-  'Hospitalidade',
-  'Técnico/Audiovisual',
-  'Motorista',
-  'Operador de Empilhadeira',
-  'Eletricista',
-  'Cozinheiro',
-  'Garçom',
-] as const;
+// Categorias disponíveis (importadas do sistema completo)
+export const CATEGORIES = getAllCategoryNames();
 
 // Disponibilidade
 export const availabilitySchema = z.object({
@@ -74,8 +59,20 @@ export const professionalSchema = z.object({
 
   // Experiência Profissional
   categories: z
-    .array(z.enum(CATEGORIES))
+    .array(z.string())
     .min(1, 'Selecione pelo menos uma categoria'),
+
+  // Subcategorias (novo)
+  subcategories: z.record(z.array(z.string())).optional(),
+
+  // Certificações (novo)
+  certifications: z.record(z.object({
+    number: z.string().optional(),
+    validity: z.string().optional(),
+    category: z.string().optional(),
+    document_url: z.string().optional(),
+    status: z.enum(['pending', 'approved', 'rejected']).optional(),
+  })).optional(),
 
   hasExperience: z.boolean(),
 

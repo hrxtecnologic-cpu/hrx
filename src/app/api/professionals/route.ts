@@ -65,8 +65,8 @@ export async function POST(req: Request) {
     // Obter dados do body
     const body = await req.json();
 
-    // Extrair documentos, portfolio e validades de documentos separadamente
-    const { documents, portfolio, cnh_number, cnh_validity, cnv_validity, nr10_validity, nr35_validity, drt_validity, ...formData } = body;
+    // Extrair documentos, portfolio, validades e novos campos separadamente
+    const { documents, portfolio, cnh_number, cnh_validity, cnv_validity, nr10_validity, nr35_validity, drt_validity, subcategories, certifications, ...formData } = body;
 
     logger.debug('Documentos recebidos', {
       userId,
@@ -222,6 +222,10 @@ export async function POST(req: Request) {
         // Documentos e portfólio
         documents: documents || {},
         portfolio: portfolio || [],
+
+        // Novo sistema de subcategorias e certificações
+        subcategories: subcategories || {},
+        certifications: certifications || {},
 
         // Controle
         accepts_notifications: validatedData.acceptsNotifications,

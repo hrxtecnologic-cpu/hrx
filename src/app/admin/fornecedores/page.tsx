@@ -22,75 +22,15 @@ import {
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Edit, Trash2, Building2, Mail, Phone } from 'lucide-react';
+import { Plus, Edit, Trash2, Building2, Mail, Phone, ChevronDown } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 import { useSupplierSearch } from '@/hooks/useSupplierSearch';
 import { SupplierSearch } from '@/components/admin/SupplierSearch';
-
-// Tipos de equipamentos disponíveis - Lista completa e profissional
-const EQUIPMENT_TYPES = [
-  // Som
-  'Sistema de Som',
-  'Microfones',
-  'Mesa de Som',
-  'Caixas de Som',
-  'Subwoofers',
-  'Monitores de Retorno',
-
-  // Iluminação
-  'Iluminação Geral',
-  'Iluminação Cênica',
-  'Moving Lights',
-  'Refletores LED',
-  'Strobo',
-  'Máquina de Fumaça',
-  'Laser',
-
-  // Audiovisual
-  'Projetores',
-  'Telões',
-  'TVs/Monitores',
-  'Câmeras',
-  'Transmissão ao Vivo',
-
-  // Estrutura
-  'Palco/Tablado',
-  'Tendas',
-  'Barracas',
-  'Camarotes',
-  'Grades',
-  'Fechamento',
-
-  // Mobiliário
-  'Mesas',
-  'Cadeiras',
-  'Sofás',
-  'Puffs',
-  'Bistrôs',
-  'Longarinas',
-
-  // Decoração
-  'Decoração Temática',
-  'Flores/Arranjos',
-  'Tapetes',
-  'Painéis',
-  'Backdrop',
-  'Balões',
-
-  // Energia e Infraestrutura
-  'Geradores',
-  'Distribuição Elétrica',
-  'Ar Condicionado',
-  'Ventiladores',
-
-  // Outros
-  'Banheiros Químicos',
-  'Seguranças/Equipe',
-  'Outros Equipamentos',
-];
+import { EQUIPMENT_CATEGORIES, getAllEquipmentTypes } from '@/lib/equipment-types';
 
 const supplierSchema = z.object({
   company_name: z.string().min(2, 'Nome da empresa é obrigatório'),
@@ -98,7 +38,12 @@ const supplierSchema = z.object({
   email: z.string().email('Email inválido'),
   phone: z.string().min(10, 'Telefone inválido'),
   equipment_types: z.array(z.string()).min(1, 'Selecione pelo menos um tipo de equipamento'),
-  proposed_budget: z.string().optional(),
+  pricing: z.object({
+    daily: z.string().optional(),
+    three_days: z.string().optional(),
+    weekly: z.string().optional(),
+    discount_notes: z.string().optional(),
+  }).optional(),
   notes: z.string().optional(),
   status: z.enum(['active', 'inactive']).default('active'),
 });
@@ -112,7 +57,12 @@ interface Supplier {
   email: string;
   phone: string;
   equipment_types: string[];
-  proposed_budget?: string;
+  pricing?: {
+    daily?: string;
+    three_days?: string;
+    weekly?: string;
+    discount_notes?: string;
+  };
   notes?: string;
   status: 'active' | 'inactive';
   created_at: string;
@@ -123,6 +73,7 @@ export default function FornecedoresPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
   const [selectedEquipmentTypes, setSelectedEquipmentTypes] = useState<string[]>([]);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Hook de busca avançada
@@ -207,7 +158,7 @@ export default function FornecedoresPage() {
       email: supplier.email,
       phone: supplier.phone,
       equipment_types: supplier.equipment_types,
-      proposed_budget: supplier.proposed_budget || '',
+      pricing: supplier.pricing || {},
       notes: supplier.notes || '',
       status: supplier.status,
     });
@@ -281,6 +232,26 @@ export default function FornecedoresPage() {
       : [...current, type];
     setSelectedEquipmentTypes(newTypes);
     setValue('equipment_types', newTypes);
+  };
+
+  // Toggle categoria do accordion
+  const toggleCategory = (categoryName: string) => {
+    setExpandedCategories(prev => {
+      const next = new Set(prev);
+      if (next.has(categoryName)) {
+        next.delete(categoryName);
+      } else {
+        next.add(categoryName);
+      }
+      return next;
+    });
+  };
+
+  // Contar quantos equipamentos selecionados por categoria
+  const getSelectedCountByCategory = (categoryName: string): number => {
+    const category = EQUIPMENT_CATEGORIES.find(c => c.name === categoryName);
+    if (!category) return 0;
+    return category.subtypes.filter(s => selectedEquipmentTypes.includes(s.label)).length;
   };
 
   return (
@@ -403,6 +374,33 @@ export default function FornecedoresPage() {
                         <Phone className="h-4 w-4" />
                         {supplier.phone}
                       </p>
+
+                      {/* Preços */}
+                      {supplier.pricing && (supplier.pricing.daily || supplier.pricing.three_days || supplier.pricing.weekly) && (
+                        <div className="flex flex-wrap gap-2 mt-2 pt-2 border-t border-zinc-800">
+                          {supplier.pricing.daily && (
+                            <span className="text-xs bg-zinc-800 text-zinc-300 px-2 py-1 rounded">
+                              Diária: {supplier.pricing.daily}
+                            </span>
+                          )}
+                          {supplier.pricing.three_days && (
+                            <span className="text-xs bg-zinc-800 text-zinc-300 px-2 py-1 rounded">
+                              3 dias: {supplier.pricing.three_days}
+                            </span>
+                          )}
+                          {supplier.pricing.weekly && (
+                            <span className="text-xs bg-zinc-800 text-zinc-300 px-2 py-1 rounded">
+                              Semanal: {supplier.pricing.weekly}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      {supplier.pricing?.discount_notes && (
+                        <p className="text-xs text-green-400 mt-1">
+                          💰 {supplier.pricing.discount_notes}
+                        </p>
+                      )}
+
                       <div className="flex flex-wrap gap-1 mt-2">
                         {supplier.equipment_types.map((type) => (
                           <Badge
@@ -524,26 +522,68 @@ export default function FornecedoresPage() {
                 )}
               </div>
 
-              <div>
-                <Label htmlFor="proposed_budget" className="text-sm font-medium text-zinc-200">
-                  Valor de Proposta de Orçamento (Opcional)
+              {/* Preços por Período */}
+              <div className="space-y-4">
+                <Label className="text-sm font-medium text-zinc-200">
+                  Valores por Período (Opcional)
                 </Label>
-                <Input
-                  id="proposed_budget"
-                  {...register('proposed_budget')}
-                  placeholder="Ex: R$ 5.000,00 a R$ 15.000,00"
-                  className="bg-zinc-800 border-zinc-700 text-white mt-2"
-                />
-                <p className="text-xs text-zinc-500 mt-1.5">
-                  Faixa de valores que este fornecedor costuma trabalhar
+                <p className="text-xs text-zinc-500 mt-1">
+                  Defina os valores de locação/serviço por período
                 </p>
-                {errors.proposed_budget && (
-                  <p className="text-xs text-red-400 mt-1.5">{errors.proposed_budget.message}</p>
-                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <Label htmlFor="pricing.daily" className="text-xs text-zinc-400">
+                      Diária
+                    </Label>
+                    <Input
+                      id="pricing.daily"
+                      {...register('pricing.daily')}
+                      placeholder="Ex: R$ 500,00"
+                      className="bg-zinc-800 border-zinc-700 text-white mt-1.5"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="pricing.three_days" className="text-xs text-zinc-400">
+                      3 Dias
+                    </Label>
+                    <Input
+                      id="pricing.three_days"
+                      {...register('pricing.three_days')}
+                      placeholder="Ex: R$ 1.200,00"
+                      className="bg-zinc-800 border-zinc-700 text-white mt-1.5"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="pricing.weekly" className="text-xs text-zinc-400">
+                      Semanal (7 dias)
+                    </Label>
+                    <Input
+                      id="pricing.weekly"
+                      {...register('pricing.weekly')}
+                      placeholder="Ex: R$ 2.000,00"
+                      className="bg-zinc-800 border-zinc-700 text-white mt-1.5"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="pricing.discount_notes" className="text-xs text-zinc-400">
+                    Observações sobre Descontos
+                  </Label>
+                  <Input
+                    id="pricing.discount_notes"
+                    {...register('pricing.discount_notes')}
+                    placeholder="Ex: 10% de desconto para períodos acima de 7 dias"
+                    className="bg-zinc-800 border-zinc-700 text-white mt-1.5"
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Tipos de Equipamento */}
+            {/* Tipos de Equipamento - Accordion por Categoria */}
             <div className="pt-4 border-t border-zinc-800">
               <Label className="text-sm font-medium text-zinc-200">
                 Tipos de Equipamento que a Empresa Fornece *
@@ -551,24 +591,78 @@ export default function FornecedoresPage() {
               <p className="text-xs text-zinc-500 mt-1 mb-3">
                 Selecione todos os tipos de equipamento que este fornecedor pode fornecer
               </p>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {EQUIPMENT_TYPES.map((type) => (
-                  <div key={type} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`equipment-${type}`}
-                      checked={selectedEquipmentTypes.includes(type)}
-                      onCheckedChange={() => toggleEquipmentType(type)}
-                      className="border-zinc-700 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
-                    />
-                    <label
-                      htmlFor={`equipment-${type}`}
-                      className="text-sm text-zinc-300 cursor-pointer select-none"
+
+              <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
+                {EQUIPMENT_CATEGORIES.map((category) => {
+                  const isExpanded = expandedCategories.has(category.name);
+                  const selectedCount = getSelectedCountByCategory(category.name);
+
+                  return (
+                    <div
+                      key={category.name}
+                      className="border border-zinc-800 bg-zinc-800/50 rounded-md overflow-hidden"
                     >
-                      {type}
-                    </label>
-                  </div>
-                ))}
+                      {/* Header da categoria */}
+                      <button
+                        type="button"
+                        onClick={() => toggleCategory(category.name)}
+                        className="w-full px-3 py-2 flex items-center justify-between hover:bg-zinc-700/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-2 flex-1">
+                          <ChevronDown
+                            className={cn(
+                              'h-4 w-4 text-zinc-400 transition-transform',
+                              isExpanded && 'rotate-180'
+                            )}
+                          />
+                          <span className="text-sm font-medium text-zinc-200">
+                            {category.label}
+                          </span>
+                          <span className="text-xs text-zinc-500">
+                            ({category.subtypes.length})
+                          </span>
+                        </div>
+
+                        {selectedCount > 0 && (
+                          <Badge className="bg-red-600 text-white text-xs px-2 py-0.5">
+                            {selectedCount}
+                          </Badge>
+                        )}
+                      </button>
+
+                      {/* Conteúdo expandido */}
+                      {isExpanded && (
+                        <div className="border-t border-zinc-700 px-3 py-2 bg-zinc-900/50">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {category.subtypes.map((subtype) => (
+                              <div key={subtype.name} className="flex items-start space-x-2">
+                                <Checkbox
+                                  id={`equipment-${category.name}-${subtype.name}`}
+                                  checked={selectedEquipmentTypes.includes(subtype.label)}
+                                  onCheckedChange={() => toggleEquipmentType(subtype.label)}
+                                  className="border-zinc-700 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600 mt-0.5"
+                                />
+                                <label
+                                  htmlFor={`equipment-${category.name}-${subtype.name}`}
+                                  className="text-sm text-zinc-300 cursor-pointer select-none flex-1"
+                                >
+                                  {subtype.label}
+                                  {subtype.description && (
+                                    <span className="block text-xs text-zinc-500 mt-0.5">
+                                      {subtype.description}
+                                    </span>
+                                  )}
+                                </label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
+
               {errors.equipment_types && (
                 <p className="text-xs text-red-400 mt-2">{errors.equipment_types.message}</p>
               )}
@@ -604,7 +698,7 @@ export default function FornecedoresPage() {
                   <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white mt-2">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-zinc-900 border-zinc-800 text-white">
                     <SelectItem value="active">Ativo</SelectItem>
                     <SelectItem value="inactive">Inativo</SelectItem>
                   </SelectContent>

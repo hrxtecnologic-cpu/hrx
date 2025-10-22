@@ -211,6 +211,8 @@ CREATE TABLE public.professionals (
   drt_validity date,
   latitude numeric,
   longitude numeric,
+  subcategories jsonb DEFAULT '{}'::jsonb,
+  certifications jsonb DEFAULT '{}'::jsonb,
   CONSTRAINT professionals_pkey PRIMARY KEY (id),
   CONSTRAINT professionals_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
   CONSTRAINT professionals_approved_by_fkey FOREIGN KEY (approved_by) REFERENCES public.users(id)
