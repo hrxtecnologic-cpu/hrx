@@ -9,6 +9,7 @@ import { QuoteRequestEmail } from './templates/QuoteRequestEmail';
 import { UrgentQuoteAdminEmail } from './templates/UrgentQuoteAdminEmail';
 import { QuoteAcceptedEmail } from './templates/QuoteAcceptedEmail';
 import { QuoteRejectedEmail } from './templates/QuoteRejectedEmail';
+import { logEmail } from './email-logger';
 
 interface SendProfessionalWelcomeEmailParams {
   professionalName: string;
@@ -36,23 +37,53 @@ export async function sendProfessionalWelcomeEmail({
   professionalName,
   professionalEmail,
 }: SendProfessionalWelcomeEmailParams): Promise<{ success: boolean; error?: string }> {
+  const subject = `Bem-vindo à HRX, ${professionalName}! 🎉`;
+
   try {
     const { data, error } = await resend.emails.send({
       from: `HRX <${FROM_EMAIL}>`,
       to: [professionalEmail],
-      subject: `Bem-vindo à HRX, ${professionalName}! 🎉`,
+      subject,
       react: <SimpleWelcomeEmail professionalName={professionalName} professionalEmail={professionalEmail} />,
     });
 
     if (error) {
       console.error('Erro ao enviar email de boas-vindas:', error);
+      // Log do erro
+      await logEmail({
+        recipientEmail: professionalEmail,
+        recipientType: 'professional',
+        subject,
+        templateUsed: 'SimpleWelcomeEmail',
+        status: 'failed',
+        errorMessage: error.message,
+      });
       return { success: false, error: error.message };
     }
+
+    // Log do sucesso
+    await logEmail({
+      recipientEmail: professionalEmail,
+      recipientType: 'professional',
+      subject,
+      templateUsed: 'SimpleWelcomeEmail',
+      status: 'sent',
+      externalId: data?.id,
+    });
 
     console.log(`✅ Email de boas-vindas enviado para: ${professionalEmail} (ID: ${data?.id})`);
     return { success: true };
   } catch (error) {
     console.error('Erro ao enviar email:', error);
+    // Log do erro
+    await logEmail({
+      recipientEmail: professionalEmail,
+      recipientType: 'professional',
+      subject,
+      templateUsed: 'SimpleWelcomeEmail',
+      status: 'failed',
+      errorMessage: 'Erro ao enviar email',
+    });
     return { success: false, error: 'Erro ao enviar email' };
   }
 }
@@ -63,23 +94,56 @@ export async function sendProfessionalWelcomeEmail({
 export async function sendAdminNotificationEmail(
   params: SendAdminNotificationEmailParams
 ): Promise<{ success: boolean; error?: string }> {
+  const subject = `🆕 Novo Cadastro: ${params.professionalName} - ${params.city}/${params.state}`;
+
   try {
     const { data, error } = await resend.emails.send({
       from: `HRX Sistema <${FROM_EMAIL}>`,
       to: [ADMIN_EMAIL],
-      subject: `🆕 Novo Cadastro: ${params.professionalName} - ${params.city}/${params.state}`,
+      subject,
       react: <AdminNotificationEmail {...params} />,
     });
 
     if (error) {
       console.error('Erro ao enviar notificação para admin:', error);
+      await logEmail({
+        recipientEmail: ADMIN_EMAIL,
+        recipientType: 'admin',
+        subject,
+        templateUsed: 'AdminNotificationEmail',
+        status: 'failed',
+        errorMessage: error.message,
+        relatedId: params.professionalId,
+        relatedType: 'professional',
+      });
       return { success: false, error: error.message };
     }
+
+    await logEmail({
+      recipientEmail: ADMIN_EMAIL,
+      recipientType: 'admin',
+      subject,
+      templateUsed: 'AdminNotificationEmail',
+      status: 'sent',
+      externalId: data?.id,
+      relatedId: params.professionalId,
+      relatedType: 'professional',
+    });
 
     console.log(`✅ Notificação enviada para admin: ${ADMIN_EMAIL} (ID: ${data?.id})`);
     return { success: true };
   } catch (error) {
     console.error('Erro ao enviar notificação:', error);
+    await logEmail({
+      recipientEmail: ADMIN_EMAIL,
+      recipientType: 'admin',
+      subject,
+      templateUsed: 'AdminNotificationEmail',
+      status: 'failed',
+      errorMessage: 'Erro ao enviar notificação',
+      relatedId: params.professionalId,
+      relatedType: 'professional',
+    });
     return { success: false, error: 'Erro ao enviar notificação' };
   }
 }
@@ -185,23 +249,50 @@ interface SendAdminRequestNotificationEmailParams {
 export async function sendContractorConfirmationEmail(
   params: SendContractorConfirmationEmailParams
 ): Promise<{ success: boolean; error?: string; emailId?: string }> {
+  const subject = `✅ Solicitação Recebida - ${params.eventName} - ${params.requestNumber}`;
+
   try {
     const { data, error } = await resend.emails.send({
       from: `HRX <${FROM_EMAIL}>`,
       to: [params.email],
-      subject: `✅ Solicitação Recebida - ${params.eventName} - ${params.requestNumber}`,
+      subject,
       react: <ContractorConfirmationEmail {...params} />,
     });
 
     if (error) {
       console.error('Erro ao enviar confirmação para contratante:', error);
+      await logEmail({
+        recipientEmail: params.email,
+        recipientType: 'contractor',
+        subject,
+        templateUsed: 'ContractorConfirmationEmail',
+        status: 'failed',
+        errorMessage: error.message,
+      });
       return { success: false, error: error.message };
     }
+
+    await logEmail({
+      recipientEmail: params.email,
+      recipientType: 'contractor',
+      subject,
+      templateUsed: 'ContractorConfirmationEmail',
+      status: 'sent',
+      externalId: data?.id,
+    });
 
     console.log(`✅ Confirmação enviada para contratante: ${params.email} (ID: ${data?.id})`);
     return { success: true, emailId: data?.id };
   } catch (error) {
     console.error('Erro ao enviar confirmação:', error);
+    await logEmail({
+      recipientEmail: params.email,
+      recipientType: 'contractor',
+      subject,
+      templateUsed: 'ContractorConfirmationEmail',
+      status: 'failed',
+      errorMessage: 'Erro ao enviar email',
+    });
     return { success: false, error: 'Erro ao enviar email' };
   }
 }
@@ -219,22 +310,49 @@ export async function sendAdminRequestNotificationEmail(
       very_urgent: '🚨 MUITO URGENTE - ',
     }[params.urgency] || '';
 
+    const subject = `${urgencyPrefix}🚨 Nova Solicitação ${params.requestNumber} - ${params.companyName}`;
+
     const { data, error } = await resend.emails.send({
       from: `HRX Sistema <${FROM_EMAIL}>`,
       to: [ADMIN_EMAIL],
-      subject: `${urgencyPrefix}🚨 Nova Solicitação ${params.requestNumber} - ${params.companyName}`,
+      subject,
       react: <AdminRequestNotificationEmail {...params} />,
     });
 
     if (error) {
       console.error('Erro ao enviar notificação de solicitação para admin:', error);
+      await logEmail({
+        recipientEmail: ADMIN_EMAIL,
+        recipientType: 'admin',
+        subject,
+        templateUsed: 'AdminRequestNotificationEmail',
+        status: 'failed',
+        errorMessage: error.message,
+      });
       return { success: false, error: error.message };
     }
+
+    await logEmail({
+      recipientEmail: ADMIN_EMAIL,
+      recipientType: 'admin',
+      subject,
+      templateUsed: 'AdminRequestNotificationEmail',
+      status: 'sent',
+      externalId: data?.id,
+    });
 
     console.log(`✅ Notificação de solicitação enviada para admin: ${ADMIN_EMAIL} (ID: ${data?.id})`);
     return { success: true, emailId: data?.id };
   } catch (error) {
     console.error('Erro ao enviar notificação de solicitação:', error);
+    await logEmail({
+      recipientEmail: ADMIN_EMAIL,
+      recipientType: 'admin',
+      subject: `Nova Solicitação ${params.requestNumber} - ${params.companyName}`,
+      templateUsed: 'AdminRequestNotificationEmail',
+      status: 'failed',
+      errorMessage: 'Erro ao enviar notificação',
+    });
     return { success: false, error: 'Erro ao enviar notificação' };
   }
 }
@@ -292,11 +410,13 @@ export async function sendContactConfirmationEmail(params: {
   email: string;
   subject: string;
 }): Promise<{ success: boolean; error?: string; emailId?: string }> {
+  const emailSubject = `Mensagem Recebida - ${params.subject}`;
+
   try {
     const { data, error } = await resend.emails.send({
       from: `HRX <${FROM_EMAIL}>`,
       to: [params.email],
-      subject: `Mensagem Recebida - ${params.subject}`,
+      subject: emailSubject,
       react: <ContactConfirmationEmail
         name={params.name}
         subject={params.subject}
@@ -305,13 +425,38 @@ export async function sendContactConfirmationEmail(params: {
 
     if (error) {
       console.error('Erro ao enviar confirmação de contato:', error);
+      await logEmail({
+        recipientEmail: params.email,
+        recipientType: 'contractor',
+        subject: emailSubject,
+        templateUsed: 'ContactConfirmationEmail',
+        status: 'failed',
+        errorMessage: error.message,
+      });
       return { success: false, error: error.message };
     }
+
+    await logEmail({
+      recipientEmail: params.email,
+      recipientType: 'contractor',
+      subject: emailSubject,
+      templateUsed: 'ContactConfirmationEmail',
+      status: 'sent',
+      externalId: data?.id,
+    });
 
     console.log(`✅ Confirmação de contato enviada para: ${params.email} (ID: ${data?.id})`);
     return { success: true, emailId: data?.id };
   } catch (error) {
     console.error('Erro ao enviar confirmação de contato:', error);
+    await logEmail({
+      recipientEmail: params.email,
+      recipientType: 'contractor',
+      subject: emailSubject,
+      templateUsed: 'ContactConfirmationEmail',
+      status: 'failed',
+      errorMessage: 'Erro ao enviar email',
+    });
     return { success: false, error: 'Erro ao enviar email' };
   }
 }
@@ -322,23 +467,50 @@ export async function sendContactConfirmationEmail(params: {
 export async function sendContactNotificationEmail(
   params: SendContactNotificationEmailParams
 ): Promise<{ success: boolean; error?: string; emailId?: string }> {
+  const subject = `📬 Novo Contato - ${params.subject}`;
+
   try {
     const { data, error } = await resend.emails.send({
       from: `HRX Sistema <${FROM_EMAIL}>`,
       to: [ADMIN_EMAIL],
-      subject: `📬 Novo Contato - ${params.subject}`,
+      subject,
       react: <ContactNotificationEmail {...params} />,
     });
 
     if (error) {
       console.error('Erro ao enviar notificação de contato para admin:', error);
+      await logEmail({
+        recipientEmail: ADMIN_EMAIL,
+        recipientType: 'admin',
+        subject,
+        templateUsed: 'ContactNotificationEmail',
+        status: 'failed',
+        errorMessage: error.message,
+      });
       return { success: false, error: error.message };
     }
+
+    await logEmail({
+      recipientEmail: ADMIN_EMAIL,
+      recipientType: 'admin',
+      subject,
+      templateUsed: 'ContactNotificationEmail',
+      status: 'sent',
+      externalId: data?.id,
+    });
 
     console.log(`✅ Notificação de contato enviada para admin: ${ADMIN_EMAIL} (ID: ${data?.id})`);
     return { success: true, emailId: data?.id };
   } catch (error) {
     console.error('Erro ao enviar notificação de contato:', error);
+    await logEmail({
+      recipientEmail: ADMIN_EMAIL,
+      recipientType: 'admin',
+      subject,
+      templateUsed: 'ContactNotificationEmail',
+      status: 'failed',
+      errorMessage: 'Erro ao enviar notificação',
+    });
     return { success: false, error: 'Erro ao enviar notificação' };
   }
 }
@@ -1181,25 +1353,58 @@ interface SendQuoteRequestEmailParams {
 export async function sendQuoteRequestEmail(
   params: SendQuoteRequestEmailParams
 ): Promise<{ success: boolean; error?: string; emailId?: string }> {
+  const subject = `📋 Solicitação de Orçamento - ${params.clientName}`;
+
   try {
     const responseUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/fornecedor/orcamentos/${params.quoteRequestId}/responder`;
 
     const { data, error } = await resend.emails.send({
       from: `HRX <${FROM_EMAIL}>`,
       to: [params.supplierEmail],
-      subject: `📋 Solicitação de Orçamento - ${params.clientName}`,
+      subject,
       react: <QuoteRequestEmail {...params} responseUrl={responseUrl} />,
     });
 
     if (error) {
       console.error('❌ Erro ao enviar solicitação de orçamento:', error);
+      await logEmail({
+        recipientEmail: params.supplierEmail,
+        recipientType: 'supplier',
+        subject,
+        templateUsed: 'QuoteRequestEmail',
+        status: 'failed',
+        errorMessage: error.message,
+        relatedId: params.quoteRequestId,
+        relatedType: 'quote_request',
+      });
       return { success: false, error: error.message };
     }
+
+    await logEmail({
+      recipientEmail: params.supplierEmail,
+      recipientType: 'supplier',
+      subject,
+      templateUsed: 'QuoteRequestEmail',
+      status: 'sent',
+      externalId: data?.id,
+      relatedId: params.quoteRequestId,
+      relatedType: 'quote_request',
+    });
 
     console.log(`✅ Solicitação de orçamento enviada para: ${params.supplierEmail} (ID: ${data?.id})`);
     return { success: true, emailId: data?.id };
   } catch (error) {
     console.error('❌ Erro ao enviar solicitação de orçamento:', error);
+    await logEmail({
+      recipientEmail: params.supplierEmail,
+      recipientType: 'supplier',
+      subject,
+      templateUsed: 'QuoteRequestEmail',
+      status: 'failed',
+      errorMessage: error instanceof Error ? error.message : 'Erro desconhecido',
+      relatedId: params.quoteRequestId,
+      relatedType: 'quote_request',
+    });
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Erro desconhecido'
@@ -1224,23 +1429,56 @@ interface SendUrgentQuoteAdminEmailParams {
 export async function sendUrgentQuoteAdminEmail(
   params: SendUrgentQuoteAdminEmailParams
 ): Promise<{ success: boolean; error?: string; emailId?: string }> {
+  const subject = `🚨 URGENTE - Novo Orçamento ${params.quoteRequestId} - ${params.clientName}`;
+
   try {
     const { data, error } = await resend.emails.send({
       from: `HRX Sistema <${FROM_EMAIL}>`,
       to: [ADMIN_EMAIL],
-      subject: `🚨 URGENTE - Novo Orçamento ${params.quoteRequestId} - ${params.clientName}`,
+      subject,
       react: <UrgentQuoteAdminEmail {...params} />,
     });
 
     if (error) {
       console.error('❌ Erro ao enviar notificação urgente para admin:', error);
+      await logEmail({
+        recipientEmail: ADMIN_EMAIL,
+        recipientType: 'admin',
+        subject,
+        templateUsed: 'UrgentQuoteAdminEmail',
+        status: 'failed',
+        errorMessage: error.message,
+        relatedId: params.quoteRequestId,
+        relatedType: 'quote_request',
+      });
       return { success: false, error: error.message };
     }
+
+    await logEmail({
+      recipientEmail: ADMIN_EMAIL,
+      recipientType: 'admin',
+      subject,
+      templateUsed: 'UrgentQuoteAdminEmail',
+      status: 'sent',
+      externalId: data?.id,
+      relatedId: params.quoteRequestId,
+      relatedType: 'quote_request',
+    });
 
     console.log(`✅ Notificação urgente enviada para admin: ${ADMIN_EMAIL} (ID: ${data?.id})`);
     return { success: true, emailId: data?.id };
   } catch (error) {
     console.error('❌ Erro ao enviar notificação urgente:', error);
+    await logEmail({
+      recipientEmail: ADMIN_EMAIL,
+      recipientType: 'admin',
+      subject,
+      templateUsed: 'UrgentQuoteAdminEmail',
+      status: 'failed',
+      errorMessage: error instanceof Error ? error.message : 'Erro desconhecido',
+      relatedId: params.quoteRequestId,
+      relatedType: 'quote_request',
+    });
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Erro desconhecido'
@@ -1268,23 +1506,56 @@ interface SendQuoteAcceptedEmailParams {
 export async function sendQuoteAcceptedEmail(
   params: SendQuoteAcceptedEmailParams
 ): Promise<{ success: boolean; error?: string; emailId?: string }> {
+  const subject = `✅ Orçamento Aceito! - ${params.clientName}`;
+
   try {
     const { data, error } = await resend.emails.send({
       from: `HRX <${FROM_EMAIL}>`,
       to: [params.supplierEmail],
-      subject: `✅ Orçamento Aceito! - ${params.clientName}`,
+      subject,
       react: <QuoteAcceptedEmail {...params} />,
     });
 
     if (error) {
       console.error('❌ Erro ao enviar email de orçamento aceito:', error);
+      await logEmail({
+        recipientEmail: params.supplierEmail,
+        recipientType: 'supplier',
+        subject,
+        templateUsed: 'QuoteAcceptedEmail',
+        status: 'failed',
+        errorMessage: error.message,
+        relatedId: params.quoteRequestId,
+        relatedType: 'quote_request',
+      });
       return { success: false, error: error.message };
     }
+
+    await logEmail({
+      recipientEmail: params.supplierEmail,
+      recipientType: 'supplier',
+      subject,
+      templateUsed: 'QuoteAcceptedEmail',
+      status: 'sent',
+      externalId: data?.id,
+      relatedId: params.quoteRequestId,
+      relatedType: 'quote_request',
+    });
 
     console.log(`✅ Email de orçamento aceito enviado para: ${params.supplierEmail} (ID: ${data?.id})`);
     return { success: true, emailId: data?.id };
   } catch (error) {
     console.error('❌ Erro ao enviar email de orçamento aceito:', error);
+    await logEmail({
+      recipientEmail: params.supplierEmail,
+      recipientType: 'supplier',
+      subject,
+      templateUsed: 'QuoteAcceptedEmail',
+      status: 'failed',
+      errorMessage: error instanceof Error ? error.message : 'Erro desconhecido',
+      relatedId: params.quoteRequestId,
+      relatedType: 'quote_request',
+    });
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Erro desconhecido'
@@ -1306,23 +1577,56 @@ interface SendQuoteRejectedEmailParams {
 export async function sendQuoteRejectedEmail(
   params: SendQuoteRejectedEmailParams
 ): Promise<{ success: boolean; error?: string; emailId?: string }> {
+  const subject = `Atualização de Orçamento - ${params.clientName}`;
+
   try {
     const { data, error } = await resend.emails.send({
       from: `HRX <${FROM_EMAIL}>`,
       to: [params.supplierEmail],
-      subject: `Atualização de Orçamento - ${params.clientName}`,
+      subject,
       react: <QuoteRejectedEmail {...params} />,
     });
 
     if (error) {
       console.error('❌ Erro ao enviar email de orçamento recusado:', error);
+      await logEmail({
+        recipientEmail: params.supplierEmail,
+        recipientType: 'supplier',
+        subject,
+        templateUsed: 'QuoteRejectedEmail',
+        status: 'failed',
+        errorMessage: error.message,
+        relatedId: params.quoteRequestId,
+        relatedType: 'quote_request',
+      });
       return { success: false, error: error.message };
     }
+
+    await logEmail({
+      recipientEmail: params.supplierEmail,
+      recipientType: 'supplier',
+      subject,
+      templateUsed: 'QuoteRejectedEmail',
+      status: 'sent',
+      externalId: data?.id,
+      relatedId: params.quoteRequestId,
+      relatedType: 'quote_request',
+    });
 
     console.log(`✅ Email de orçamento recusado enviado para: ${params.supplierEmail} (ID: ${data?.id})`);
     return { success: true, emailId: data?.id };
   } catch (error) {
     console.error('❌ Erro ao enviar email de orçamento recusado:', error);
+    await logEmail({
+      recipientEmail: params.supplierEmail,
+      recipientType: 'supplier',
+      subject,
+      templateUsed: 'QuoteRejectedEmail',
+      status: 'failed',
+      errorMessage: error instanceof Error ? error.message : 'Erro desconhecido',
+      relatedId: params.quoteRequestId,
+      relatedType: 'quote_request',
+    });
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Erro desconhecido'
