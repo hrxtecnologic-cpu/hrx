@@ -5,6 +5,7 @@ import { ptBR } from "@clerk/localizations";
 import { Toaster } from "@/components/ui/toaster";
 import { PWAInstaller } from "@/components/PWAInstaller";
 import "./globals.css";
+import "./mapbox-gl.css";
 
 const inter = Inter({
   variable: "--font-inter",

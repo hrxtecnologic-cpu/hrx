@@ -13,6 +13,7 @@ import {
   Building2,
   X,
   Briefcase,
+  Map,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAdminCounts } from '@/hooks/useAdminCounts';
@@ -32,6 +33,7 @@ const getMenuItems = (documentCount: number) => [
       { icon: Building2, label: 'Fornecedores', href: '/admin/fornecedores', badge: null },
       { icon: FileCheck, label: 'Documentos', href: '/admin/documentos', badge: documentCount > 0 ? documentCount : null },
       { icon: Briefcase, label: 'Projetos', href: '/admin/projetos', badge: null },
+      { icon: Map, label: 'Mapa', href: '/admin/mapa', badge: null },
     ],
   },
   {

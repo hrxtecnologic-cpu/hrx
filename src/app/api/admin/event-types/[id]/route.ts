@@ -90,55 +90,26 @@ export async function DELETE(
     }
 
     // ========== Verificar se tipo de evento está em uso ==========
-    // Event type é usado nas tabelas: contractor_requests e requests
+    // Event type é usado na tabela: event_projects
 
-    // Verificar contractor_requests
-    const { data: contractorRequests, error: checkContractorError } = await supabase
-      .from('contractor_requests')
-      .select('id, event_name, event_type')
-      .eq('event_type', eventType.name)
-      .limit(1);
+    // Verificar event_projects
+    const { count: eventProjectsCount, error: checkError } = await supabase
+      .from('event_projects')
+      .select('*', { count: 'exact', head: true })
+      .eq('event_type', eventType.name);
 
-    if (checkContractorError) {
-      throw checkContractorError;
+    if (checkError) {
+      throw checkError;
     }
 
-    // Verificar requests
-    const { data: requests, error: checkRequestsError } = await supabase
-      .from('requests')
-      .select('id, event_name, event_type')
-      .eq('event_type', eventType.name)
-      .limit(1);
-
-    if (checkRequestsError) {
-      throw checkRequestsError;
-    }
-
-    const isInUse = (contractorRequests && contractorRequests.length > 0) ||
-                    (requests && requests.length > 0);
-
-    if (isInUse) {
-      // Contar total de usos
-      const { count: contractorCount } = await supabase
-        .from('contractor_requests')
-        .select('*', { count: 'exact', head: true })
-        .eq('event_type', eventType.name);
-
-      const { count: requestsCount } = await supabase
-        .from('requests')
-        .select('*', { count: 'exact', head: true })
-        .eq('event_type', eventType.name);
-
-      const totalUses = (contractorCount || 0) + (requestsCount || 0);
-
+    if (eventProjectsCount && eventProjectsCount > 0) {
       return NextResponse.json(
         {
           error: 'Tipo de evento em uso',
-          message: `Este tipo de evento não pode ser deletado pois está sendo usado em ${totalUses} solicitação(ões).`,
+          message: `Este tipo de evento não pode ser deletado pois está sendo usado em ${eventProjectsCount} projeto(s).`,
           details: {
-            totalUses,
-            contractorRequests: contractorCount || 0,
-            requests: requestsCount || 0,
+            totalUses: eventProjectsCount,
+            eventProjects: eventProjectsCount,
             eventTypeName: eventType.name,
           }
         },

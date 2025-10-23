@@ -22,30 +22,40 @@ export async function GET() {
 
     const supabase = await createClient();
 
-    // Buscar user_id no Supabase
-    const { data: userData } = await supabase
-      .from('users')
-      .select('id, user_type')
+    // Buscar profissional (suporta clerk_id direto ou via users)
+    let professional = null;
+
+    // Tenta buscar direto por clerk_id
+    const { data: profByClerkId } = await supabase
+      .from('professionals')
+      .select('*')
       .eq('clerk_id', userId)
       .single();
 
-    if (!userData) {
-      return notFoundResponse('Usuário não encontrado');
+    if (profByClerkId) {
+      professional = profByClerkId;
+    } else {
+      // Tenta via users table (modelo antigo)
+      const { data: userData } = await supabase
+        .from('users')
+        .select('id, user_type')
+        .eq('clerk_id', userId)
+        .single();
+
+      if (userData && userData.user_type === 'professional') {
+        const { data: profByUserId } = await supabase
+          .from('professionals')
+          .select('*')
+          .eq('user_id', userData.id)
+          .single();
+
+        if (profByUserId) {
+          professional = profByUserId;
+        }
+      }
     }
 
-    // Verificar se é profissional
-    if (userData.user_type !== 'professional') {
-      return forbiddenResponse('Apenas profissionais podem acessar esta rota');
-    }
-
-    // Buscar dados do profissional
-    const { data: professional, error } = await supabase
-      .from('professionals')
-      .select('*')
-      .eq('user_id', userData.id)
-      .single();
-
-    if (error || !professional) {
+    if (!professional) {
       return notFoundResponse('Perfil profissional não encontrado');
     }
 
@@ -99,24 +109,55 @@ export async function PATCH(req: Request) {
       portfolio,
       subcategories,
       certifications,
+      // Document URLs
+      rg_photo_url,
+      cpf_photo_url,
+      proof_of_residence_url,
+      cnh_photo_url,
+      cnv_photo_url,
+      nr10_certificate_url,
+      nr35_certificate_url,
+      drt_photo_url,
+      profile_photo_url,
     } = body;
 
     const supabase = await createClient();
 
-    // Buscar user_id no Supabase
-    const { data: userData } = await supabase
-      .from('users')
-      .select('id, user_type')
+    // Buscar profissional (suporta clerk_id direto ou via users)
+    let professionalId = null;
+
+    // Tenta buscar direto por clerk_id
+    const { data: profByClerkId } = await supabase
+      .from('professionals')
+      .select('id, clerk_id')
       .eq('clerk_id', userId)
       .single();
 
-    if (!userData) {
-      return notFoundResponse('Usuário não encontrado');
+    if (profByClerkId) {
+      professionalId = profByClerkId.id;
+    } else {
+      // Tenta via users table (modelo antigo)
+      const { data: userData } = await supabase
+        .from('users')
+        .select('id, user_type')
+        .eq('clerk_id', userId)
+        .single();
+
+      if (userData && userData.user_type === 'professional') {
+        const { data: profByUserId } = await supabase
+          .from('professionals')
+          .select('id')
+          .eq('user_id', userData.id)
+          .single();
+
+        if (profByUserId) {
+          professionalId = profByUserId.id;
+        }
+      }
     }
 
-    // Verificar se é profissional
-    if (userData.user_type !== 'professional') {
-      return forbiddenResponse('Apenas profissionais podem acessar esta rota');
+    if (!professionalId) {
+      return notFoundResponse('Profissional não encontrado');
     }
 
     // Atualizar perfil profissional
@@ -148,24 +189,34 @@ export async function PATCH(req: Request) {
         portfolio,
         subcategories,
         certifications,
+        // Document URLs
+        rg_photo_url,
+        cpf_photo_url,
+        proof_of_residence_url,
+        cnh_photo_url,
+        cnv_photo_url,
+        nr10_certificate_url,
+        nr35_certificate_url,
+        drt_photo_url,
+        profile_photo_url,
         // Se foi rejeitado, voltar para pending após edição
         status: 'pending',
         updated_at: new Date().toISOString(),
       })
-      .eq('user_id', userData.id)
+      .eq('id', professionalId)
       .select()
       .single();
 
     if (error) {
       logger.error('Erro ao atualizar perfil profissional', error, {
-        userId: userData.id
+        professionalId
       });
       throw error;
     }
 
     logger.info('Perfil profissional atualizado com sucesso', {
       professionalId: professional.id,
-      userId: userData.id
+      userId
     });
 
     return successResponse(

@@ -22,28 +22,38 @@ export async function GET() {
 
     const supabase = await createClient();
 
-    // Buscar user_id no Supabase
-    const { data: userData } = await supabase
-      .from('users')
-      .select('id, user_type')
+    // Buscar profissional (suporta clerk_id direto ou via users)
+    let professional = null;
+
+    // Tenta buscar direto por clerk_id
+    const { data: profByClerkId } = await supabase
+      .from('professionals')
+      .select('id')
       .eq('clerk_id', userId)
       .single();
 
-    if (!userData) {
-      return notFoundResponse('Usuário não encontrado');
-    }
+    if (profByClerkId) {
+      professional = profByClerkId;
+    } else {
+      // Tenta via users table (modelo antigo)
+      const { data: userData } = await supabase
+        .from('users')
+        .select('id, user_type')
+        .eq('clerk_id', userId)
+        .single();
 
-    // Verificar se é profissional
-    if (userData.user_type !== 'professional') {
-      return forbiddenResponse('Apenas profissionais podem acessar esta rota');
-    }
+      if (userData && userData.user_type === 'professional') {
+        const { data: profByUserId } = await supabase
+          .from('professionals')
+          .select('id')
+          .eq('user_id', userData.id)
+          .single();
 
-    // Buscar professional_id
-    const { data: professional } = await supabase
-      .from('professionals')
-      .select('id')
-      .eq('user_id', userData.id)
-      .single();
+        if (profByUserId) {
+          professional = profByUserId;
+        }
+      }
+    }
 
     if (!professional) {
       return notFoundResponse('Perfil profissional não encontrado');

@@ -15,6 +15,7 @@ import {
   XCircle,
   MessageSquare,
   Clock,
+  Settings,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -153,12 +154,20 @@ export default function ComunicacaoPage() {
           <h1 className="text-3xl font-bold text-white mb-2">Comunicação</h1>
           <p className="text-zinc-400">Gerenciar templates de email e comunicação</p>
         </div>
-        <Link href="/admin/comunicacao/historico">
-          <Button className="bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700">
-            <Clock className="h-4 w-4 mr-2" />
-            Ver Histórico
-          </Button>
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/admin/comunicacao/configuracoes">
+            <Button className="bg-blue-600 hover:bg-blue-500 text-white">
+              <Settings className="h-4 w-4 mr-2" />
+              Configurações
+            </Button>
+          </Link>
+          <Link href="/admin/comunicacao/historico">
+            <Button className="bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700">
+              <Clock className="h-4 w-4 mr-2" />
+              Ver Histórico
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Stats */}
@@ -277,16 +286,16 @@ export default function ComunicacaoPage() {
                   <Eye className="h-4 w-4 mr-2" />
                   Preview
                 </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="flex-1 border-zinc-700 text-zinc-400 hover:bg-zinc-800"
-                  title="Funcionalidade em breve"
-                  disabled
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Editar
-                </Button>
+                <Link href={`/admin/comunicacao/editar/${template.id}`} className="flex-1">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full border-zinc-700 text-zinc-400 hover:bg-zinc-800 hover:text-white hover:border-zinc-600"
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Editar
+                  </Button>
+                </Link>
               </div>
             </CardContent>
           </Card>

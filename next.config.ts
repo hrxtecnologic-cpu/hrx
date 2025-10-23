@@ -46,7 +46,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()'
+            value: 'camera=(), microphone=(), geolocation=(self), interest-cohort=()'
           },
           {
             key: 'Content-Security-Policy',
@@ -57,7 +57,7 @@ const nextConfig: NextConfig = {
                   "style-src 'self' 'unsafe-inline'",
                   "img-src 'self' data: blob: https: http:",
                   "font-src 'self' data:",
-                  "connect-src 'self' http://localhost:* ws://localhost:* https://clerk.hrxeventos.com.br https://*.clerk.accounts.dev https://api.clerk.com https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com",
+                  "connect-src 'self' http://localhost:* ws://localhost:* https://clerk.hrxeventos.com.br https://*.clerk.accounts.dev https://api.clerk.com https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com https://api.mapbox.com https://events.mapbox.com https://viacep.com.br",
                   "frame-src 'self' https://challenges.cloudflare.com https://*.clerk.accounts.dev",
                   "worker-src 'self' blob:",
                   "object-src 'none'",
@@ -71,7 +71,7 @@ const nextConfig: NextConfig = {
                   "style-src 'self' 'unsafe-inline'",
                   "img-src 'self' data: blob: https: *.supabase.co https://img.clerk.com",
                   "font-src 'self' data:",
-                  "connect-src 'self' https://clerk.hrxeventos.com.br https://api.clerk.com https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com",
+                  "connect-src 'self' https://clerk.hrxeventos.com.br https://api.clerk.com https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com https://api.mapbox.com https://events.mapbox.com https://viacep.com.br",
                   "frame-src 'self' https://challenges.cloudflare.com",
                   "worker-src 'self' blob:",
                   "object-src 'none'",

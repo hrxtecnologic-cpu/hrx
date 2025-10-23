@@ -116,6 +116,29 @@ export function validateCNPJ(cnpj: string): boolean {
   return true;
 }
 
+// Formata moeda: 1234.56 → R$ 1.234,56
+export function formatCurrency(value: number): string {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  }).format(value);
+}
+
+// Formata data: 2025-10-23 → 23/10/2025
+export function formatDate(date: string | Date): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return new Intl.DateTimeFormat('pt-BR').format(d);
+}
+
+// Formata data e hora: 2025-10-23T10:30:00 → 23/10/2025 10:30
+export function formatDateTime(date: string | Date): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return new Intl.DateTimeFormat('pt-BR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+  }).format(d);
+}
+
 // Busca endereço pelo CEP (ViaCEP API)
 export async function fetchAddressByCEP(cep: string): Promise<{
   street: string;

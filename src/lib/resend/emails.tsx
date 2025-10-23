@@ -9,6 +9,7 @@ import { QuoteRequestEmail } from './templates/QuoteRequestEmail';
 import { UrgentQuoteAdminEmail } from './templates/UrgentQuoteAdminEmail';
 import { QuoteAcceptedEmail } from './templates/QuoteAcceptedEmail';
 import { QuoteRejectedEmail } from './templates/QuoteRejectedEmail';
+import { ProfessionalInvitationEmail } from './templates/ProfessionalInvitationEmail';
 import { logEmail } from './email-logger';
 
 interface SendProfessionalWelcomeEmailParams {
@@ -2419,6 +2420,145 @@ export async function sendEventRequestAdminNotification(
     return { success: true, emailId: data?.id };
   } catch (error) {
     console.error('❌ Erro ao enviar notificação de solicitação de evento:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Erro desconhecido'
+    };
+  }
+}
+
+/**
+ * ========================================
+ * PROFESSIONAL INVITATION EMAIL
+ * ========================================
+ * Envia convite para profissional confirmar presença em evento
+ */
+
+interface SendProfessionalInvitationParams {
+  // Profissional
+  professionalName: string;
+  professionalEmail: string;
+
+  // Evento
+  eventName: string;
+  eventType: string;
+  eventDate?: string;
+  eventLocation: string;
+
+  // Função do profissional
+  role: string;
+  category: string;
+  durationDays: number;
+  dailyRate?: number;
+
+  // Cliente e projeto
+  clientName: string;
+  isUrgent: boolean;
+  projectNumber: string;
+  projectId: string;
+  teamMemberId: string;
+
+  // Observações
+  additionalNotes?: string;
+
+  // Token de confirmação
+  invitationToken: string;
+}
+
+export async function sendProfessionalInvitation(
+  params: SendProfessionalInvitationParams
+): Promise<{ success: boolean; error?: string; emailId?: string }> {
+
+  const subject = params.isUrgent
+    ? `⚡ [URGENTE] Convite para trabalhar: ${params.eventName}`
+    : `🎯 Convite para trabalhar: ${params.eventName}`;
+
+  try {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+    // URLs de confirmação e rejeição
+    const confirmUrl = `${appUrl}/professional/confirm/${params.invitationToken}?action=confirm`;
+    const rejectUrl = `${appUrl}/professional/confirm/${params.invitationToken}?action=reject`;
+
+    // Formatar diária
+    const dailyRateFormatted = params.dailyRate
+      ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(params.dailyRate)
+      : undefined;
+
+    // Enviar email
+    const { data, error } = await resend.emails.send({
+      from: `HRX Eventos <${FROM_EMAIL}>`,
+      to: [params.professionalEmail],
+      subject,
+      react: (
+        <ProfessionalInvitationEmail
+          professionalName={params.professionalName}
+          professionalEmail={params.professionalEmail}
+          eventName={params.eventName}
+          eventType={params.eventType}
+          eventDate={params.eventDate}
+          eventLocation={params.eventLocation}
+          role={params.role}
+          category={params.category}
+          durationDays={params.durationDays}
+          dailyRate={dailyRateFormatted}
+          clientName={params.clientName}
+          isUrgent={params.isUrgent}
+          projectNumber={params.projectNumber}
+          additionalNotes={params.additionalNotes}
+          confirmUrl={confirmUrl}
+          rejectUrl={rejectUrl}
+        />
+      ),
+    });
+
+    if (error) {
+      console.error('❌ Erro ao enviar convite para profissional:', error);
+
+      // Log do erro
+      await logEmail({
+        recipientEmail: params.professionalEmail,
+        recipientType: 'professional',
+        subject,
+        templateUsed: 'ProfessionalInvitationEmail',
+        status: 'failed',
+        errorMessage: error.message,
+      });
+
+      return { success: false, error: error.message };
+    }
+
+    // Log do sucesso
+    await logEmail({
+      recipientEmail: params.professionalEmail,
+      recipientType: 'professional',
+      subject,
+      templateUsed: 'ProfessionalInvitationEmail',
+      status: 'sent',
+      externalId: data?.id,
+    });
+
+    console.log(
+      `✅ Convite enviado para: ${params.professionalEmail} | ` +
+      `Evento: ${params.eventName} | ` +
+      `Token: ${params.invitationToken.substring(0, 8)}... | ` +
+      `Email ID: ${data?.id}`
+    );
+
+    return { success: true, emailId: data?.id };
+  } catch (error) {
+    console.error('❌ Erro ao enviar convite para profissional:', error);
+
+    // Log do erro
+    await logEmail({
+      recipientEmail: params.professionalEmail,
+      recipientType: 'professional',
+      subject,
+      templateUsed: 'ProfessionalInvitationEmail',
+      status: 'failed',
+      errorMessage: error instanceof Error ? error.message : 'Erro desconhecido',
+    });
+
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Erro desconhecido'

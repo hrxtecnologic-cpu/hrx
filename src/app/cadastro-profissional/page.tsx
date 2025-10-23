@@ -23,6 +23,8 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PortfolioUpload } from '@/components/PortfolioUpload';
 import { CategorySubcategorySelector } from '@/components/CategorySubcategorySelector';
+import { BasicDocumentsUpload } from '@/components/BasicDocumentsUpload';
+import { LocationPicker } from '@/components/LocationPicker';
 import { AlertCircle, XCircle } from 'lucide-react';
 import { Professional, DocumentValidations, DocumentValidation } from '@/types';
 import type { Subcategories, Certifications, Certification } from '@/types/certification';
@@ -42,6 +44,10 @@ export default function CadastroProfissionalPage() {
   // Sistema de subcategorias e certificações
   const [subcategories, setSubcategories] = useState<Subcategories>({});
   const [certifications, setCertifications] = useState<Certifications>({});
+
+  // Localização no mapa
+  const [mapLatitude, setMapLatitude] = useState<number | undefined>();
+  const [mapLongitude, setMapLongitude] = useState<number | undefined>();
 
   const {
     register,
@@ -136,6 +142,12 @@ export default function CadastroProfissionalPage() {
             setCertifications(data.certifications);
           }
 
+          // Carregar geolocalização
+          if (data.latitude && data.longitude) {
+            setMapLatitude(data.latitude);
+            setMapLongitude(data.longitude);
+          }
+
           // Buscar validações de documentos
           if (data.id) {
             const validationsResponse = await fetch(`/api/professionals/me/documents`);
@@ -162,14 +174,36 @@ export default function CadastroProfissionalPage() {
 
     setSearchingCEP(true);
     const address = await fetchAddressByCEP(cep);
-    setSearchingCEP(false);
 
     if (address) {
       setValue('street', address.street);
       setValue('neighborhood', address.neighborhood);
       setValue('city', address.city);
       setValue('state', address.state);
+
+      // Buscar coordenadas do endereço via Mapbox Geocoding
+      try {
+        const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+        if (mapboxToken) {
+          const fullAddress = `${address.street}, ${address.neighborhood}, ${address.city}, ${address.state}, Brasil`;
+          const geocodeUrl = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(fullAddress)}.json?access_token=${mapboxToken}&limit=1`;
+
+          const response = await fetch(geocodeUrl);
+          const data = await response.json();
+
+          if (data.features && data.features.length > 0) {
+            const [lng, lat] = data.features[0].center;
+            setMapLatitude(lat);
+            setMapLongitude(lng);
+            console.log(`📍 [CEP→MAPA] Coordenadas encontradas: Lat ${lat}, Lng ${lng}`);
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao buscar coordenadas do CEP:', error);
+      }
     }
+
+    setSearchingCEP(false);
   }
 
   // Toggle categoria (DEPRECATED - mantido para compatibilidade)
@@ -236,6 +270,86 @@ export default function CadastroProfissionalPage() {
     }
   };
 
+  // Handler para upload de documentos básicos
+  const handleDocumentUploaded = (type: string, url: string) => {
+    setUploadedDocuments((prev) => ({
+      ...prev,
+      [type]: url,
+    }));
+    console.log(`✅ [DOCUMENTO BÁSICO] ${type} carregado:`, url);
+  };
+
+  // Handler para seleção de localização no mapa
+  const handleLocationSelect = async (lat: number, lng: number, address?: string) => {
+    setMapLatitude(lat);
+    setMapLongitude(lng);
+    console.log(`📍 [LOCALIZAÇÃO] Lat: ${lat}, Lng: ${lng}`);
+
+    // Fazer geocoding reverso para preencher campos de endereço
+    if (address) {
+      console.log(`📍 [ENDEREÇO COMPLETO] ${address}`);
+
+      try {
+        const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+        if (mapboxToken) {
+          const response = await fetch(
+            `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${mapboxToken}&types=address,poi`
+          );
+          const data = await response.json();
+
+          if (data.features && data.features.length > 0) {
+            const feature = data.features[0];
+            const context = feature.context || [];
+
+            // Extrair informações do contexto
+            let street = '';
+            let neighborhood = '';
+            let city = '';
+            let state = '';
+            let postalCode = '';
+
+            // Nome da rua (do próprio feature)
+            if (feature.address && feature.text) {
+              street = `${feature.text}, ${feature.address}`;
+            } else if (feature.text) {
+              street = feature.text;
+            }
+
+            // Buscar no contexto
+            context.forEach((ctx: any) => {
+              if (ctx.id.startsWith('postcode')) {
+                postalCode = ctx.text;
+              } else if (ctx.id.startsWith('neighborhood')) {
+                neighborhood = ctx.text;
+              } else if (ctx.id.startsWith('place')) {
+                city = ctx.text;
+              } else if (ctx.id.startsWith('region')) {
+                state = ctx.short_code?.replace('BR-', '') || ctx.text;
+              }
+            });
+
+            // Preencher os campos do formulário
+            if (street) setValue('street', street);
+            if (neighborhood) setValue('neighborhood', neighborhood);
+            if (city) setValue('city', city);
+            if (state) setValue('state', state);
+            if (postalCode) setValue('cep', postalCode);
+
+            console.log(`📍 [MAPA→FORMULÁRIO] Campos preenchidos:`, {
+              street,
+              neighborhood,
+              city,
+              state,
+              cep: postalCode
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao preencher campos do endereço:', error);
+      }
+    }
+  };
+
   // Upload de fotos de portfólio
   async function handlePortfolioUpload(files: File[]) {
     if (!user?.id) return;
@@ -254,18 +368,72 @@ export default function CadastroProfissionalPage() {
     setIsSubmitting(true);
 
     try {
+      // Mapear certificações para documentos (para validação do backend)
+      const mappedDocuments = { ...uploadedDocuments };
+      const validityFields: Record<string, string> = {};
+
+      // CNH: certification 'cnh' -> document 'cnh_photo'
+      if (certifications.cnh?.document_url) {
+        mappedDocuments.cnh_photo = certifications.cnh.document_url;
+        if (certifications.cnh.number) {
+          validityFields.cnh_number = certifications.cnh.number;
+        }
+        if (certifications.cnh.validity) {
+          validityFields.cnh_validity = certifications.cnh.validity;
+        }
+      }
+
+      // CNV: certification 'cnv' -> document 'cnv_photo'
+      if (certifications.cnv?.document_url) {
+        mappedDocuments.cnv_photo = certifications.cnv.document_url;
+        if (certifications.cnv.validity) {
+          validityFields.cnv_validity = certifications.cnv.validity;
+        }
+      }
+
+      // NR10: certification 'nr10' -> document 'nr10_certificate'
+      if (certifications.nr10?.document_url) {
+        mappedDocuments.nr10_certificate = certifications.nr10.document_url;
+        if (certifications.nr10.validity) {
+          validityFields.nr10_validity = certifications.nr10.validity;
+        }
+      }
+
+      // NR35: certification 'nr35' -> document 'nr35_certificate'
+      if (certifications.nr35?.document_url) {
+        mappedDocuments.nr35_certificate = certifications.nr35.document_url;
+        if (certifications.nr35.validity) {
+          validityFields.nr35_validity = certifications.nr35.validity;
+        }
+      }
+
+      // DRT: certification 'drt' -> document 'drt_photo'
+      if (certifications.drt?.document_url) {
+        mappedDocuments.drt_photo = certifications.drt.document_url;
+        if (certifications.drt.validity) {
+          validityFields.drt_validity = certifications.drt.validity;
+        }
+      }
+
       // Incluir URLs dos documentos no payload
       const payload = {
         ...data,
-        documents: uploadedDocuments,
+        documents: mappedDocuments,
         portfolio: portfolioUrls,
         // Sistema de subcategorias e certificações
         subcategories,
         certifications,
+        // Campos de validade
+        ...validityFields,
+        // Geolocalização
+        latitude: mapLatitude,
+        longitude: mapLongitude,
       };
 
-      console.log('📦 [FORMULÁRIO] Enviando documentos:', uploadedDocuments);
-      console.log('📦 [FORMULÁRIO] Payload completo:', JSON.stringify(payload.documents, null, 2));
+      console.log('📦 [FORMULÁRIO] Documentos básicos:', uploadedDocuments);
+      console.log('📦 [FORMULÁRIO] Certificações:', certifications);
+      console.log('📦 [FORMULÁRIO] Documentos mapeados:', mappedDocuments);
+      console.log('📦 [FORMULÁRIO] Campos de validade:', validityFields);
 
       const response = await fetch('/api/professionals', {
         method: 'POST',
@@ -606,6 +774,14 @@ export default function CadastroProfissionalPage() {
             </CardContent>
           </Card>
 
+          {/* Localização no Mapa */}
+          <LocationPicker
+            latitude={mapLatitude}
+            longitude={mapLongitude}
+            onLocationSelect={handleLocationSelect}
+            disabled={isSubmitting}
+          />
+
           {/* Categorias e Subcategorias - Novo Organograma */}
           <CategorySubcategorySelector
             selectedSubcategories={subcategories}
@@ -617,6 +793,16 @@ export default function CadastroProfissionalPage() {
           />
           {errors.categories && (
             <p className="text-red-500 text-sm mt-2 text-center">{errors.categories.message}</p>
+          )}
+
+          {/* Documentos Básicos Obrigatórios */}
+          {user?.id && (
+            <BasicDocumentsUpload
+              userId={user.id}
+              uploadedDocuments={uploadedDocuments}
+              onDocumentUploaded={handleDocumentUploaded}
+              disabled={isSubmitting}
+            />
           )}
 
           {/* Experiência */}

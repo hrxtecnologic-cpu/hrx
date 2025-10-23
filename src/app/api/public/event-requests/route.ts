@@ -118,8 +118,12 @@ export async function POST(req: Request) {
           // Criador (se autenticado)
           created_by: userId,
 
+          // ✅ CORRIGIDO: Salvar demanda original do cliente nos campos JSONB
+          professionals_needed: professionals || [],
+          equipment_needed: equipment_types || [],
+
           // Metadados da solicitação pública
-          internal_notes: `Solicitação pública recebida via formulário do site.\n\nProfissionais solicitados: ${JSON.stringify(professionals, null, 2)}\n\nEquipamentos: ${equipment_types?.join(', ') || 'Nenhum'}\n\nObservações sobre equipamentos: ${equipment_notes || 'Nenhuma'}`,
+          internal_notes: `Solicitação pública recebida via formulário do site.\n\nObservações sobre equipamentos: ${equipment_notes || 'Nenhuma'}\n\nObservações adicionais: ${additional_notes || 'Nenhuma'}`,
         },
       ])
       .select()

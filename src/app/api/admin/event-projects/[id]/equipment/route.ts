@@ -129,9 +129,20 @@ export async function POST(
       equipment,
     });
   } catch (error: any) {
-    logger.error('Erro ao adicionar equipamento', { error: error.message });
+    logger.error('Erro ao adicionar equipamento', {
+      error: error.message,
+      errorType: typeof error,
+      errorString: String(error),
+      stack: error.stack,
+      projectId: params.id,
+      userId,
+    });
     return NextResponse.json(
-      { error: 'Erro interno do servidor' },
+      {
+        error: 'Erro interno do servidor',
+        message: error.message || String(error),
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      },
       { status: 500 }
     );
   }

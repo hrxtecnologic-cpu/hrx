@@ -77,16 +77,38 @@ export async function POST(req: Request) {
     // Validar com Zod
     const validatedData = professionalSchema.parse(formData);
 
-    // Buscar o user_id no Supabase baseado no clerk_id
-    const { data: userData, error: userError } = await supabase
+    // Buscar ou criar o user_id no Supabase baseado no clerk_id
+    let { data: userData, error: userError } = await supabase
       .from('users')
       .select('id')
       .eq('clerk_id', userId)
-      .single();
+      .maybeSingle();
 
-    if (userError || !userData) {
-      logger.error('Erro ao buscar usuário no banco', userError, { userId });
-      return notFoundResponse('Usuário não encontrado no banco de dados');
+    // Se não existe, criar automaticamente (webhook pode ter falhado)
+    if (!userData) {
+      logger.info('Usuário não encontrado, criando automaticamente...', { userId });
+
+      const { data: newUser, error: createError } = await supabase
+        .from('users')
+        .insert({
+          clerk_id: userId,
+          email: user.emailAddresses[0]?.emailAddress || '',
+          full_name: user.firstName && user.lastName
+            ? `${user.firstName} ${user.lastName}`
+            : user.username || 'Sem nome',
+          user_type: 'professional',
+          status: 'active',
+        })
+        .select('id')
+        .single();
+
+      if (createError || !newUser) {
+        logger.error('Erro ao criar usuário automaticamente', createError, { userId });
+        return internalErrorResponse('Erro ao criar usuário no banco de dados');
+      }
+
+      userData = newUser;
+      logger.info('Usuário criado automaticamente com sucesso', { userId, supabaseUserId: newUser.id });
     }
 
     // Verificar se já existe cadastro para este usuário

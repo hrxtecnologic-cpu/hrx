@@ -19,17 +19,22 @@ const supabase = createClient(
 // =============================================
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  let userId: string | null = null;
+  let projectId: string | null = null;
+
   try {
     // Verificar autenticação
-    const { userId } = await auth();
+    const authResult = await auth();
+    userId = authResult.userId;
+
     if (!userId) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     }
 
     // Rate limiting
-    const rateLimitResult = await rateLimit(userId, RateLimitPresets.API);
+    const rateLimitResult = await rateLimit(userId, RateLimitPresets.API_WRITE);
     if (!rateLimitResult.success) {
       return NextResponse.json(
         createRateLimitError(rateLimitResult),
@@ -37,7 +42,8 @@ export async function POST(
       );
     }
 
-    const projectId = params.id;
+    const resolvedParams = await params;
+    projectId = resolvedParams.id;
     const body: AddTeamMemberData = await req.json();
 
     // Validações
@@ -143,9 +149,20 @@ export async function POST(
       teamMember,
     });
   } catch (error: any) {
-    logger.error('Erro ao adicionar membro à equipe', { error: error.message });
+    logger.error('Erro ao adicionar membro à equipe', {
+      error: error.message,
+      errorType: typeof error,
+      errorString: String(error),
+      stack: error.stack,
+      projectId,
+      userId,
+    });
     return NextResponse.json(
-      { error: 'Erro interno do servidor' },
+      {
+        error: 'Erro interno do servidor',
+        message: error.message || String(error),
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      },
       { status: 500 }
     );
   }
@@ -156,7 +173,7 @@ export async function POST(
 // =============================================
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verificar autenticação
@@ -166,13 +183,16 @@ export async function DELETE(
     }
 
     // Rate limiting
-    const rateLimitResult = await rateLimit(userId, RateLimitPresets.API);
+    const rateLimitResult = await rateLimit(userId, RateLimitPresets.API_WRITE);
     if (!rateLimitResult.success) {
       return NextResponse.json(
         createRateLimitError(rateLimitResult),
         { status: 429 }
       );
     }
+
+    const resolvedParams = await params;
+    const projectId = resolvedParams.id;
 
     const { searchParams } = new URL(req.url);
     const memberId = searchParams.get('member_id');
@@ -189,7 +209,7 @@ export async function DELETE(
       .from('project_team')
       .delete()
       .eq('id', memberId)
-      .eq('project_id', params.id);
+      .eq('project_id', projectId);
 
     if (error) {
       logger.error('Erro ao remover membro da equipe', {
@@ -202,7 +222,7 @@ export async function DELETE(
 
     logger.info('Membro removido da equipe', {
       userId,
-      projectId: params.id,
+      projectId,
       memberId,
     });
 

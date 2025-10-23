@@ -2,11 +2,12 @@
  * Cache Service
  *
  * Sistema de cache genérico e reutilizável
- * Usa memória em desenvolvimento, extensível para Redis em produção
+ * Usa Redis em produção e fallback para memória em desenvolvimento
  */
 
 import { logger } from './logger';
 import crypto from 'crypto';
+import { getCache as redisGet, setCache as redisSet, deleteCache as redisDelete, deleteCachePattern as redisDeletePattern } from './redis';
 
 // =====================================================
 // Types
@@ -46,10 +47,10 @@ export interface CacheStats {
 }
 
 // =====================================================
-// In-Memory Store
+// In-Memory Store (Fallback)
 // =====================================================
 
-const store: CacheStore = {};
+const memoryStore: CacheStore = {};
 const stats = {
   hits: 0,
   misses: 0,
@@ -58,21 +59,23 @@ const stats = {
 };
 
 // Limpar registros expirados a cada 5 minutos
-setInterval(() => {
-  const now = Date.now();
-  let cleaned = 0;
+if (typeof setInterval !== 'undefined') {
+  setInterval(() => {
+    const now = Date.now();
+    let cleaned = 0;
 
-  Object.keys(store).forEach(key => {
-    if (store[key].expiresAt < now) {
-      delete store[key];
-      cleaned++;
+    Object.keys(memoryStore).forEach(key => {
+      if (memoryStore[key].expiresAt < now) {
+        delete memoryStore[key];
+        cleaned++;
+      }
+    });
+
+    if (cleaned > 0) {
+      logger.debug('Cache cleanup executado', { cleaned, remaining: Object.keys(memoryStore).length });
     }
-  });
-
-  if (cleaned > 0) {
-    logger.debug('Cache cleanup executado', { cleaned, remaining: Object.keys(store).length });
-  }
-}, 300000); // 5 minutos
+  }, 300000); // 5 minutos
+}
 
 // =====================================================
 // Cache Operations
@@ -95,99 +98,160 @@ export function generateCacheKey(prefix: string, identifier: string | object): s
 }
 
 /**
- * Busca valor no cache
- *
- * @param key - Chave de cache
- * @returns Valor armazenado ou null se não encontrado/expirado
+ * Cache em memória (fallback)
  */
-export async function cacheGet<T>(key: string): Promise<T | null> {
-  const entry = store[key];
+async function cacheGetMemory<T>(key: string): Promise<T | null> {
+  const entry = memoryStore[key];
 
   if (!entry) {
     stats.misses++;
-    logger.debug('Cache miss', { key });
+    logger.debug('Cache miss (memory)', { key });
     return null;
   }
 
   const now = Date.now();
 
-  // Verificar se expirou
   if (entry.expiresAt < now) {
-    delete store[key];
+    delete memoryStore[key];
     stats.misses++;
-    logger.debug('Cache expired', { key });
+    logger.debug('Cache expired (memory)', { key });
     return null;
   }
 
   stats.hits++;
-  logger.debug('Cache hit', { key, ttlRemaining: entry.expiresAt - now });
+  logger.debug('Cache hit (memory)', { key, ttlRemaining: entry.expiresAt - now });
   return entry.value as T;
 }
 
-/**
- * Armazena valor no cache
- *
- * @param key - Chave de cache
- * @param value - Valor a ser armazenado
- * @param ttl - TTL em milissegundos
- */
-export async function cacheSet<T>(key: string, value: T, ttl: number): Promise<void> {
+async function cacheSetMemory<T>(key: string, value: T, ttl: number): Promise<void> {
   const now = Date.now();
 
-  store[key] = {
+  memoryStore[key] = {
     value,
     expiresAt: now + ttl,
   };
 
   stats.sets++;
-  logger.debug('Cache set', { key, ttl, expiresAt: new Date(now + ttl).toISOString() });
+  logger.debug('Cache set (memory)', { key, ttl, expiresAt: new Date(now + ttl).toISOString() });
 }
 
-/**
- * Remove valor do cache
- *
- * @param key - Chave de cache
- */
-export async function cacheDelete(key: string): Promise<void> {
-  if (store[key]) {
-    delete store[key];
+async function cacheDeleteMemory(key: string): Promise<void> {
+  if (memoryStore[key]) {
+    delete memoryStore[key];
     stats.deletes++;
-    logger.debug('Cache delete', { key });
+    logger.debug('Cache delete (memory)', { key });
   }
 }
 
-/**
- * Limpa todo o cache (ou apenas chaves com determinado prefixo)
- *
- * @param prefix - Prefixo opcional para filtrar chaves
- */
-export async function cacheClear(prefix?: string): Promise<number> {
+async function cacheClearMemory(prefix?: string): Promise<number> {
   let cleared = 0;
 
   if (prefix) {
-    // Limpar apenas chaves com esse prefixo
-    Object.keys(store).forEach(key => {
+    Object.keys(memoryStore).forEach(key => {
       if (key.startsWith(prefix)) {
-        delete store[key];
+        delete memoryStore[key];
         cleared++;
       }
     });
-    logger.info('Cache parcial limpo', { prefix, cleared });
+    logger.info('Cache parcial limpo (memory)', { prefix, cleared });
   } else {
-    // Limpar tudo
-    cleared = Object.keys(store).length;
-    Object.keys(store).forEach(key => delete store[key]);
-    logger.info('Cache completamente limpo', { cleared });
+    cleared = Object.keys(memoryStore).length;
+    Object.keys(memoryStore).forEach(key => delete memoryStore[key]);
+    logger.info('Cache completamente limpo (memory)', { cleared });
   }
 
   return cleared;
 }
 
 /**
+ * Busca valor no cache (Redis ou memória)
+ */
+export async function cacheGet<T>(key: string): Promise<T | null> {
+  if (process.env.REDIS_URL) {
+    try {
+      const value = await redisGet<T>(key);
+      if (value !== null) {
+        stats.hits++;
+        logger.debug('Cache hit (Redis)', { key });
+      } else {
+        stats.misses++;
+        logger.debug('Cache miss (Redis)', { key });
+      }
+      return value;
+    } catch (error) {
+      logger.warn('Redis falhou, usando memória', { error });
+      return cacheGetMemory<T>(key);
+    }
+  }
+
+  return cacheGetMemory<T>(key);
+}
+
+/**
+ * Armazena valor no cache (Redis ou memória)
+ */
+export async function cacheSet<T>(key: string, value: T, ttl: number): Promise<void> {
+  if (process.env.REDIS_URL) {
+    try {
+      await redisSet(key, value, { ttl: Math.floor(ttl / 1000) }); // ms para segundos
+      stats.sets++;
+      logger.debug('Cache set (Redis)', { key, ttl });
+      return;
+    } catch (error) {
+      logger.warn('Redis falhou, usando memória', { error });
+      return cacheSetMemory(key, value, ttl);
+    }
+  }
+
+  return cacheSetMemory(key, value, ttl);
+}
+
+/**
+ * Remove valor do cache (Redis ou memória)
+ */
+export async function cacheDelete(key: string): Promise<void> {
+  if (process.env.REDIS_URL) {
+    try {
+      await redisDelete(key);
+      stats.deletes++;
+      logger.debug('Cache delete (Redis)', { key });
+      return;
+    } catch (error) {
+      logger.warn('Redis falhou, usando memória', { error });
+      return cacheDeleteMemory(key);
+    }
+  }
+
+  return cacheDeleteMemory(key);
+}
+
+/**
+ * Limpa cache por prefixo (Redis ou memória)
+ */
+export async function cacheClear(prefix?: string): Promise<number> {
+  if (process.env.REDIS_URL) {
+    try {
+      if (prefix) {
+        await redisDeletePattern(`${prefix}*`);
+      } else {
+        await redisDeletePattern('*');
+      }
+      logger.info('Cache limpo (Redis)', { prefix });
+      return 0; // Redis não retorna count
+    } catch (error) {
+      logger.warn('Redis falhou, usando memória', { error });
+      return cacheClearMemory(prefix);
+    }
+  }
+
+  return cacheClearMemory(prefix);
+}
+
+/**
  * Retorna estatísticas do cache
  */
 export function getCacheStats(): CacheStats {
-  const totalKeys = Object.keys(store).length;
+  const totalKeys = Object.keys(memoryStore).length;
   const totalRequests = stats.hits + stats.misses;
   const hitRate = totalRequests > 0
     ? ((stats.hits / totalRequests) * 100).toFixed(2)

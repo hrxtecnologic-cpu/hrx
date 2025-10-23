@@ -13,9 +13,19 @@ const PRECACHE_URLS = [
 self.addEventListener('install', (event) => {
   console.log('[SW] Installing service worker...');
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
+    caches.open(CACHE_NAME).then(async (cache) => {
       console.log('[SW] Caching essentials');
-      return cache.addAll(PRECACHE_URLS);
+      // Cachear arquivos um por um para evitar falha total
+      const cachePromises = PRECACHE_URLS.map(async (url) => {
+        try {
+          await cache.add(url);
+          console.log('[SW] Cached:', url);
+        } catch (error) {
+          console.warn('[SW] Failed to cache:', url, error);
+          // Continua mesmo se um arquivo falhar
+        }
+      });
+      return Promise.all(cachePromises);
     })
   );
   self.skipWaiting();

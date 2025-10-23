@@ -98,7 +98,6 @@ export async function POST(
         total_equipment_cost: totalEquipmentCost,
         total_cost: totalCost,
         total_client_price: totalClientPrice,
-        equipment_supplier_id: quotation.supplier_id,
         updated_at: new Date().toISOString(),
       })
       .eq('id', projectId);

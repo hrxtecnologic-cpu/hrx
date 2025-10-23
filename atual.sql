@@ -9,44 +9,6 @@ CREATE TABLE public.categories (
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT categories_pkey PRIMARY KEY (id)
 );
-CREATE TABLE public.contractor_requests (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  clerk_id character varying,
-  company_name character varying NOT NULL,
-  cnpj character varying,
-  responsible_name character varying NOT NULL,
-  responsible_role character varying,
-  email character varying NOT NULL,
-  phone character varying NOT NULL,
-  accepts_whatsapp boolean DEFAULT false,
-  website character varying,
-  company_address text,
-  event_name character varying NOT NULL,
-  event_type character varying NOT NULL,
-  event_description text,
-  start_date date NOT NULL,
-  end_date date,
-  start_time time without time zone,
-  end_time time without time zone,
-  expected_attendance integer,
-  venue_name character varying,
-  venue_address character varying NOT NULL,
-  venue_city character varying NOT NULL,
-  venue_state character varying NOT NULL,
-  venue_zip character varying,
-  professionals_needed jsonb,
-  needs_equipment boolean DEFAULT false,
-  equipment_list ARRAY,
-  equipment_other text,
-  equipment_notes text,
-  budget_range character varying,
-  urgency character varying DEFAULT 'normal'::character varying,
-  additional_notes text,
-  status character varying DEFAULT 'pending'::character varying,
-  created_at timestamp with time zone DEFAULT now(),
-  updated_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT contractor_requests_pkey PRIMARY KEY (id)
-);
 CREATE TABLE public.contractors (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   company_name character varying NOT NULL,
@@ -94,6 +56,31 @@ CREATE TABLE public.email_logs (
   sent_at timestamp with time zone DEFAULT now(),
   CONSTRAINT email_logs_pkey PRIMARY KEY (id)
 );
+CREATE TABLE public.email_template_config (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  company_name text DEFAULT 'HRX Tecnologia'::text,
+  company_logo_url text,
+  primary_color text DEFAULT '#DC2626'::text,
+  secondary_color text DEFAULT '#EF4444'::text,
+  background_color text DEFAULT '#f9fafb'::text,
+  text_color text DEFAULT '#1a1a1a'::text,
+  contact_email text DEFAULT 'contato@hrxeventos.com.br'::text,
+  contact_phone text DEFAULT '(11) 99999-9999'::text,
+  contact_whatsapp text DEFAULT '5511999999999'::text,
+  contact_website text DEFAULT 'https://hrxeventos.com.br'::text,
+  contact_address text,
+  social_instagram text,
+  social_facebook text,
+  social_linkedin text,
+  template_texts jsonb DEFAULT '{}'::jsonb,
+  footer_text text DEFAULT 'HRX Tecnologia - Conectando profissionais a eventos'::text,
+  show_social_links boolean DEFAULT true,
+  show_contact_info boolean DEFAULT true,
+  is_active boolean DEFAULT false,
+  CONSTRAINT email_template_config_pkey PRIMARY KEY (id)
+);
 CREATE TABLE public.equipment_allocations (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   request_id uuid NOT NULL UNIQUE,
@@ -101,8 +88,7 @@ CREATE TABLE public.equipment_allocations (
   notes text,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT equipment_allocations_pkey PRIMARY KEY (id),
-  CONSTRAINT equipment_allocations_request_id_fkey FOREIGN KEY (request_id) REFERENCES public.contractor_requests(id)
+  CONSTRAINT equipment_allocations_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.equipment_suppliers (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -175,7 +161,13 @@ CREATE TABLE public.event_projects (
   completed_at timestamp with time zone,
   migrated_from_contractor_request_id uuid,
   migrated_from_quote_request_id uuid,
-  CONSTRAINT event_projects_pkey PRIMARY KEY (id)
+  equipment_supplier_id uuid,
+  professionals_needed jsonb DEFAULT '[]'::jsonb,
+  equipment_needed jsonb DEFAULT '[]'::jsonb,
+  latitude numeric,
+  longitude numeric,
+  CONSTRAINT event_projects_pkey PRIMARY KEY (id),
+  CONSTRAINT event_projects_equipment_supplier_id_fkey FOREIGN KEY (equipment_supplier_id) REFERENCES public.equipment_suppliers(id)
 );
 CREATE TABLE public.event_types (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -185,7 +177,48 @@ CREATE TABLE public.event_types (
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT event_types_pkey PRIMARY KEY (id)
 );
+CREATE TABLE public.notification_preferences (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL UNIQUE,
+  email_enabled boolean DEFAULT true,
+  push_enabled boolean DEFAULT true,
+  sms_enabled boolean DEFAULT false,
+  notify_project_updates boolean DEFAULT true,
+  notify_invitations boolean DEFAULT true,
+  notify_quotations boolean DEFAULT true,
+  notify_documents boolean DEFAULT true,
+  notify_payments boolean DEFAULT true,
+  notify_reminders boolean DEFAULT true,
+  digest_frequency text DEFAULT 'instant'::text CHECK (digest_frequency = ANY (ARRAY['instant'::text, 'hourly'::text, 'daily'::text, 'weekly'::text, 'never'::text])),
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT notification_preferences_pkey PRIMARY KEY (id),
+  CONSTRAINT notification_preferences_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+);
 CREATE TABLE public.notifications (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid,
+  user_type text NOT NULL CHECK (user_type = ANY (ARRAY['admin'::text, 'professional'::text, 'supplier'::text, 'client'::text])),
+  notification_type text NOT NULL CHECK (notification_type = ANY (ARRAY['project_created'::text, 'project_status_changed'::text, 'invitation_received'::text, 'invitation_accepted'::text, 'invitation_rejected'::text, 'quotation_received'::text, 'quotation_accepted'::text, 'document_approved'::text, 'document_rejected'::text, 'document_expiring'::text, 'team_incomplete'::text, 'proposal_sent'::text, 'payment_received'::text, 'event_reminder'::text, 'system_alert'::text])),
+  title text NOT NULL,
+  message text NOT NULL,
+  action_url text,
+  project_id uuid,
+  professional_id uuid,
+  supplier_id uuid,
+  is_read boolean DEFAULT false,
+  read_at timestamp with time zone,
+  priority text DEFAULT 'normal'::text CHECK (priority = ANY (ARRAY['low'::text, 'normal'::text, 'high'::text, 'urgent'::text])),
+  created_at timestamp with time zone DEFAULT now(),
+  expires_at timestamp with time zone,
+  metadata jsonb DEFAULT '{}'::jsonb,
+  CONSTRAINT notifications_pkey PRIMARY KEY (id),
+  CONSTRAINT notifications_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
+  CONSTRAINT notifications_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.event_projects(id),
+  CONSTRAINT notifications_professional_id_fkey FOREIGN KEY (professional_id) REFERENCES public.professionals(id),
+  CONSTRAINT notifications_supplier_id_fkey FOREIGN KEY (supplier_id) REFERENCES public.equipment_suppliers(id)
+);
+CREATE TABLE public.notifications_old (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   professional_id uuid NOT NULL,
   request_id uuid,
@@ -196,7 +229,7 @@ CREATE TABLE public.notifications (
   read boolean DEFAULT false,
   read_at timestamp with time zone,
   created_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT notifications_pkey PRIMARY KEY (id)
+  CONSTRAINT notifications_old_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.professional_history (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -212,6 +245,28 @@ CREATE TABLE public.professional_history (
   CONSTRAINT professional_history_pkey PRIMARY KEY (id),
   CONSTRAINT professional_history_professional_id_fkey FOREIGN KEY (professional_id) REFERENCES public.professionals(id),
   CONSTRAINT professional_history_action_by_fkey FOREIGN KEY (action_by) REFERENCES public.users(id)
+);
+CREATE TABLE public.professional_reviews (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  project_id uuid NOT NULL,
+  team_member_id uuid NOT NULL,
+  professional_id uuid NOT NULL,
+  rating integer NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  comment text,
+  punctuality_rating integer CHECK (punctuality_rating >= 1 AND punctuality_rating <= 5),
+  professionalism_rating integer CHECK (professionalism_rating >= 1 AND professionalism_rating <= 5),
+  quality_rating integer CHECK (quality_rating >= 1 AND quality_rating <= 5),
+  communication_rating integer CHECK (communication_rating >= 1 AND communication_rating <= 5),
+  would_hire_again boolean DEFAULT true,
+  reviewed_by uuid,
+  is_visible boolean DEFAULT true,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT professional_reviews_pkey PRIMARY KEY (id),
+  CONSTRAINT professional_reviews_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.event_projects(id),
+  CONSTRAINT professional_reviews_team_member_id_fkey FOREIGN KEY (team_member_id) REFERENCES public.project_team(id),
+  CONSTRAINT professional_reviews_professional_id_fkey FOREIGN KEY (professional_id) REFERENCES public.professionals(id),
+  CONSTRAINT professional_reviews_reviewed_by_fkey FOREIGN KEY (reviewed_by) REFERENCES public.users(id)
 );
 CREATE TABLE public.professionals (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -286,8 +341,7 @@ CREATE TABLE public.project_emails (
   opened_at timestamp with time zone,
   created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT project_emails_pkey PRIMARY KEY (id),
-  CONSTRAINT project_emails_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.event_projects(id),
-  CONSTRAINT project_emails_quotation_id_fkey FOREIGN KEY (quotation_id) REFERENCES public.supplier_quotations(id)
+  CONSTRAINT project_emails_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.event_projects(id)
 );
 CREATE TABLE public.project_equipment (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -328,64 +382,11 @@ CREATE TABLE public.project_team (
   updated_at timestamp with time zone DEFAULT now(),
   invited_at timestamp with time zone,
   confirmed_at timestamp with time zone,
+  invitation_token character varying UNIQUE,
+  token_expires_at timestamp with time zone,
   CONSTRAINT project_team_pkey PRIMARY KEY (id),
   CONSTRAINT project_team_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.event_projects(id),
   CONSTRAINT project_team_professional_id_fkey FOREIGN KEY (professional_id) REFERENCES public.professionals(id)
-);
-CREATE TABLE public.quote_emails (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  quote_request_id uuid NOT NULL,
-  supplier_quote_id uuid,
-  recipient_email text NOT NULL,
-  recipient_name text,
-  email_type text NOT NULL CHECK (email_type = ANY (ARRAY['quote_request'::text, 'quote_urgent_admin'::text, 'quote_accepted'::text, 'quote_rejected'::text, 'quote_reminder'::text])),
-  status text NOT NULL DEFAULT 'pending'::text CHECK (status = ANY (ARRAY['pending'::text, 'sent'::text, 'delivered'::text, 'failed'::text])),
-  resend_id text,
-  error_message text,
-  sent_at timestamp with time zone,
-  delivered_at timestamp with time zone,
-  created_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT quote_emails_pkey PRIMARY KEY (id),
-  CONSTRAINT quote_emails_quote_request_id_fkey FOREIGN KEY (quote_request_id) REFERENCES public.quote_requests(id),
-  CONSTRAINT quote_emails_supplier_quote_id_fkey FOREIGN KEY (supplier_quote_id) REFERENCES public.supplier_quotes(id)
-);
-CREATE TABLE public.quote_request_items (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  quote_request_id uuid NOT NULL,
-  item_type text NOT NULL CHECK (item_type = ANY (ARRAY['equipment'::text, 'professional'::text, 'service'::text, 'other'::text])),
-  category text NOT NULL,
-  subcategory text,
-  name text NOT NULL,
-  description text,
-  quantity integer NOT NULL DEFAULT 1 CHECK (quantity > 0),
-  duration_days integer NOT NULL DEFAULT 1 CHECK (duration_days > 0),
-  specifications jsonb DEFAULT '{}'::jsonb,
-  status text NOT NULL DEFAULT 'pending'::text CHECK (status = ANY (ARRAY['pending'::text, 'quoted'::text, 'assigned'::text, 'confirmed'::text])),
-  created_at timestamp with time zone DEFAULT now(),
-  updated_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT quote_request_items_pkey PRIMARY KEY (id),
-  CONSTRAINT quote_request_items_quote_request_id_fkey FOREIGN KEY (quote_request_id) REFERENCES public.quote_requests(id)
-);
-CREATE TABLE public.quote_requests (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  client_name text NOT NULL,
-  client_email text,
-  client_phone text,
-  event_date date,
-  event_type text,
-  event_location text,
-  description text,
-  is_urgent boolean DEFAULT false,
-  profit_margin numeric NOT NULL CHECK (profit_margin = ANY (ARRAY[35.00, 80.00])),
-  status text NOT NULL DEFAULT 'draft'::text CHECK (status = ANY (ARRAY['draft'::text, 'sent'::text, 'analyzing'::text, 'finalized'::text, 'cancelled'::text])),
-  total_supplier_cost numeric DEFAULT 0,
-  total_client_price numeric DEFAULT 0,
-  total_profit numeric DEFAULT 0,
-  created_by text,
-  created_at timestamp with time zone DEFAULT now(),
-  updated_at timestamp with time zone DEFAULT now(),
-  finalized_at timestamp with time zone,
-  CONSTRAINT quote_requests_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.requests (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -421,52 +422,46 @@ CREATE TABLE public.requests (
 CREATE TABLE public.supplier_quotations (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   project_id uuid NOT NULL,
-  equipment_id uuid NOT NULL,
   supplier_id uuid NOT NULL,
-  supplier_price numeric NOT NULL,
-  supplier_notes text,
-  profit_margin_applied numeric NOT NULL,
-  hrx_price numeric NOT NULL,
-  profit_amount numeric NOT NULL CHECK (profit_amount >= 0::numeric),
-  availability_confirmed boolean DEFAULT false,
-  delivery_date date,
-  pickup_date date,
-  status character varying NOT NULL DEFAULT 'pending'::character varying CHECK (status::text = ANY (ARRAY['pending'::character varying, 'sent'::character varying, 'received'::character varying, 'accepted'::character varying, 'rejected'::character varying, 'expired'::character varying]::text[])),
-  deadline timestamp with time zone,
+  token character varying NOT NULL UNIQUE,
+  requested_items jsonb NOT NULL DEFAULT '[]'::jsonb,
+  status character varying NOT NULL DEFAULT 'pending'::character varying CHECK (status::text = ANY (ARRAY['pending'::character varying, 'submitted'::character varying, 'accepted'::character varying, 'rejected'::character varying, 'expired'::character varying]::text[])),
+  total_price numeric,
+  daily_rate numeric,
+  delivery_fee numeric DEFAULT 0,
+  setup_fee numeric DEFAULT 0,
+  payment_terms text,
+  delivery_details text,
+  notes text,
+  valid_until timestamp with time zone,
   created_at timestamp with time zone DEFAULT now(),
-  updated_at timestamp with time zone DEFAULT now(),
-  sent_at timestamp with time zone,
-  received_at timestamp with time zone,
-  accepted_at timestamp with time zone,
-  rejected_at timestamp with time zone,
+  submitted_at timestamp with time zone,
+  responded_at timestamp with time zone,
   CONSTRAINT supplier_quotations_pkey PRIMARY KEY (id),
   CONSTRAINT supplier_quotations_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.event_projects(id),
-  CONSTRAINT supplier_quotations_equipment_id_fkey FOREIGN KEY (equipment_id) REFERENCES public.project_equipment(id),
   CONSTRAINT supplier_quotations_supplier_id_fkey FOREIGN KEY (supplier_id) REFERENCES public.equipment_suppliers(id)
 );
-CREATE TABLE public.supplier_quotes (
+CREATE TABLE public.supplier_reviews (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
-  quote_request_id uuid NOT NULL,
-  quote_request_item_id uuid,
+  project_id uuid NOT NULL,
+  quotation_id uuid NOT NULL,
   supplier_id uuid NOT NULL,
-  supplier_price numeric NOT NULL,
-  hrx_price numeric NOT NULL,
-  profit_margin_applied numeric NOT NULL,
-  profit_amount numeric NOT NULL CHECK (profit_amount >= 0::numeric),
-  description text,
-  notes text,
-  availability_confirmed boolean DEFAULT false,
-  status text NOT NULL DEFAULT 'pending'::text CHECK (status = ANY (ARRAY['pending'::text, 'sent'::text, 'received'::text, 'accepted'::text, 'rejected'::text])),
-  sent_at timestamp with time zone,
-  received_at timestamp with time zone,
-  accepted_at timestamp with time zone,
-  rejected_at timestamp with time zone,
+  rating integer NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  comment text,
+  delivery_rating integer CHECK (delivery_rating >= 1 AND delivery_rating <= 5),
+  equipment_quality_rating integer CHECK (equipment_quality_rating >= 1 AND equipment_quality_rating <= 5),
+  service_rating integer CHECK (service_rating >= 1 AND service_rating <= 5),
+  price_value_rating integer CHECK (price_value_rating >= 1 AND price_value_rating <= 5),
+  would_hire_again boolean DEFAULT true,
+  reviewed_by uuid,
+  is_visible boolean DEFAULT true,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT supplier_quotes_pkey PRIMARY KEY (id),
-  CONSTRAINT supplier_quotes_quote_request_id_fkey FOREIGN KEY (quote_request_id) REFERENCES public.quote_requests(id),
-  CONSTRAINT supplier_quotes_quote_request_item_id_fkey FOREIGN KEY (quote_request_item_id) REFERENCES public.quote_request_items(id),
-  CONSTRAINT supplier_quotes_supplier_id_fkey FOREIGN KEY (supplier_id) REFERENCES public.equipment_suppliers(id)
+  CONSTRAINT supplier_reviews_pkey PRIMARY KEY (id),
+  CONSTRAINT supplier_reviews_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.event_projects(id),
+  CONSTRAINT supplier_reviews_quotation_id_fkey FOREIGN KEY (quotation_id) REFERENCES public.supplier_quotations(id),
+  CONSTRAINT supplier_reviews_supplier_id_fkey FOREIGN KEY (supplier_id) REFERENCES public.equipment_suppliers(id),
+  CONSTRAINT supplier_reviews_reviewed_by_fkey FOREIGN KEY (reviewed_by) REFERENCES public.users(id)
 );
 CREATE TABLE public.users (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -480,53 +475,4 @@ CREATE TABLE public.users (
   updated_at timestamp with time zone DEFAULT now(),
   role character varying DEFAULT 'user'::character varying CHECK (role::text = ANY (ARRAY['user'::character varying, 'admin'::character varying]::text[])),
   CONSTRAINT users_pkey PRIMARY KEY (id)
-);-- Tabela para armazenar orçamentos de fornecedores
-CREATE TABLE IF NOT EXISTS supplier_quotations (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-
-  -- Relacionamentos
-  project_id UUID NOT NULL REFERENCES event_projects(id) ON DELETE CASCADE,
-  supplier_id UUID NOT NULL REFERENCES equipment_suppliers(id) ON DELETE CASCADE,
-
-  -- Token único para acesso público
-  token VARCHAR NOT NULL UNIQUE,
-
-  -- Equipamentos solicitados (JSON)
-  requested_items JSONB NOT NULL DEFAULT '[]'::jsonb,
-
-  -- Resposta do fornecedor
-  status VARCHAR NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'submitted', 'accepted', 'rejected', 'expired')),
-
-  -- Orçamento
-  total_price NUMERIC(10, 2),
-  daily_rate NUMERIC(10, 2),
-  delivery_fee NUMERIC(10, 2) DEFAULT 0,
-  setup_fee NUMERIC(10, 2) DEFAULT 0,
-
-  -- Condições
-  payment_terms TEXT,
-  delivery_details TEXT,
-  notes TEXT,
-
-  -- Validade
-  valid_until TIMESTAMP WITH TIME ZONE,
-
-  -- Timestamps
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  submitted_at TIMESTAMP WITH TIME ZONE,
-  responded_at TIMESTAMP WITH TIME ZONE,
-
-  -- Índices
-  CONSTRAINT unique_project_supplier UNIQUE(project_id, supplier_id)
 );
-
--- Índices para performance
-CREATE INDEX idx_supplier_quotations_project ON supplier_quotations(project_id);
-CREATE INDEX idx_supplier_quotations_supplier ON supplier_quotations(supplier_id);
-CREATE INDEX idx_supplier_quotations_token ON supplier_quotations(token);
-CREATE INDEX idx_supplier_quotations_status ON supplier_quotations(status);
-
--- Comentários
-COMMENT ON TABLE supplier_quotations IS 'Orçamentos solicitados e recebidos de fornecedores';
-COMMENT ON COLUMN supplier_quotations.token IS 'Token único para fornecedor acessar formulário sem login';
-COMMENT ON COLUMN supplier_quotations.requested_items IS 'Lista de equipamentos solicitados com quantidades e especificações';

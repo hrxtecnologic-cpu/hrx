@@ -2,8 +2,10 @@
  * Rate Limiting System
  *
  * Protege endpoints contra abuso limitando requisições por usuário/IP
- * Usa memória em desenvolvimento e pode ser adaptado para Redis em produção
+ * Usa Redis em produção e fallback para memória em desenvolvimento
  */
+
+import { rateLimit as redisRateLimit } from './redis';
 
 interface RateLimitStore {
   [key: string]: {
@@ -12,18 +14,20 @@ interface RateLimitStore {
   };
 }
 
-// Store em memória (para desenvolvimento e pequena escala)
-const store: RateLimitStore = {};
+// Store em memória (fallback se Redis não disponível)
+const memoryStore: RateLimitStore = {};
 
 // Limpar registros expirados a cada 1 minuto
-setInterval(() => {
-  const now = Date.now();
-  Object.keys(store).forEach(key => {
-    if (store[key].resetTime < now) {
-      delete store[key];
-    }
-  });
-}, 60000);
+if (typeof setInterval !== 'undefined') {
+  setInterval(() => {
+    const now = Date.now();
+    Object.keys(memoryStore).forEach(key => {
+      if (memoryStore[key].resetTime < now) {
+        delete memoryStore[key];
+      }
+    });
+  }, 60000);
+}
 
 interface RateLimitConfig {
   /**
@@ -43,7 +47,7 @@ interface RateLimitConfig {
   prefix: string;
 }
 
-interface RateLimitResult {
+export interface RateLimitResult {
   success: boolean;
   limit: number;
   remaining: number;
@@ -51,13 +55,9 @@ interface RateLimitResult {
 }
 
 /**
- * Verifica se a requisição está dentro do rate limit
- *
- * @param identifier - Identificador único (userId, IP, etc)
- * @param config - Configuração do rate limit
- * @returns Resultado do rate limit
+ * Rate limit em memória (fallback)
  */
-export async function rateLimit(
+async function rateLimitMemory(
   identifier: string,
   config: RateLimitConfig
 ): Promise<RateLimitResult> {
@@ -65,7 +65,7 @@ export async function rateLimit(
   const now = Date.now();
 
   // Buscar ou criar registro
-  let record = store[key];
+  let record = memoryStore[key];
 
   if (!record || record.resetTime < now) {
     // Criar novo registro
@@ -73,7 +73,7 @@ export async function rateLimit(
       count: 0,
       resetTime: now + config.window,
     };
-    store[key] = record;
+    memoryStore[key] = record;
   }
 
   // Incrementar contador
@@ -89,6 +89,42 @@ export async function rateLimit(
     remaining,
     reset: record.resetTime,
   };
+}
+
+/**
+ * Verifica se a requisição está dentro do rate limit
+ *
+ * @param identifier - Identificador único (userId, IP, etc)
+ * @param config - Configuração do rate limit
+ * @returns Resultado do rate limit
+ */
+export async function rateLimit(
+  identifier: string,
+  config: RateLimitConfig
+): Promise<RateLimitResult> {
+  // Tentar usar Redis primeiro
+  if (process.env.REDIS_URL) {
+    try {
+      const result = await redisRateLimit(identifier, {
+        limit: config.limit,
+        window: Math.floor(config.window / 1000), // converter ms para segundos
+        prefix: config.prefix,
+      });
+
+      return {
+        success: result.success,
+        limit: result.limit,
+        remaining: result.remaining,
+        reset: result.reset * 1000, // converter segundos para ms
+      };
+    } catch (error) {
+      console.warn('[RateLimit] Redis falhou, usando memória:', error);
+      return rateLimitMemory(identifier, config);
+    }
+  }
+
+  // Fallback para memória
+  return rateLimitMemory(identifier, config);
 }
 
 /**
