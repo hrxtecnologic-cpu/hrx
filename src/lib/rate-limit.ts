@@ -2,10 +2,10 @@
  * Rate Limiting System
  *
  * Protege endpoints contra abuso limitando requisições por usuário/IP
- * Usa Redis em produção e fallback para memória em desenvolvimento
+ * Usa memória (Redis desabilitado temporariamente)
  */
 
-import { rateLimit as redisRateLimit } from './redis';
+// import { rateLimit as redisRateLimit } from './redis'; // Desabilitado - Redis não instalado
 
 interface RateLimitStore {
   [key: string]: {
@@ -102,7 +102,8 @@ export async function rateLimit(
   identifier: string,
   config: RateLimitConfig
 ): Promise<RateLimitResult> {
-  // Tentar usar Redis primeiro
+  // Redis desabilitado temporariamente - usando apenas memória
+  /*
   if (process.env.REDIS_URL) {
     try {
       const result = await redisRateLimit(identifier, {
@@ -122,8 +123,9 @@ export async function rateLimit(
       return rateLimitMemory(identifier, config);
     }
   }
+  */
 
-  // Fallback para memória
+  // Usando memória (Redis não instalado)
   return rateLimitMemory(identifier, config);
 }
 
