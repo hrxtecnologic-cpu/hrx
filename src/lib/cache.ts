@@ -7,7 +7,7 @@
 
 import { logger } from './logger';
 import crypto from 'crypto';
-import { getCache as redisGet, setCache as redisSet, deleteCache as redisDelete, deleteCachePattern as redisDeletePattern } from './redis';
+// Redis desabilitado - usando apenas memória
 
 // =====================================================
 // Types
@@ -164,86 +164,34 @@ async function cacheClearMemory(prefix?: string): Promise<number> {
 }
 
 /**
- * Busca valor no cache (Redis ou memória)
+ * Busca valor no cache (apenas memória)
  */
 export async function cacheGet<T>(key: string): Promise<T | null> {
-  if (process.env.REDIS_URL) {
-    try {
-      const value = await redisGet<T>(key);
-      if (value !== null) {
-        stats.hits++;
-        logger.debug('Cache hit (Redis)', { key });
-      } else {
-        stats.misses++;
-        logger.debug('Cache miss (Redis)', { key });
-      }
-      return value;
-    } catch (error) {
-      logger.warn('Redis falhou, usando memória', { error });
-      return cacheGetMemory<T>(key);
-    }
-  }
-
+  // Redis desabilitado - usando apenas memória
   return cacheGetMemory<T>(key);
 }
 
 /**
- * Armazena valor no cache (Redis ou memória)
+ * Armazena valor no cache (apenas memória)
  */
 export async function cacheSet<T>(key: string, value: T, ttl: number): Promise<void> {
-  if (process.env.REDIS_URL) {
-    try {
-      await redisSet(key, value, { ttl: Math.floor(ttl / 1000) }); // ms para segundos
-      stats.sets++;
-      logger.debug('Cache set (Redis)', { key, ttl });
-      return;
-    } catch (error) {
-      logger.warn('Redis falhou, usando memória', { error });
-      return cacheSetMemory(key, value, ttl);
-    }
-  }
-
+  // Redis desabilitado - usando apenas memória
   return cacheSetMemory(key, value, ttl);
 }
 
 /**
- * Remove valor do cache (Redis ou memória)
+ * Remove valor do cache (apenas memória)
  */
 export async function cacheDelete(key: string): Promise<void> {
-  if (process.env.REDIS_URL) {
-    try {
-      await redisDelete(key);
-      stats.deletes++;
-      logger.debug('Cache delete (Redis)', { key });
-      return;
-    } catch (error) {
-      logger.warn('Redis falhou, usando memória', { error });
-      return cacheDeleteMemory(key);
-    }
-  }
-
+  // Redis desabilitado - usando apenas memória
   return cacheDeleteMemory(key);
 }
 
 /**
- * Limpa cache por prefixo (Redis ou memória)
+ * Limpa cache por prefixo (apenas memória)
  */
 export async function cacheClear(prefix?: string): Promise<number> {
-  if (process.env.REDIS_URL) {
-    try {
-      if (prefix) {
-        await redisDeletePattern(`${prefix}*`);
-      } else {
-        await redisDeletePattern('*');
-      }
-      logger.info('Cache limpo (Redis)', { prefix });
-      return 0; // Redis não retorna count
-    } catch (error) {
-      logger.warn('Redis falhou, usando memória', { error });
-      return cacheClearMemory(prefix);
-    }
-  }
-
+  // Redis desabilitado - usando apenas memória
   return cacheClearMemory(prefix);
 }
 
