@@ -19,7 +19,7 @@ const supabase = createClient(
 // =============================================
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verificar autenticação
@@ -29,7 +29,7 @@ export async function GET(
     }
 
     // Rate limiting
-    const rateLimitResult = await rateLimit(userId, RateLimitPresets.API);
+    const rateLimitResult = await rateLimit(userId, RateLimitPresets.API_READ);
     if (!rateLimitResult.success) {
       return NextResponse.json(
         createRateLimitError(rateLimitResult),
@@ -37,7 +37,7 @@ export async function GET(
       );
     }
 
-    const projectId = params.id;
+    const { id: projectId } = await params;
 
     // Buscar projeto
     const { data: project, error: projectError } = await supabase
@@ -163,7 +163,7 @@ export async function GET(
 // =============================================
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verificar autenticação
@@ -173,7 +173,7 @@ export async function PATCH(
     }
 
     // Rate limiting
-    const rateLimitResult = await rateLimit(userId, RateLimitPresets.API);
+    const rateLimitResult = await rateLimit(userId, RateLimitPresets.API_WRITE);
     if (!rateLimitResult.success) {
       return NextResponse.json(
         createRateLimitError(rateLimitResult),
@@ -181,7 +181,7 @@ export async function PATCH(
       );
     }
 
-    const projectId = params.id;
+    const { id: projectId } = await params;
     const body: UpdateEventProjectData = await req.json();
 
     // Campos permitidos para atualização
@@ -285,48 +285,59 @@ export async function PATCH(
 // =============================================
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    console.log('🗑️ DELETE /api/admin/event-projects/[id] - Iniciando...');
+
     // Verificar autenticação
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     }
+    console.log('✅ Autenticado:', userId);
 
     // Rate limiting
-    const rateLimitResult = await rateLimit(userId, RateLimitPresets.API);
+    const rateLimitResult = await rateLimit(userId, RateLimitPresets.API_WRITE);
     if (!rateLimitResult.success) {
       return NextResponse.json(
         createRateLimitError(rateLimitResult),
         { status: 429 }
       );
     }
+    console.log('✅ Rate limit OK');
 
-    const projectId = params.id;
+    const { id: projectId } = await params;
+    console.log('📋 Project ID:', projectId);
 
     // Verificar se existe
+    console.log('🔍 Verificando se projeto existe...');
     const { data: project, error: checkError } = await supabase
       .from('event_projects')
-      .select('status, project_number')
+      .select('project_number')
       .eq('id', projectId)
       .single();
 
+    console.log('📊 Resultado da verificação:', { project, checkError });
+
     if (checkError || !project) {
+      console.log('❌ Projeto não encontrado');
       return NextResponse.json(
         { error: 'Projeto não encontrado' },
         { status: 404 }
       );
     }
 
-    // Não deletar, apenas marcar como cancelled
+    // Deletar projeto do banco
+    console.log('🗑️ Deletando projeto do banco...');
     const { error } = await supabase
       .from('event_projects')
-      .update({ status: 'cancelled' })
+      .delete()
       .eq('id', projectId);
 
     if (error) {
-      logger.error('Erro ao cancelar projeto', {
+      console.error('❌ Erro ao deletar:', error);
+      logger.error('Erro ao deletar projeto', {
         error: error.message,
         projectId,
         userId,
@@ -334,21 +345,30 @@ export async function DELETE(
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    logger.info('Projeto cancelado', {
+    console.log('✅ Projeto deletado com sucesso');
+    logger.info('Projeto deletado', {
       userId,
       projectId,
       projectNumber: project.project_number,
-      previousStatus: project.status,
     });
 
     return NextResponse.json({
       success: true,
-      message: 'Projeto cancelado com sucesso',
+      message: 'Projeto deletado com sucesso',
     });
   } catch (error: any) {
-    logger.error('Erro ao cancelar projeto', { error: error.message });
+    console.error('💥 CATCH ERROR:', error);
+    console.error('💥 ERROR TYPE:', typeof error);
+    console.error('💥 ERROR MESSAGE:', error?.message);
+    console.error('💥 ERROR STACK:', error?.stack);
+
+    logger.error('Erro ao cancelar projeto', {
+      error: error?.message || 'Unknown error',
+      stack: error?.stack,
+      errorObject: JSON.stringify(error)
+    });
     return NextResponse.json(
-      { error: 'Erro interno do servidor' },
+      { error: error?.message || 'Erro interno do servidor' },
       { status: 500 }
     );
   }

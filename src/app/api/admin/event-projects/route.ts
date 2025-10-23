@@ -57,10 +57,10 @@ export async function GET(req: Request) {
 
     console.log('📊 Query params:', { status, isUrgent, clientName, eventType, limit, offset });
 
-    // Query usando a view otimizada
-    console.log('🔍 Consultando view event_projects_summary...');
+    // Query direta na tabela event_projects
+    console.log('🔍 Consultando tabela event_projects...');
     let query = supabase
-      .from('event_projects_summary')
+      .from('event_projects')
       .select('*')
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
@@ -115,7 +115,7 @@ export async function GET(req: Request) {
     });
 
     return NextResponse.json({
-      projects: data as EventProjectSummary[],
+      projects: data || [],
       total: data?.length || 0,
       limit,
       offset,

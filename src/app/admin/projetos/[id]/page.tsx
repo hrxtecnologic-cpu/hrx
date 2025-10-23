@@ -22,7 +22,8 @@ import {
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { AddTeamMemberButton, AddEquipmentButton, RequestQuotesButton } from '@/components/admin/ProjectActions';
+import { TeamActionsButtons, AddEquipmentButton, RequestQuotesButton, SendProposalButton } from '@/components/admin/ProjectActions';
+import { ProjectQuotationsSection } from '@/components/admin/ProjectQuotationsSection';
 
 export default async function ProjetoDetailPage({
   params,
@@ -155,7 +156,8 @@ export default async function ProjetoDetailPage({
       quoting: { label: 'Cotando', color: 'bg-yellow-500/10 text-yellow-500' },
       quoted: { label: 'Cotado', color: 'bg-orange-500/10 text-orange-500' },
       proposed: { label: 'Proposta Enviada', color: 'bg-cyan-500/10 text-cyan-500' },
-      approved: { label: 'Aprovado', color: 'bg-green-500/10 text-green-500' },
+      approved: { label: 'Aprovado ✓', color: 'bg-green-500/10 text-green-500' },
+      rejected: { label: 'Recusado', color: 'bg-red-500/10 text-red-500' },
       in_execution: { label: 'Em Execução', color: 'bg-indigo-500/10 text-indigo-500' },
       completed: { label: 'Concluído', color: 'bg-emerald-500/10 text-emerald-500' },
       cancelled: { label: 'Cancelado', color: 'bg-zinc-500/10 text-zinc-500' },
@@ -194,6 +196,14 @@ export default async function ProjetoDetailPage({
         </div>
 
         <div className="flex gap-2">
+          <SendProposalButton
+            projectId={id}
+            clientEmail={project.client_email || ''}
+            clientName={project.client_name}
+            hasTeamMembers={(team?.length || 0) > 0}
+            hasEquipment={(equipment?.length || 0) > 0}
+            projectStatus={project.status}
+          />
           <Link href="/admin/projetos">
             <Button variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">
               Voltar
@@ -409,7 +419,7 @@ export default async function ProjetoDetailPage({
                   <Users className="h-5 w-5 text-red-600" />
                   Equipe do Projeto ({team?.length || 0})
                 </CardTitle>
-                <AddTeamMemberButton
+                <TeamActionsButtons
                   projectId={id}
                   project={{
                     event_name: project.event_name,
@@ -547,102 +557,18 @@ export default async function ProjetoDetailPage({
             </CardContent>
           </Card>
 
-          {/* Cotações */}
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <DollarSign className="h-5 w-5 text-red-600" />
-                Cotações ({quotations?.length || 0})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {quotations && quotations.length > 0 ? (
-                <div className="space-y-3">
-                  {quotations.map((quote: any) => (
-                    <div
-                      key={quote.id}
-                      className="p-3 bg-zinc-950/50 rounded-lg border-l-4"
-                      style={{
-                        borderColor:
-                          quote.status === 'accepted'
-                            ? '#22c55e'
-                            : quote.status === 'rejected'
-                            ? '#ef4444'
-                            : quote.status === 'received'
-                            ? '#3b82f6'
-                            : '#71717a',
-                      }}
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <p className="text-sm font-semibold text-white">
-                            {quote.supplier?.company_name || 'Fornecedor desconhecido'}
-                          </p>
-                          <p className="text-xs text-zinc-500">
-                            {quote.equipment?.name || 'Equipamento'}
-                          </p>
-                        </div>
-                        <span
-                          className={`text-xs px-2 py-1 rounded ${
-                            quote.status === 'accepted'
-                              ? 'bg-green-500/10 text-green-500'
-                              : quote.status === 'rejected'
-                              ? 'bg-red-500/10 text-red-500'
-                              : quote.status === 'received'
-                              ? 'bg-blue-500/10 text-blue-500'
-                              : 'bg-zinc-700 text-zinc-400'
-                          }`}
-                        >
-                          {quote.status}
-                        </span>
-                      </div>
-
-                      {quote.supplier_price && (
-                        <div className="grid grid-cols-3 gap-2 text-xs mt-2">
-                          <div>
-                            <p className="text-zinc-500">Preço Fornecedor</p>
-                            <p className="text-white font-semibold">
-                              {formatCurrency(quote.supplier_price)}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-zinc-500">Preço HRX</p>
-                            <p className="text-green-500 font-semibold">
-                              {formatCurrency(quote.hrx_price)}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-zinc-500">Lucro ({quote.profit_margin_applied}%)</p>
-                            <p className="text-red-500 font-semibold">
-                              {formatCurrency(quote.profit_amount)}
-                            </p>
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="flex items-center gap-3 mt-2 text-xs text-zinc-500">
-                        {quote.responded_at && (
-                          <span>
-                            Respondido: {new Date(quote.responded_at).toLocaleDateString('pt-BR')}
-                          </span>
-                        )}
-                        {quote.deadline && (
-                          <span>
-                            Prazo: {new Date(quote.deadline).toLocaleDateString('pt-BR')}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <DollarSign className="h-12 w-12 text-zinc-700 mx-auto mb-2" />
-                  <p className="text-sm text-zinc-500">Nenhuma cotação solicitada ainda</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          {/* Orçamentos de Fornecedores */}
+          <ProjectQuotationsSection
+            projectId={id}
+            projectName={project.event_name}
+            equipmentItems={(equipment || []).map((item: any) => ({
+              name: item.name,
+              category: item.category || '',
+              quantity: item.quantity || 1,
+              duration_days: item.duration_days || 1,
+              specifications: item.description,
+            }))}
+          />
         </div>
 
         {/* Coluna Lateral */}

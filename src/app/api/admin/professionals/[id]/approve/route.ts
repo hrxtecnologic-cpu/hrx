@@ -43,11 +43,20 @@ export async function POST(
       return notFoundResponse('Profissional não encontrado');
     }
 
+    // Buscar user_id do admin que está aprovando
+    const { data: currentUser } = await supabase
+      .from('users')
+      .select('id')
+      .eq('clerk_id', userId)
+      .single();
+
     // Atualizar status do profissional
     const { error } = await supabase
       .from('professionals')
       .update({
         status: 'approved',
+        approved_at: new Date().toISOString(),
+        approved_by: currentUser?.id || null,
         updated_at: new Date().toISOString(),
       })
       .eq('id', id);

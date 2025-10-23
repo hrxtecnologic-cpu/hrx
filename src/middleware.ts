@@ -13,7 +13,9 @@ const isPublicRoute = createRouteMatcher([
   '/contato',
   '/termos',
   '/privacidade',
-  '/solicitar-equipe(.*)',
+  '/solicitar-equipe(.*)', // Sistema antigo (será deprecado)
+  '/solicitar-evento(.*)', // Sistema novo (recomendado)
+  '/orcamento(.*)', // Fornecedor responde orçamento (público)
   '/cadastrar-profissional(.*)',
   '/cadastrar-contratante(.*)',
   '/api/webhooks(.*)',
@@ -22,6 +24,7 @@ const isPublicRoute = createRouteMatcher([
   '/api/contact(.*)',
   '/api/requests(.*)',
   '/api/contractors(.*)',
+  '/api/public(.*)', // APIs públicas (event-requests, quotations, etc)
   // '/api/professionals(.*)' <- REMOVIDO: precisa autenticação
   // '/api/upload(.*)' <- REMOVIDO: precisa autenticação
   // '/api/user/check-registration' <- Precisa autenticação mas não é pública

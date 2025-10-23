@@ -86,6 +86,40 @@ export async function POST(req: Request) {
       throw error;
     }
 
+    // Buscar estatísticas de orçamentos para cada fornecedor
+    const suppliersWithStats = await Promise.all(
+      (suppliers || []).map(async (supplier) => {
+        const { data: quotations } = await supabase
+          .from('supplier_quotations')
+          .select('id, status, total_price')
+          .eq('supplier_id', supplier.id);
+
+        const total = quotations?.length || 0;
+        const submitted = quotations?.filter(q => ['submitted', 'accepted'].includes(q.status)).length || 0;
+        const accepted = quotations?.filter(q => q.status === 'accepted').length || 0;
+        const rejected = quotations?.filter(q => q.status === 'rejected').length || 0;
+        const acceptanceRate = submitted > 0 ? Math.round((accepted / submitted) * 100) : 0;
+
+        // Calcular ticket médio dos orçamentos aceitos
+        const acceptedQuotations = quotations?.filter(q => q.status === 'accepted' && q.total_price) || [];
+        const avgTicket = acceptedQuotations.length > 0
+          ? acceptedQuotations.reduce((sum, q) => sum + (q.total_price || 0), 0) / acceptedQuotations.length
+          : 0;
+
+        return {
+          ...supplier,
+          stats: {
+            totalQuotations: total,
+            submittedQuotations: submitted,
+            acceptedQuotations: accepted,
+            rejectedQuotations: rejected,
+            acceptanceRate,
+            avgTicket,
+          },
+        };
+      })
+    );
+
     logger.debug('Busca de fornecedores executada', {
       userId,
       query,
@@ -97,7 +131,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      data: suppliers || [],
+      data: suppliersWithStats,
       pagination: {
         page,
         limit,

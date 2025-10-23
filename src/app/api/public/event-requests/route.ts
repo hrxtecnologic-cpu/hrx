@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 import {
   sendEventRequestClientConfirmation,
   sendEventRequestAdminNotification,
@@ -70,6 +71,15 @@ export async function POST(req: Request) {
 
     const supabase = await createClient();
 
+    // Tentar obter userId se usuário estiver autenticado (opcional)
+    let userId: string | null = null;
+    try {
+      const authResult = await auth();
+      userId = authResult.userId;
+    } catch {
+      // Usuário não autenticado - tudo bem, é API pública
+    }
+
     // Criar projeto de evento
     const { data: project, error: projectError } = await supabase
       .from('event_projects')
@@ -104,6 +114,9 @@ export async function POST(req: Request) {
           profit_margin: is_urgent ? 80 : 35, // Margem automática baseada na urgência
           budget_range: budget_range || null,
           additional_notes: additional_notes || null,
+
+          // Criador (se autenticado)
+          created_by: userId,
 
           // Metadados da solicitação pública
           internal_notes: `Solicitação pública recebida via formulário do site.\n\nProfissionais solicitados: ${JSON.stringify(professionals, null, 2)}\n\nEquipamentos: ${equipment_types?.join(', ') || 'Nenhum'}\n\nObservações sobre equipamentos: ${equipment_notes || 'Nenhuma'}`,

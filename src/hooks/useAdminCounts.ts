@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 
 interface AdminCounts {
   documents: number;
-  requests: number;
 }
 
 interface UseAdminCountsResult {
@@ -17,19 +16,16 @@ interface UseAdminCountsResult {
  *
  * Busca:
  * - documents: Profissionais com status 'pending'
- * - requests: Contractor requests com status 'pending'
  *
  * Atualiza automaticamente a cada 30 segundos
  *
  * @example
  * const { counts, loading, refetch } = useAdminCounts();
  * console.log(counts.documents); // 12
- * console.log(counts.requests);  // 5
  */
 export function useAdminCounts(): UseAdminCountsResult {
   const [counts, setCounts] = useState<AdminCounts>({
     documents: 0,
-    requests: 0,
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -46,7 +42,7 @@ export function useAdminCounts(): UseAdminCountsResult {
       if (!response.ok) {
         // Se não é admin ou não autenticado, silenciosamente retorna 0
         if (response.status === 401 || response.status === 403) {
-          setCounts({ documents: 0, requests: 0 });
+          setCounts({ documents: 0 });
           setError(null);
           return;
         }

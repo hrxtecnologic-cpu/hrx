@@ -87,6 +87,12 @@ export async function POST(
       );
     }
 
+    // Calcular total_cost
+    const daily_rate = body.daily_rate || 0;
+    const quantity = body.quantity || 1;
+    const duration_days = body.duration_days || 1;
+    const total_cost = daily_rate * quantity * duration_days;
+
     // Adicionar membro
     const { data: teamMember, error: insertError } = await supabase
       .from('project_team')
@@ -98,9 +104,10 @@ export async function POST(
           role: body.role,
           category: body.category,
           subcategory: body.subcategory,
-          quantity: body.quantity || 1,
-          duration_days: body.duration_days || 1,
-          daily_rate: body.daily_rate,
+          quantity: quantity,
+          duration_days: duration_days,
+          daily_rate: daily_rate,
+          total_cost: total_cost,
           notes: body.notes,
           status: 'planned',
         },
@@ -110,11 +117,17 @@ export async function POST(
 
     if (insertError) {
       logger.error('Erro ao adicionar membro à equipe', {
-        error: insertError.message,
+        error: insertError,
+        errorMessage: insertError.message,
+        errorDetails: insertError.details,
+        errorCode: insertError.code,
         projectId,
         userId,
       });
-      return NextResponse.json({ error: insertError.message }, { status: 500 });
+      return NextResponse.json({
+        error: insertError.message || insertError.details || 'Erro ao adicionar membro',
+        details: insertError
+      }, { status: 500 });
     }
 
     logger.info('Membro adicionado à equipe', {

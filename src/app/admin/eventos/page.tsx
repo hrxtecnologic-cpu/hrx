@@ -13,18 +13,18 @@ import Link from 'next/link';
 export default async function EventosPage() {
   const supabase = await createClient();
 
-  // Buscar solicitações aprovadas (que viraram eventos)
+  // Buscar projetos aprovados e em execução (eventos)
   const { data: events } = await supabase
-    .from('contractor_requests')
+    .from('event_projects')
     .select('*')
-    .in('status', ['in_progress', 'completed'])
-    .order('start_date', { ascending: true });
+    .in('status', ['approved', 'in_execution', 'completed'])
+    .order('event_date', { ascending: true });
 
   const now = new Date();
 
   // Separar eventos futuros e passados
-  const upcomingEvents = events?.filter(e => new Date(e.start_date) >= now) || [];
-  const pastEvents = events?.filter(e => new Date(e.start_date) < now) || [];
+  const upcomingEvents = events?.filter(e => e.event_date && new Date(e.event_date) >= now) || [];
+  const pastEvents = events?.filter(e => e.event_date && new Date(e.event_date) < now) || [];
 
   return (
     <div className="space-y-6">
@@ -50,9 +50,9 @@ export default async function EventosPage() {
         </Card>
         <Card className="bg-zinc-900 border-zinc-800">
           <CardContent className="p-4">
-            <p className="text-sm text-zinc-400">Em Andamento</p>
+            <p className="text-sm text-zinc-400">Em Execução</p>
             <p className="text-2xl font-bold text-yellow-500">
-              {events?.filter(e => e.status === 'in_progress').length || 0}
+              {events?.filter(e => e.status === 'in_execution').length || 0}
             </p>
           </CardContent>
         </Card>
@@ -78,10 +78,10 @@ export default async function EventosPage() {
                     {/* Data Badge */}
                     <div className="flex-shrink-0 w-16 h-16 bg-red-600/10 border border-red-600/20 rounded-lg flex flex-col items-center justify-center">
                       <p className="text-xs text-red-500 uppercase">
-                        {new Date(event.start_date).toLocaleDateString('pt-BR', { month: 'short' })}
+                        {new Date(event.event_date).toLocaleDateString('pt-BR', { month: 'short' })}
                       </p>
                       <p className="text-xl font-bold text-red-500">
-                        {new Date(event.start_date).getDate()}
+                        {new Date(event.event_date).getDate()}
                       </p>
                     </div>
 
@@ -92,15 +92,19 @@ export default async function EventosPage() {
                           <h3 className="text-lg font-semibold text-white mb-1">
                             {event.event_name}
                           </h3>
-                          <p className="text-sm text-zinc-400">{event.company_name}</p>
+                          <p className="text-sm text-zinc-400">{event.client_company || event.client_name}</p>
                         </div>
-                        {event.status === 'in_progress' ? (
+                        {event.status === 'in_execution' ? (
                           <span className="text-xs bg-yellow-500/10 text-yellow-500 px-3 py-1 rounded-full whitespace-nowrap">
-                            Em Andamento
+                            Em Execução
+                          </span>
+                        ) : event.status === 'approved' ? (
+                          <span className="text-xs bg-blue-500/10 text-blue-500 px-3 py-1 rounded-full whitespace-nowrap">
+                            Aprovado
                           </span>
                         ) : (
-                          <span className="text-xs bg-blue-500/10 text-blue-500 px-3 py-1 rounded-full whitespace-nowrap">
-                            Agendado
+                          <span className="text-xs bg-green-500/10 text-green-500 px-3 py-1 rounded-full whitespace-nowrap">
+                            Concluído
                           </span>
                         )}
                       </div>
@@ -111,7 +115,7 @@ export default async function EventosPage() {
                           <Calendar className="h-4 w-4 text-zinc-500" />
                           <div>
                             <p className="text-zinc-400">
-                              {new Date(event.start_date).toLocaleDateString('pt-BR')}
+                              {new Date(event.event_date).toLocaleDateString('pt-BR')}
                               {event.start_time && ` - ${event.start_time}`}
                             </p>
                           </div>
@@ -127,37 +131,21 @@ export default async function EventosPage() {
                         <div className="flex items-center gap-2 text-sm">
                           <Users className="h-4 w-4 text-zinc-500" />
                           <p className="text-zinc-400">
-                            {event.professionals_needed?.reduce((sum: number, p: any) => sum + (p.quantity || 0), 0) || 0} profissionais
+                            {event.expected_attendance || 'N/A'} pessoas esperadas
                           </p>
                         </div>
                       </div>
-
-                      {/* Profissionais */}
-                      {event.professionals_needed && (
-                        <div className="mb-4">
-                          <div className="flex flex-wrap gap-2">
-                            {event.professionals_needed.map((prof: any, index: number) => (
-                              <span
-                                key={index}
-                                className="text-xs bg-zinc-800 text-zinc-300 px-3 py-1 rounded"
-                              >
-                                {prof.quantity}x {prof.category}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
 
                       {/* Actions */}
                       <div className="flex items-center justify-between pt-4 border-t border-zinc-800">
                         <div className="flex items-center gap-2 text-xs">
                           <Clock className="h-3 w-3 text-zinc-500" />
                           <span className="text-zinc-500">
-                            Faltam {Math.ceil((new Date(event.start_date).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))} dias
+                            Faltam {Math.ceil((new Date(event.event_date).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))} dias
                           </span>
                         </div>
 
-                        <Link href={`/admin/solicitacoes/${event.id}`}>
+                        <Link href={`/admin/projetos/${event.id}`}>
                           <Button size="sm" className="bg-red-600 hover:bg-red-500 text-white">
                             Ver Detalhes
                           </Button>
@@ -185,12 +173,12 @@ export default async function EventosPage() {
                       <CheckCircle className="h-8 w-8 text-green-500" />
                       <div>
                         <h3 className="font-semibold text-white">{event.event_name}</h3>
-                        <p className="text-sm text-zinc-400">{event.company_name}</p>
+                        <p className="text-sm text-zinc-400">{event.client_company || event.client_name}</p>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className="text-sm text-zinc-400">
-                        {new Date(event.start_date).toLocaleDateString('pt-BR')}
+                        {new Date(event.event_date).toLocaleDateString('pt-BR')}
                       </p>
                       <span className="text-xs bg-green-500/10 text-green-500 px-3 py-1 rounded-full">
                         Concluído
@@ -213,9 +201,9 @@ export default async function EventosPage() {
               Nenhum evento agendado
             </h3>
             <p className="text-zinc-400">
-              Os eventos aparecerão aqui automaticamente quando você aprovar solicitações de contratantes na seção{' '}
-              <Link href="/admin/solicitacoes" className="text-red-500 hover:underline">
-                Solicitações
+              Os eventos aparecerão aqui automaticamente quando você aprovar projetos na seção{' '}
+              <Link href="/admin/projetos" className="text-red-500 hover:underline">
+                Projetos
               </Link>
             </p>
           </CardContent>

@@ -11,8 +11,7 @@ import { logger } from '@/lib/logger';
  *
  * Response:
  * {
- *   documents: number,  // Profissionais com status 'pending'
- *   requests: number    // Contractor requests com status 'pending'
+ *   documents: number  // Profissionais com status 'pending'
  * }
  */
 export async function GET() {
@@ -44,28 +43,15 @@ export async function GET() {
       throw documentsError;
     }
 
-    // Buscar solicitações pendentes
-    const { count: requestsCount, error: requestsError } = await supabase
-      .from('contractor_requests')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'pending');
-
-    if (requestsError) {
-      logger.error('Erro ao buscar contagem de solicitações pendentes', requestsError);
-      throw requestsError;
-    }
-
     logger.debug('Contadores admin consultados', {
       userId,
       documents: documentsCount || 0,
-      requests: requestsCount || 0,
     });
 
     return NextResponse.json({
       success: true,
       data: {
         documents: documentsCount || 0,
-        requests: requestsCount || 0,
       },
     });
   } catch (error) {

@@ -16,10 +16,10 @@ export default async function RelatoriosPage() {
   // Buscar dados para relatórios
   const [
     { data: professionals },
-    { data: requests },
+    { data: projects },
   ] = await Promise.all([
     supabase.from('professionals').select('created_at, status, categories'),
-    supabase.from('contractor_requests').select('created_at, event_type, status, professionals_needed'),
+    supabase.from('event_projects').select('created_at, event_type, status, expected_attendance'),
   ]);
 
   // Calcular métricas
@@ -30,8 +30,8 @@ export default async function RelatoriosPage() {
     p => new Date(p.created_at) >= last30Days
   ).length || 0;
 
-  const newRequestsLast30Days = requests?.filter(
-    r => new Date(r.created_at) >= last30Days
+  const newProjectsLast30Days = projects?.filter(
+    p => new Date(p.created_at) >= last30Days
   ).length || 0;
 
   // Agrupar por categoria
@@ -48,8 +48,10 @@ export default async function RelatoriosPage() {
 
   // Agrupar por tipo de evento
   const eventTypesCount: Record<string, number> = {};
-  requests?.forEach(r => {
-    eventTypesCount[r.event_type] = (eventTypesCount[r.event_type] || 0) + 1;
+  projects?.forEach(p => {
+    if (p.event_type) {
+      eventTypesCount[p.event_type] = (eventTypesCount[p.event_type] || 0) + 1;
+    }
   });
 
   const topEventTypes = Object.entries(eventTypesCount)
@@ -102,8 +104,8 @@ export default async function RelatoriosPage() {
           <CardContent className="p-6">
             <div className="flex items-start justify-between mb-4">
               <div>
-                <p className="text-sm text-zinc-400">Novas Solicitações</p>
-                <p className="text-2xl font-bold text-white mt-1">{newRequestsLast30Days}</p>
+                <p className="text-sm text-zinc-400">Novos Projetos</p>
+                <p className="text-2xl font-bold text-white mt-1">{newProjectsLast30Days}</p>
               </div>
               <div className="p-3 bg-green-500/10 rounded-lg">
                 <Calendar className="h-6 w-6 text-green-500" />
@@ -112,7 +114,7 @@ export default async function RelatoriosPage() {
             <p className="text-xs text-zinc-500">Últimos 30 dias</p>
             <div className="mt-2 flex items-center gap-1 text-xs text-green-500">
               <TrendingUp className="h-3 w-3" />
-              <span>+{Math.round((newRequestsLast30Days / (requests?.length || 1)) * 100)}%</span>
+              <span>+{Math.round((newProjectsLast30Days / (projects?.length || 1)) * 100)}%</span>
             </div>
           </CardContent>
         </Card>
@@ -145,13 +147,13 @@ export default async function RelatoriosPage() {
             <div className="flex items-start justify-between mb-4">
               <div>
                 <p className="text-sm text-zinc-400">Total de Eventos</p>
-                <p className="text-2xl font-bold text-white mt-1">{requests?.length || 0}</p>
+                <p className="text-2xl font-bold text-white mt-1">{projects?.length || 0}</p>
               </div>
               <div className="p-3 bg-red-500/10 rounded-lg">
                 <DollarSign className="h-6 w-6 text-red-500" />
               </div>
             </div>
-            <p className="text-xs text-zinc-500">Todas solicitações</p>
+            <p className="text-xs text-zinc-500">Todos os projetos</p>
           </CardContent>
         </Card>
       </div>
@@ -194,7 +196,7 @@ export default async function RelatoriosPage() {
           <CardContent>
             <div className="space-y-4">
               {topEventTypes.map(([eventType, count]) => {
-                const percentage = Math.round((count / (requests?.length || 1)) * 100);
+                const percentage = Math.round((count / (projects?.length || 1)) * 100);
                 return (
                   <div key={eventType}>
                     <div className="flex items-center justify-between mb-2">
@@ -274,24 +276,24 @@ export default async function RelatoriosPage() {
           </CardContent>
         </Card>
 
-        {/* Status de Solicitações */}
+        {/* Status de Projetos */}
         <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader>
-            <CardTitle className="text-white">Status das Solicitações</CardTitle>
+            <CardTitle className="text-white">Status dos Projetos</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg">
-                <span className="text-sm text-zinc-300">Concluídas</span>
+                <span className="text-sm text-zinc-300">Concluídos</span>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-green-500">
-                    {requests?.filter(r => r.status === 'completed').length || 0}
+                    {projects?.filter(r => r.status === 'completed').length || 0}
                   </span>
                   <div className="w-24 bg-zinc-800 rounded-full h-2">
                     <div
                       className="bg-green-500 h-2 rounded-full"
                       style={{
-                        width: `${Math.round(((requests?.filter(r => r.status === 'completed').length || 0) / (requests?.length || 1)) * 100)}%`
+                        width: `${Math.round(((projects?.filter(r => r.status === 'completed').length || 0) / (projects?.length || 1)) * 100)}%`
                       }}
                     />
                   </div>
@@ -299,16 +301,16 @@ export default async function RelatoriosPage() {
               </div>
 
               <div className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg">
-                <span className="text-sm text-zinc-300">Em Andamento</span>
+                <span className="text-sm text-zinc-300">Em Execução</span>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-blue-500">
-                    {requests?.filter(r => r.status === 'in_progress').length || 0}
+                    {projects?.filter(r => r.status === 'in_execution').length || 0}
                   </span>
                   <div className="w-24 bg-zinc-800 rounded-full h-2">
                     <div
                       className="bg-blue-500 h-2 rounded-full"
                       style={{
-                        width: `${Math.round(((requests?.filter(r => r.status === 'in_progress').length || 0) / (requests?.length || 1)) * 100)}%`
+                        width: `${Math.round(((projects?.filter(r => r.status === 'in_execution').length || 0) / (projects?.length || 1)) * 100)}%`
                       }}
                     />
                   </div>
@@ -316,16 +318,16 @@ export default async function RelatoriosPage() {
               </div>
 
               <div className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg">
-                <span className="text-sm text-zinc-300">Pendentes</span>
+                <span className="text-sm text-zinc-300">Novos</span>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-yellow-500">
-                    {requests?.filter(r => r.status === 'pending').length || 0}
+                    {projects?.filter(r => r.status === 'new').length || 0}
                   </span>
                   <div className="w-24 bg-zinc-800 rounded-full h-2">
                     <div
                       className="bg-yellow-500 h-2 rounded-full"
                       style={{
-                        width: `${Math.round(((requests?.filter(r => r.status === 'pending').length || 0) / (requests?.length || 1)) * 100)}%`
+                        width: `${Math.round(((projects?.filter(r => r.status === 'new').length || 0) / (projects?.length || 1)) * 100)}%`
                       }}
                     />
                   </div>

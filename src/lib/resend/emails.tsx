@@ -1520,7 +1520,7 @@ export async function sendEquipmentQuoteRequestEmail(
   params: SendEquipmentQuoteRequestEmailParams
 ): Promise<{ success: boolean; error?: string; emailId?: string }> {
   try {
-    const responseUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/fornecedor/cotacoes/${params.quotationId}/responder`;
+    const responseUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/quotations/${params.quotationId}/respond?token=${encodeURIComponent(params.supplierEmail)}`;
 
     const { data, error } = await resend.emails.send({
       from: `HRX <${FROM_EMAIL}>`,

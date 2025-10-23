@@ -103,11 +103,17 @@ export async function POST(
 
     if (insertError) {
       logger.error('Erro ao adicionar equipamento', {
-        error: insertError.message,
+        error: insertError,
+        errorMessage: insertError.message,
+        errorDetails: insertError.details,
+        errorCode: insertError.code,
         projectId,
         userId,
       });
-      return NextResponse.json({ error: insertError.message }, { status: 500 });
+      return NextResponse.json({
+        error: insertError.message || insertError.details || 'Erro ao adicionar equipamento',
+        details: insertError
+      }, { status: 500 });
     }
 
     logger.info('Equipamento adicionado ao projeto', {

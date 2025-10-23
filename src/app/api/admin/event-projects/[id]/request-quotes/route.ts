@@ -20,25 +20,26 @@ const supabase = createClient(
 // =============================================
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Aguardar params (Next.js 15)
+    const { id: projectId } = await params;
+
     // Verificar autenticação
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     }
 
-    // Rate limiting
-    const rateLimitResult = await rateLimit(userId, RateLimitPresets.API);
+    // Rate limiting (solicitação de cotações é uma operação de escrita)
+    const rateLimitResult = await rateLimit(userId, RateLimitPresets.API_WRITE);
     if (!rateLimitResult.success) {
       return NextResponse.json(
         createRateLimitError(rateLimitResult),
         { status: 429 }
       );
     }
-
-    const projectId = params.id;
     const body: RequestEquipmentQuotesData = await req.json();
 
     // Validações

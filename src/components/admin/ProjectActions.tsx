@@ -20,12 +20,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, ChevronDown, Package, Users, Search, Send, Building2, Mail, Phone, MapPin, Loader2, Briefcase } from 'lucide-react';
+import { Plus, ChevronDown, Package, Users, Search, Send, Building2, Mail, Phone, MapPin, Loader2, Briefcase, FileText, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { CATEGORIES_WITH_SUBCATEGORIES } from '@/lib/categories-subcategories';
 import { EQUIPMENT_CATEGORIES } from '@/lib/equipment-types';
+import { TeamBatchSelection } from './TeamBatchSelection';
 
 // NOTA: Categorias de profissionais devem vir do arquivo central
 // Vamos importar CATEGORIES_WITH_SUBCATEGORIES no topo do arquivo
@@ -489,6 +490,37 @@ interface AddEquipmentButtonProps {
   projectId: string;
   project?: ProjectInfo;
   onSuccess?: () => void;
+}
+
+// =============================================
+// Wrapper component that provides both team addition options
+// =============================================
+interface TeamActionsButtonsProps {
+  projectId: string;
+  project?: ProjectInfo;
+}
+
+export function TeamActionsButtons({ projectId, project }: TeamActionsButtonsProps) {
+  const [batchSelectionOpen, setBatchSelectionOpen] = useState(false);
+
+  return (
+    <div className="flex gap-2">
+      <Button
+        onClick={() => setBatchSelectionOpen(true)}
+        size="sm"
+        className="bg-red-600 hover:bg-red-500 text-white"
+      >
+        <Users className="h-4 w-4 mr-2" />
+        Seleção em Massa
+      </Button>
+      <AddTeamMemberButton projectId={projectId} project={project} />
+      <TeamBatchSelection
+        projectId={projectId}
+        isOpen={batchSelectionOpen}
+        onClose={() => setBatchSelectionOpen(false)}
+      />
+    </div>
+  );
 }
 
 export function AddEquipmentButton({ projectId, project, onSuccess }: AddEquipmentButtonProps) {
@@ -1257,6 +1289,215 @@ export function RequestQuotesButton({
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+// ============================================
+// SendProposalButton - Enviar proposta final ao cliente
+// ============================================
+
+interface SendProposalButtonProps {
+  projectId: string;
+  clientEmail: string;
+  clientName: string;
+  hasTeamMembers: boolean;
+  hasEquipment: boolean;
+  projectStatus: string;
+  onSuccess?: () => void;
+}
+
+export function SendProposalButton({
+  projectId,
+  clientEmail,
+  clientName,
+  hasTeamMembers,
+  hasEquipment,
+  projectStatus,
+  onSuccess,
+}: SendProposalButtonProps) {
+  const router = useRouter();
+  const [isOpen, setIsOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const canSendProposal = (hasTeamMembers || hasEquipment) && clientEmail;
+  const alreadySent = projectStatus === 'proposed' || projectStatus === 'approved' || projectStatus === 'completed';
+
+  const handleSendProposal = async () => {
+    setLoading(true);
+
+    try {
+      const response = await fetch(`/api/admin/event-projects/${projectId}/send-proposal`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Erro ao enviar proposta');
+      }
+
+      toast.success(`Proposta enviada para ${clientEmail}!`, {
+        description: `Valor total: R$ ${data.totalValue?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+      });
+
+      setIsOpen(false);
+
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.refresh();
+      }
+    } catch (error: any) {
+      toast.error('Erro ao enviar proposta', {
+        description: error.message || 'Tente novamente mais tarde',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <Button
+        onClick={() => setIsOpen(true)}
+        disabled={!canSendProposal}
+        className="bg-green-600 hover:bg-green-700 text-white"
+        title={
+          !canSendProposal
+            ? !clientEmail
+              ? 'Projeto sem email do cliente'
+              : 'Adicione profissionais ou equipamentos primeiro'
+            : alreadySent
+            ? 'Proposta já foi enviada'
+            : 'Enviar proposta final ao cliente'
+        }
+      >
+        <Send className="h-4 w-4 mr-2" />
+        {alreadySent ? 'Reenviar Proposta' : 'Enviar Proposta Final'}
+      </Button>
+
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="bg-zinc-900 text-white border-zinc-800 max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl flex items-center gap-2">
+              <Send className="h-6 w-6 text-green-500" />
+              Enviar Proposta Final
+            </DialogTitle>
+            <DialogDescription className="text-zinc-400">
+              Confirme o envio da proposta comercial completa para o cliente
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Destinatário */}
+            <div className="p-4 bg-zinc-800/50 rounded-lg border border-zinc-700">
+              <div className="flex items-center gap-2 mb-2">
+                <Mail className="h-4 w-4 text-zinc-400" />
+                <span className="text-sm font-medium text-zinc-300">Destinatário</span>
+              </div>
+              <p className="text-white font-medium">{clientName}</p>
+              <p className="text-sm text-zinc-400">{clientEmail}</p>
+            </div>
+
+            {/* Conteúdo da Proposta */}
+            <div className="p-4 bg-blue-950/20 border border-blue-900/50 rounded-lg">
+              <div className="flex items-center gap-2 mb-3">
+                <FileText className="h-4 w-4 text-blue-400" />
+                <span className="text-sm font-medium text-blue-200">
+                  Conteúdo da Proposta
+                </span>
+              </div>
+              <ul className="space-y-2 text-sm text-zinc-300">
+                <li className="flex items-center gap-2">
+                  <span className="text-green-500">✓</span>
+                  Dados completos do evento
+                </li>
+                {hasTeamMembers && (
+                  <li className="flex items-center gap-2">
+                    <span className="text-green-500">✓</span>
+                    Equipe de profissionais selecionados com valores
+                  </li>
+                )}
+                {hasEquipment && (
+                  <li className="flex items-center gap-2">
+                    <span className="text-green-500">✓</span>
+                    Equipamentos selecionados com valores
+                  </li>
+                )}
+                <li className="flex items-center gap-2">
+                  <span className="text-green-500">✓</span>
+                  Valor total da proposta
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-green-500">✓</span>
+                  Forma de pagamento (50% início + 50% final)
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-green-500">✓</span>
+                  Observação sobre impostos (16% IOF)
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-green-500">✓</span>
+                  Botões para aceitar/rejeitar proposta
+                </li>
+              </ul>
+            </div>
+
+            {/* Aviso */}
+            <div className="p-3 bg-yellow-950/20 border border-yellow-900/50 rounded-lg">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 text-yellow-500 mt-0.5" />
+                <div className="text-xs text-yellow-200">
+                  <p className="font-medium mb-1">Importante:</p>
+                  <p>
+                    • O status do projeto será alterado para "Proposta Enviada"
+                    <br />
+                    • O cliente receberá um email com todos os detalhes e valores
+                    <br />
+                    • A proposta tem validade de 7 dias
+                    <br />
+                    {alreadySent && '• Uma nova proposta será enviada substituindo a anterior'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsOpen(false)}
+              className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+              disabled={loading}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSendProposal}
+              disabled={loading}
+              className="bg-green-600 hover:bg-green-700 text-white min-w-[140px]"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Enviando...
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4 mr-2" />
+                  Enviar Proposta
+                </>
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>

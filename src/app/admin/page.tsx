@@ -18,19 +18,19 @@ export default async function AdminDashboardPage() {
   const [
     { count: totalProfessionals },
     { count: pendingDocuments },
-    { count: totalRequests },
-    { count: pendingRequests },
+    { count: totalProjects },
+    { count: newProjects },
   ] = await Promise.all([
     supabase.from('professionals').select('*', { count: 'exact', head: true }),
     supabase
       .from('professionals')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'pending'),
-    supabase.from('contractor_requests').select('*', { count: 'exact', head: true }),
+    supabase.from('event_projects').select('*', { count: 'exact', head: true }),
     supabase
-      .from('contractor_requests')
+      .from('event_projects')
       .select('*', { count: 'exact', head: true })
-      .eq('status', 'pending'),
+      .eq('status', 'new'),
   ]);
 
   const stats = [
@@ -52,21 +52,21 @@ export default async function AdminDashboardPage() {
       alert: (pendingDocuments || 0) > 0,
     },
     {
-      title: 'Solicitações Totais',
-      value: totalRequests || 0,
+      title: 'Projetos Totais',
+      value: totalProjects || 0,
       icon: ClipboardList,
-      description: 'Empresas interessadas',
+      description: 'Eventos cadastrados',
       color: 'text-green-500',
       bgColor: 'bg-green-500/10',
     },
     {
-      title: 'Solicitações Pendentes',
-      value: pendingRequests || 0,
+      title: 'Projetos Novos',
+      value: newProjects || 0,
       icon: Clock,
-      description: 'Aguardando resposta',
+      description: 'Aguardando análise',
       color: 'text-red-500',
       bgColor: 'bg-red-500/10',
-      alert: (pendingRequests || 0) > 0,
+      alert: (newProjects || 0) > 0,
     },
   ];
 
@@ -77,10 +77,10 @@ export default async function AdminDashboardPage() {
     .order('created_at', { ascending: false })
     .limit(5);
 
-  // Buscar solicitações recentes
-  const { data: recentRequests } = await supabase
-    .from('contractor_requests')
-    .select('company_name, event_name, urgency, status, created_at')
+  // Buscar projetos recentes
+  const { data: recentProjects } = await supabase
+    .from('event_projects')
+    .select('client_company, event_name, is_urgent, status, created_at')
     .order('created_at', { ascending: false })
     .limit(5);
 
@@ -169,43 +169,45 @@ export default async function AdminDashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Solicitações Recentes */}
+        {/* Projetos Recentes */}
         <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader>
-            <CardTitle className="text-white">Solicitações Recentes</CardTitle>
+            <CardTitle className="text-white">Projetos Recentes</CardTitle>
             <CardDescription className="text-zinc-400">
-              Últimas solicitações de equipe
+              Últimos projetos cadastrados
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentRequests && recentRequests.length > 0 ? (
-                recentRequests.map((req, index) => (
+              {recentProjects && recentProjects.length > 0 ? (
+                recentProjects.map((proj, index) => (
                   <div
                     key={index}
                     className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg"
                   >
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-white">{req.company_name}</p>
-                      <p className="text-xs text-zinc-500">{req.event_name}</p>
+                      <p className="text-sm font-medium text-white">{proj.client_company || 'Cliente'}</p>
+                      <p className="text-xs text-zinc-500">{proj.event_name}</p>
                     </div>
                     <div className="flex items-center gap-2">
-                      {req.urgency === 'very_urgent' && (
+                      {proj.is_urgent && (
                         <span className="text-xs bg-red-500/10 text-red-500 px-2 py-1 rounded">
                           Urgente
                         </span>
                       )}
-                      {req.status === 'pending' ? (
+                      {proj.status === 'new' ? (
                         <Clock className="h-4 w-4 text-yellow-500" />
-                      ) : (
+                      ) : proj.status === 'completed' ? (
                         <CheckCircle className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <Clock className="h-4 w-4 text-blue-500" />
                       )}
                     </div>
                   </div>
                 ))
               ) : (
                 <p className="text-sm text-zinc-500 text-center py-8">
-                  Nenhuma solicitação ainda
+                  Nenhum projeto ainda
                 </p>
               )}
             </div>
@@ -232,13 +234,13 @@ export default async function AdminDashboardPage() {
             </a>
 
             <a
-              href="/admin/solicitacoes"
+              href="/admin/projetos"
               className="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-lg hover:bg-red-500/20 transition"
             >
               <ClipboardList className="h-8 w-8 text-red-500" />
               <div>
-                <p className="font-semibold text-white">Ver Solicitações</p>
-                <p className="text-xs text-zinc-400">{pendingRequests || 0} novas</p>
+                <p className="font-semibold text-white">Ver Projetos</p>
+                <p className="text-xs text-zinc-400">{newProjects || 0} novos</p>
               </div>
             </a>
 

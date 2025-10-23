@@ -102,7 +102,7 @@ export function AdvancedSearch<T = any>({
     setFilters,
     nextPage,
     previousPage,
-  } = useAdvancedSearch<T>(initialFilters, { limit: 20 }, false);
+  } = useAdvancedSearch<T>(initialFilters, { limit: 20 }, true); // Changed to true to auto-search
 
   // Notificar parent sobre mudanças nos resultados
   useEffect(() => {

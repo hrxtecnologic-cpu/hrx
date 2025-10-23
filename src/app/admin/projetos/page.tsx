@@ -95,6 +95,7 @@ export default function ProjetosPage() {
   const router = useRouter();
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [stats, setStats] = useState({
     total: 0,
     new: 0,
@@ -179,6 +180,33 @@ export default function ProjetosPage() {
       is_urgent: false,
     });
     setIsDialogOpen(true);
+  };
+
+  // Deletar projeto
+  const handleDelete = async (projectId: string, projectNumber: string) => {
+    if (!confirm(`Tem certeza que deseja deletar o projeto ${projectNumber}?`)) {
+      return;
+    }
+
+    try {
+      setDeletingId(projectId);
+      const response = await fetch(`/api/admin/event-projects/${projectId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Erro ao deletar projeto');
+      }
+
+      toast.success('Projeto deletado com sucesso');
+      fetchProjects();
+    } catch (error: any) {
+      console.error('Erro ao deletar projeto:', error);
+      toast.error(error.message || 'Erro ao deletar projeto');
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   // Submeter formulário
@@ -417,12 +445,26 @@ export default function ProjetosPage() {
                         )}
                       </div>
 
-                      <Link href={`/admin/projetos/${project.id}`}>
-                        <Button size="sm" className="bg-red-600 hover:bg-red-500 text-white">
-                          <Eye className="h-4 w-4 mr-2" />
-                          Ver Detalhes
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleDelete(project.id, project.project_number);
+                          }}
+                          disabled={deletingId === project.id}
+                          className="bg-zinc-700 hover:bg-zinc-600 text-white"
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </Button>
-                      </Link>
+                        <Link href={`/admin/projetos/${project.id}`}>
+                          <Button size="sm" className="bg-red-600 hover:bg-red-500 text-white">
+                            <Eye className="h-4 w-4 mr-2" />
+                            Ver Detalhes
+                          </Button>
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -6,8 +6,6 @@ import {
   LayoutDashboard,
   Users,
   FileCheck,
-  ClipboardList,
-  Calendar,
   BarChart3,
   MessageSquare,
   Settings,
@@ -19,7 +17,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useAdminCounts } from '@/hooks/useAdminCounts';
 
-const getMenuItems = (documentCount: number, requestCount: number) => [
+const getMenuItems = (documentCount: number) => [
   {
     title: 'Principal',
     items: [
@@ -34,8 +32,6 @@ const getMenuItems = (documentCount: number, requestCount: number) => [
       { icon: Building2, label: 'Fornecedores', href: '/admin/fornecedores', badge: null },
       { icon: FileCheck, label: 'Documentos', href: '/admin/documentos', badge: documentCount > 0 ? documentCount : null },
       { icon: Briefcase, label: 'Projetos', href: '/admin/projetos', badge: null },
-      { icon: ClipboardList, label: 'Solicitações', href: '/admin/solicitacoes', badge: requestCount > 0 ? requestCount : null },
-      { icon: Calendar, label: 'Eventos', href: '/admin/eventos', badge: null },
     ],
   },
   {
@@ -57,7 +53,7 @@ export function AdminSidebar({ mobileMenuOpen = false, setMobileMenuOpen }: Admi
   const pathname = usePathname();
   const { counts } = useAdminCounts();
 
-  const menuItems = getMenuItems(counts.documents, counts.requests);
+  const menuItems = getMenuItems(counts.documents);
 
   const SidebarContent = () => (
     <div className="flex flex-col flex-grow bg-zinc-900 border-r border-zinc-800 overflow-y-auto">

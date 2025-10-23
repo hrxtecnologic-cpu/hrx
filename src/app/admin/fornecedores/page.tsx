@@ -22,7 +22,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Edit, Trash2, Building2, Mail, Phone, ChevronDown } from 'lucide-react';
+import { Plus, Edit, Trash2, Building2, Mail, Phone, ChevronDown, TrendingUp, CheckCircle, XCircle, MessageSquare, ExternalLink } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -66,6 +66,14 @@ interface Supplier {
   notes?: string;
   status: 'active' | 'inactive';
   created_at: string;
+  stats?: {
+    totalQuotations: number;
+    submittedQuotations: number;
+    acceptedQuotations: number;
+    rejectedQuotations: number;
+    acceptanceRate: number;
+    avgTicket: number;
+  };
 }
 
 export default function FornecedoresPage() {
@@ -341,12 +349,17 @@ export default function FornecedoresPage() {
             </CardContent>
           </Card>
         ) : (
-          searchResults.map((supplier) => (
+          searchResults.map((supplier) => {
+            // Formatar telefone para WhatsApp (remover caracteres não numéricos)
+            const whatsappNumber = supplier.phone.replace(/\D/g, '');
+            const hasWhatsApp = whatsappNumber.length >= 10;
+
+            return (
             <Card key={supplier.id} className="bg-zinc-900 border-zinc-800">
               <CardContent className="p-6">
-                <div className="flex justify-between items-start">
+                <div className="flex justify-between items-start gap-4">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
+                    <div className="flex items-center gap-3 mb-3">
                       <Building2 className="h-5 w-5 text-red-500" />
                       <h3 className="text-lg font-semibold text-white">
                         {supplier.company_name}
@@ -362,67 +375,130 @@ export default function FornecedoresPage() {
                         {supplier.status === 'active' ? 'Ativo' : 'Inativo'}
                       </Badge>
                     </div>
-                    <div className="space-y-1 text-sm text-zinc-400">
+
+                    {/* Informações de Contato */}
+                    <div className="space-y-2 text-sm text-zinc-400 mb-3">
                       <p className="flex items-center gap-2">
                         <strong className="text-zinc-300">Contato:</strong> {supplier.contact_name}
                       </p>
-                      <p className="flex items-center gap-2">
+                      <div className="flex items-center gap-2">
                         <Mail className="h-4 w-4" />
-                        {supplier.email}
-                      </p>
-                      <p className="flex items-center gap-2">
-                        <Phone className="h-4 w-4" />
-                        {supplier.phone}
-                      </p>
-
-                      {/* Preços */}
-                      {supplier.pricing && (supplier.pricing.daily || supplier.pricing.three_days || supplier.pricing.weekly) && (
-                        <div className="flex flex-wrap gap-2 mt-2 pt-2 border-t border-zinc-800">
-                          {supplier.pricing.daily && (
-                            <span className="text-xs bg-zinc-800 text-zinc-300 px-2 py-1 rounded">
-                              Diária: {supplier.pricing.daily}
-                            </span>
-                          )}
-                          {supplier.pricing.three_days && (
-                            <span className="text-xs bg-zinc-800 text-zinc-300 px-2 py-1 rounded">
-                              3 dias: {supplier.pricing.three_days}
-                            </span>
-                          )}
-                          {supplier.pricing.weekly && (
-                            <span className="text-xs bg-zinc-800 text-zinc-300 px-2 py-1 rounded">
-                              Semanal: {supplier.pricing.weekly}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                      {supplier.pricing?.discount_notes && (
-                        <p className="text-xs text-green-400 mt-1">
-                          💰 {supplier.pricing.discount_notes}
-                        </p>
-                      )}
-
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {supplier.equipment_types.map((type) => (
-                          <Badge
-                            key={type}
-                            variant="outline"
-                            className="bg-red-600/10 text-red-400 border-red-600/30"
-                          >
-                            {type}
-                          </Badge>
-                        ))}
+                        <a
+                          href={`mailto:${supplier.email}`}
+                          className="hover:text-blue-400 hover:underline transition-colors"
+                        >
+                          {supplier.email}
+                        </a>
                       </div>
-                      {supplier.notes && (
-                        <p className="text-xs mt-2 text-zinc-500">{supplier.notes}</p>
-                      )}
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-4 w-4" />
+                        <span>{supplier.phone}</span>
+                        {hasWhatsApp && (
+                          <a
+                            href={`https://wa.me/55${whatsappNumber}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-green-400 hover:text-green-300 transition-colors flex items-center gap-1"
+                            title="Abrir no WhatsApp"
+                          >
+                            <MessageSquare className="h-3 w-3" />
+                          </a>
+                        )}
+                      </div>
                     </div>
+
+                    {/* Estatísticas de Orçamentos */}
+                    {supplier.stats && supplier.stats.totalQuotations > 0 && (
+                      <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-3 mb-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <TrendingUp className="h-4 w-4 text-blue-400" />
+                          <span className="text-xs font-semibold text-zinc-300">Histórico de Orçamentos</span>
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                          <div className="text-center">
+                            <p className="text-xs text-zinc-500">Total</p>
+                            <p className="text-lg font-bold text-white">{supplier.stats.totalQuotations}</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-xs text-zinc-500 flex items-center justify-center gap-1">
+                              <CheckCircle className="h-3 w-3" /> Aceitos
+                            </p>
+                            <p className="text-lg font-bold text-green-400">{supplier.stats.acceptedQuotations}</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-xs text-zinc-500 flex items-center justify-center gap-1">
+                              <XCircle className="h-3 w-3" /> Rejeitados
+                            </p>
+                            <p className="text-lg font-bold text-red-400">{supplier.stats.rejectedQuotations}</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-xs text-zinc-500">Taxa</p>
+                            <p className="text-lg font-bold text-blue-400">{supplier.stats.acceptanceRate}%</p>
+                          </div>
+                        </div>
+                        {supplier.stats.avgTicket > 0 && (
+                          <div className="mt-2 pt-2 border-t border-zinc-700">
+                            <p className="text-xs text-zinc-500">Ticket Médio (aceitos)</p>
+                            <p className="text-sm font-semibold text-yellow-400">
+                              R$ {supplier.stats.avgTicket.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Preços */}
+                    {supplier.pricing && (supplier.pricing.daily || supplier.pricing.three_days || supplier.pricing.weekly) && (
+                      <div className="flex flex-wrap gap-2 mb-3 pb-3 border-b border-zinc-800">
+                        {supplier.pricing.daily && (
+                          <span className="text-xs bg-zinc-800 text-zinc-300 px-2 py-1 rounded">
+                            Diária: {supplier.pricing.daily}
+                          </span>
+                        )}
+                        {supplier.pricing.three_days && (
+                          <span className="text-xs bg-zinc-800 text-zinc-300 px-2 py-1 rounded">
+                            3 dias: {supplier.pricing.three_days}
+                          </span>
+                        )}
+                        {supplier.pricing.weekly && (
+                          <span className="text-xs bg-zinc-800 text-zinc-300 px-2 py-1 rounded">
+                            Semanal: {supplier.pricing.weekly}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {supplier.pricing?.discount_notes && (
+                      <p className="text-xs text-green-400 mb-3">
+                        💰 {supplier.pricing.discount_notes}
+                      </p>
+                    )}
+
+                    {/* Tipos de Equipamento */}
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      {supplier.equipment_types.map((type) => (
+                        <Badge
+                          key={type}
+                          variant="outline"
+                          className="bg-red-600/10 text-red-400 border-red-600/30 text-xs"
+                        >
+                          {type}
+                        </Badge>
+                      ))}
+                    </div>
+
+                    {/* Notas */}
+                    {supplier.notes && (
+                      <p className="text-xs mt-2 text-zinc-500">{supplier.notes}</p>
+                    )}
                   </div>
-                  <div className="flex gap-2 ml-4">
+
+                  {/* Botões de Ação */}
+                  <div className="flex flex-col gap-2">
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => handleEdit(supplier)}
-                      className="border-white text-white hover:bg-red-600 hover:border-red-600"
+                      className="border-zinc-700 text-white hover:bg-red-600 hover:border-red-600"
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
@@ -438,7 +514,8 @@ export default function FornecedoresPage() {
                 </div>
               </CardContent>
             </Card>
-          ))
+            );
+          })
         )}
       </div>
 
