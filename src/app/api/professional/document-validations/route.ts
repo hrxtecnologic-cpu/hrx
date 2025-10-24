@@ -65,7 +65,6 @@ export async function GET() {
       allVersions: validations || [],
     });
   } catch (error) {
-    console.error('Erro ao buscar validações:', error);
     return NextResponse.json(
       { error: 'Erro ao buscar validações' },
       { status: 500 }

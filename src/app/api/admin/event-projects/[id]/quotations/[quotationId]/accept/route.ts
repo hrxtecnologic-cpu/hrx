@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { createClient } from '@/lib/supabase/server';
+import { isAdmin } from '@/lib/auth';
+import { sendQuoteAcceptedEmail, sendQuoteRejectedEmail } from '@/lib/resend/emails';
+import { logger } from '@/lib/logger';
 
 /**
  * POST /api/admin/projects/[id]/quotations/[quotationId]/accept
@@ -15,6 +18,15 @@ export async function POST(
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    }
+
+    // Verificar se é admin
+    const { isAdmin: userIsAdmin } = await isAdmin();
+    if (!userIsAdmin) {
+      return NextResponse.json(
+        { error: 'Acesso negado. Apenas administradores.' },
+        { status: 403 }
+      );
     }
 
     const { id: projectId, quotationId } = await params;
@@ -104,9 +116,71 @@ export async function POST(
     } else {
     }
 
-    // TODO: Enviar emails (fornecedor aceito + rejeitados)
-    // Por enquanto apenas loga
+    // Enviar email para fornecedor aceito
+    try {
+      const acceptedEmailResult = await sendQuoteAcceptedEmail({
+        supplierName: (quotation as any).supplier?.contact_name || (quotation as any).supplier?.company_name || 'Fornecedor',
+        supplierEmail: (quotation as any).supplier?.email || '',
+        quoteRequestId: project.project_number,
+        clientName: 'HRX Eventos',
+        eventDate: new Date().toISOString(), // Buscar do projeto se necessário
+        acceptedPrice: quotation.total_price || 0,
+      });
 
+      if (acceptedEmailResult.success) {
+        logger.info('Email de aceite enviado', {
+          emailId: acceptedEmailResult.emailId,
+          quotationId,
+          supplierEmail: (quotation as any).supplier?.email,
+        });
+      }
+    } catch (emailError) {
+      logger.error('Erro ao enviar email de aceite', emailError instanceof Error ? emailError : undefined);
+    }
+
+    // Enviar emails para fornecedores rejeitados
+    const { data: rejectedQuotations } = await supabase
+      .from('supplier_quotations')
+      .select(`
+        id,
+        supplier:equipment_suppliers!supplier_id(
+          id,
+          company_name,
+          contact_name,
+          email
+        )
+      `)
+      .eq('project_id', projectId)
+      .eq('status', 'rejected')
+      .neq('id', quotationId);
+
+    if (rejectedQuotations && rejectedQuotations.length > 0) {
+      for (const rejected of rejectedQuotations) {
+        try {
+          if ((rejected as any).supplier?.email) {
+            const rejectedEmailResult = await sendQuoteRejectedEmail({
+              supplierName: (rejected as any).supplier?.contact_name || (rejected as any).supplier?.company_name || 'Fornecedor',
+              supplierEmail: (rejected as any).supplier.email,
+              quoteRequestId: project.project_number,
+              clientName: 'HRX Eventos',
+              reason: 'Selecionamos outro fornecedor para este projeto',
+            });
+
+            if (rejectedEmailResult.success) {
+              logger.info('Email de rejeição enviado', {
+                emailId: rejectedEmailResult.emailId,
+                quotationId: rejected.id,
+                supplierEmail: (rejected as any).supplier.email,
+              });
+            }
+          }
+        } catch (emailError) {
+          logger.error('Erro ao enviar email de rejeição', emailError instanceof Error ? emailError : undefined, {
+            quotationId: rejected.id,
+          });
+        }
+      }
+    }
 
     return NextResponse.json({
       success: true,
@@ -115,6 +189,10 @@ export async function POST(
         totalEquipmentCost,
         totalCost,
         totalClientPrice,
+      },
+      emailsSent: {
+        accepted: 1,
+        rejected: rejectedQuotations?.length || 0,
       },
     });
   } catch (error: any) {

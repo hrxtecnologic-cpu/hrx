@@ -23,7 +23,6 @@ export async function GET() {
 
     return NextResponse.json(eventTypes || []);
   } catch (error) {
-    console.error('Erro ao buscar tipos de evento:', error);
     return NextResponse.json(
       { error: 'Erro ao buscar tipos de evento' },
       { status: 500 }
@@ -76,7 +75,6 @@ export async function POST(req: Request) {
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Erro ao criar tipo de evento:', error);
     return NextResponse.json(
       { error: 'Erro ao criar tipo de evento' },
       { status: 500 }

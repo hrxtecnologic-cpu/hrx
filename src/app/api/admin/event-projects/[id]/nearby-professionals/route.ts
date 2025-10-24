@@ -35,7 +35,6 @@ export async function GET(
     const subcategory = searchParams.get('subcategory');
     const maxDistance = parseInt(searchParams.get('maxDistance') || '100');
 
-    console.log('🔍 Buscando profissionais próximos:', { projectId: id, category, subcategory, maxDistance });
 
     // 1. Buscar dados do projeto (para pegar localização do evento)
     const { data: project, error: projectError } = await supabase
@@ -80,7 +79,6 @@ export async function GET(
     const { data: professionals, error: profError } = await query;
 
     if (profError) {
-      console.error('Erro ao buscar profissionais:', profError);
       return NextResponse.json({ error: profError.message }, { status: 500 });
     }
 
@@ -98,7 +96,6 @@ export async function GET(
     // 4. Calcular distância para profissionais com geolocalização
     // TODO: Usar função calculate_distance quando tivermos lat/lon do evento
 
-    console.log(`✅ Encontrados ${filteredProfessionals.length} profissionais`);
 
     return NextResponse.json({
       professionals: filteredProfessionals,
@@ -113,7 +110,6 @@ export async function GET(
       },
     });
   } catch (error: any) {
-    console.error('Erro ao buscar profissionais próximos:', error);
     return NextResponse.json(
       { error: error?.message || 'Erro interno do servidor' },
       { status: 500 }

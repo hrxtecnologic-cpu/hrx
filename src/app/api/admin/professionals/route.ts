@@ -41,7 +41,6 @@ export async function GET(req: Request) {
 
     return NextResponse.json(filtered);
   } catch (error) {
-    console.error('Erro ao buscar profissionais:', error);
     return NextResponse.json(
       { error: 'Erro ao buscar profissionais' },
       { status: 500 }

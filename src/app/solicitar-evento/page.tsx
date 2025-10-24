@@ -47,6 +47,14 @@ const professionalSchema = z.object({
   requirements: z.string().optional(),
 });
 
+// Schema para equipamento
+const equipmentSchema = z.object({
+  category: z.string().min(1, 'Categoria é obrigatória'),
+  quantity: z.number().min(1, 'Mínimo 1'),
+  estimated_daily_rate: z.number().min(0, 'Valor deve ser maior ou igual a 0').optional(),
+  notes: z.string().optional(),
+});
+
 // Schema completo do formulário
 const eventRequestSchema = z.object({
   // Cliente
@@ -76,8 +84,7 @@ const eventRequestSchema = z.object({
   professionals: z.array(professionalSchema).min(1, 'Adicione pelo menos um profissional'),
 
   // Equipamentos
-  equipment_types: z.array(z.string()).optional(),
-  equipment_notes: z.string().optional(),
+  equipment: z.array(equipmentSchema).optional(),
 
   // Urgência e Orçamento
   is_urgent: z.boolean().default(false),
@@ -106,7 +113,7 @@ export default function SolicitarEventoPage() {
     resolver: zodResolver(eventRequestSchema),
     defaultValues: {
       professionals: [{ category_group: '', category: '', quantity: 1, requirements: '' }],
-      equipment_types: [],
+      equipment: [],
       is_urgent: false,
     },
   });
@@ -114,6 +121,11 @@ export default function SolicitarEventoPage() {
   const { fields, append, remove } = useFieldArray({
     control,
     name: 'professionals',
+  });
+
+  const { fields: equipmentFields, append: appendEquipment, remove: removeEquipment } = useFieldArray({
+    control,
+    name: 'equipment',
   });
 
   const isUrgent = watch('is_urgent');
@@ -131,20 +143,23 @@ export default function SolicitarEventoPage() {
     });
   };
 
-  // Toggle equipamento
-  const toggleEquipment = (equipment: string) => {
-    const updated = selectedEquipment.includes(equipment)
-      ? selectedEquipment.filter((e) => e !== equipment)
-      : [...selectedEquipment, equipment];
-    setSelectedEquipment(updated);
-    setValue('equipment_types', updated);
+  // Adicionar equipamento
+  const addEquipment = (category: string) => {
+    appendEquipment({
+      category,
+      quantity: 1,
+      estimated_daily_rate: 0,
+      notes: '',
+    });
   };
 
   // Contar equipamentos selecionados por categoria
   const getSelectedCountByCategory = (categoryName: string): number => {
     const category = EQUIPMENT_CATEGORIES.find((c) => c.name === categoryName);
     if (!category) return 0;
-    return category.subtypes.filter((s) => selectedEquipment.includes(s.value)).length;
+    return category.subtypes.filter((subtype) =>
+      equipmentFields.some((field) => field.category === subtype.label)
+    ).length;
   };
 
   const onSubmit = async (data: EventRequestFormData) => {

@@ -31,7 +31,6 @@ export async function GET() {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('Erro ao enviar email:', error);
     return NextResponse.json(
       {
         success: false,

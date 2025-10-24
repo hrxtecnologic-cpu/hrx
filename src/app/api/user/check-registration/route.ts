@@ -41,7 +41,6 @@ export async function GET() {
       hasContractorRegistration: false, // Contratantes não precisam cadastro prévio
     });
   } catch (error) {
-    console.error('Erro ao verificar cadastro:', error);
     return NextResponse.json(
       { error: 'Erro ao verificar cadastro' },
       { status: 500 }

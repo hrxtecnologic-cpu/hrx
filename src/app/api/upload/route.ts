@@ -100,7 +100,6 @@ export async function POST(req: Request) {
       });
 
     if (uploadError) {
-      console.error('Erro no upload:', uploadError);
       return NextResponse.json(
         { error: uploadError.message },
         { status: 500 }
@@ -117,7 +116,6 @@ export async function POST(req: Request) {
       url: urlData.publicUrl,
     });
   } catch (error) {
-    console.error('Erro no upload:', error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }

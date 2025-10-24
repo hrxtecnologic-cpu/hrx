@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS supplier_equipment (
   name TEXT NOT NULL,
   category TEXT NOT NULL,
   description TEXT,
-  specifications TEXT,
+  specifications TEXT,  
 
   -- Disponibilidade e Preços
   quantity INTEGER DEFAULT 1,

@@ -376,7 +376,6 @@ export async function GET(req: Request) {
       },
     });
   } catch (error) {
-    console.error('Erro ao gerar preview:', error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }

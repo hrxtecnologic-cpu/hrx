@@ -60,7 +60,6 @@ export async function GET(
       .order('created_at', { ascending: true });
 
     if (itemsError) {
-      console.error('Erro ao buscar itens:', itemsError);
     }
 
     // Buscar cotações com informações dos fornecedores
@@ -80,7 +79,6 @@ export async function GET(
       .order('created_at', { ascending: false });
 
     if (quotesError) {
-      console.error('Erro ao buscar cotações:', quotesError);
     }
 
     // Buscar histórico de emails
@@ -91,7 +89,6 @@ export async function GET(
       .order('created_at', { ascending: false });
 
     if (emailsError) {
-      console.error('Erro ao buscar emails:', emailsError);
     }
 
     const result: QuoteRequestWithDetails = {
@@ -103,7 +100,6 @@ export async function GET(
 
     return NextResponse.json({ quote: result });
   } catch (error) {
-    console.error('Erro ao buscar orçamento:', error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }
@@ -185,13 +181,11 @@ export async function PATCH(
       .single();
 
     if (error) {
-      console.error('Erro ao atualizar orçamento:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, quote: data });
   } catch (error) {
-    console.error('Erro ao atualizar orçamento:', error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }
@@ -245,13 +239,11 @@ export async function DELETE(
       .eq('id', quoteId);
 
     if (error) {
-      console.error('Erro ao cancelar orçamento:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, message: 'Orçamento cancelado' });
   } catch (error) {
-    console.error('Erro ao cancelar orçamento:', error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }

@@ -46,7 +46,6 @@ export async function GET() {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('❌ Erro ao buscar projetos do contratante:', error);
       return NextResponse.json(
         { error: 'Erro ao buscar projetos' },
         { status: 500 }
@@ -59,7 +58,6 @@ export async function GET() {
       total: projects?.length || 0,
     });
   } catch (error: any) {
-    console.error('❌ Erro no endpoint meus-projetos:', error);
     return NextResponse.json(
       { error: error?.message || 'Erro interno do servidor' },
       { status: 500 }

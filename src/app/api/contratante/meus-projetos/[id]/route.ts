@@ -66,7 +66,6 @@ export async function GET(
       .single();
 
     if (error) {
-      console.error('❌ Erro ao buscar projeto:', error);
       return NextResponse.json(
         { error: 'Projeto não encontrado' },
         { status: 404 }
@@ -85,7 +84,6 @@ export async function GET(
       project,
     });
   } catch (error: any) {
-    console.error('❌ Erro no endpoint meus-projetos/[id]:', error);
     return NextResponse.json(
       { error: error?.message || 'Erro interno do servidor' },
       { status: 500 }

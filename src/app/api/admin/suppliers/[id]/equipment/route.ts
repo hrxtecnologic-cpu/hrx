@@ -30,7 +30,6 @@ export async function GET(
       .order('name', { ascending: true });
 
     if (error) {
-      console.error('Erro ao buscar equipamentos do fornecedor:', error);
       return NextResponse.json(
         { error: 'Erro ao buscar equipamentos' },
         { status: 500 }
@@ -43,7 +42,6 @@ export async function GET(
       total: equipment?.length || 0,
     });
   } catch (error) {
-    console.error('Erro na API de equipamentos do fornecedor:', error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }

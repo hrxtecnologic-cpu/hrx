@@ -38,7 +38,6 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (metricsError) {
-      console.error('Erro ao buscar métricas:', metricsError);
     }
 
     // Buscar KPIs do mês
@@ -46,7 +45,6 @@ export async function GET(request: NextRequest) {
       .rpc('get_current_month_kpis');
 
     if (kpisError) {
-      console.error('Erro ao buscar KPIs:', kpisError);
     }
 
     // Buscar pipeline de vendas
@@ -55,7 +53,6 @@ export async function GET(request: NextRequest) {
       .select('*');
 
     if (pipelineError) {
-      console.error('Erro ao buscar pipeline:', pipelineError);
     }
 
     // Buscar eventos próximos
@@ -65,7 +62,6 @@ export async function GET(request: NextRequest) {
       .limit(10);
 
     if (eventsError) {
-      console.error('Erro ao buscar eventos:', eventsError);
     }
 
     return NextResponse.json({
@@ -78,7 +74,6 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Erro na API de métricas:', error);
     return NextResponse.json(
       { success: false, error: 'Erro interno do servidor' },
       { status: 500 }

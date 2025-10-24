@@ -19,7 +19,6 @@ export async function GET() {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   }
 
-  console.log('🔍 Buscando usuário com clerk_id:', userId);
 
   // Tentar buscar o usuário
   const { data, error, count } = await supabase
@@ -27,15 +26,12 @@ export async function GET() {
     .select('*', { count: 'exact' })
     .eq('clerk_id', userId);
 
-  console.log('📊 Resultado da query:', { data, error, count });
 
   // Também listar todos os usuários para debug
   const { data: allUsers, count: totalUsers } = await supabase
     .from('users')
     .select('clerk_id, email', { count: 'exact' });
 
-  console.log('📋 Total de usuários no banco:', totalUsers);
-  console.log('📋 Usuários:', allUsers);
 
   return NextResponse.json({
     searchedClerkId: userId,

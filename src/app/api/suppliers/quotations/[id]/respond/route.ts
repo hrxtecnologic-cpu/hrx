@@ -37,9 +37,9 @@ export async function POST(
     const body = await req.json();
 
     // Validações
-    if (!body.supplier_price || body.supplier_price <= 0) {
+    if (!body.total_price || body.total_price <= 0) {
       return NextResponse.json(
-        { error: 'Preço é obrigatório e deve ser maior que zero' },
+        { error: 'Preço total é obrigatório e deve ser maior que zero' },
         { status: 400 }
       );
     }
@@ -77,12 +77,12 @@ export async function POST(
       );
     }
 
-    // Verificar deadline
-    if (quotation.deadline) {
-      const deadline = new Date(quotation.deadline);
+    // Verificar valid_until (prazo)
+    if (quotation.valid_until) {
+      const validUntil = new Date(quotation.valid_until);
       const now = new Date();
 
-      if (now > deadline) {
+      if (now > validUntil) {
         return NextResponse.json(
           { error: 'O prazo para responder esta cotação já expirou' },
           { status: 400 }
@@ -90,25 +90,20 @@ export async function POST(
       }
     }
 
-    // Calcular preço HRX com margem de lucro
-    const supplierPrice = parseFloat(body.supplier_price);
-    const profitMarginPercent = quotation.project.profit_margin; // 35 ou 80
-    const profitAmount = supplierPrice * (profitMarginPercent / 100);
-    const hrxPrice = supplierPrice + profitAmount;
-
-    // Atualizar cotação
+    // Atualizar cotação com campos que existem no banco
     const { data: updatedQuotation, error: updateError } = await supabase
       .from('supplier_quotations')
       .update({
-        supplier_price: supplierPrice,
-        hrx_price: hrxPrice,
-        profit_margin_applied: profitMarginPercent,
-        profit_amount: profitAmount,
-        status: 'received',
+        total_price: parseFloat(body.total_price),
+        daily_rate: body.daily_rate ? parseFloat(body.daily_rate) : null,
+        delivery_fee: body.delivery_fee ? parseFloat(body.delivery_fee) : 0,
+        setup_fee: body.setup_fee ? parseFloat(body.setup_fee) : 0,
+        payment_terms: body.payment_terms || null,
+        delivery_details: body.delivery_details || null,
+        notes: body.notes || null,
+        status: 'submitted',
+        submitted_at: new Date().toISOString(),
         responded_at: new Date().toISOString(),
-        supplier_notes: body.notes,
-        delivery_time: body.delivery_time,
-        payment_terms: body.payment_terms,
       })
       .eq('id', quotationId)
       .select()
@@ -130,9 +125,7 @@ export async function POST(
       quotationId,
       projectId: quotation.project_id,
       supplierId: quotation.supplier_id,
-      supplierPrice,
-      hrxPrice,
-      profitMargin: profitMarginPercent,
+      totalPrice: updatedQuotation.total_price,
       ip,
     });
 
@@ -143,8 +136,8 @@ export async function POST(
       message: 'Cotação enviada com sucesso! A HRX entrará em contato em breve.',
       quotation: {
         id: updatedQuotation.id,
-        supplier_price: updatedQuotation.supplier_price,
-        received_at: updatedQuotation.responded_at,
+        total_price: updatedQuotation.total_price,
+        submitted_at: updatedQuotation.submitted_at,
       },
     });
   } catch (error: any) {
@@ -180,15 +173,16 @@ export async function GET(
       );
     }
 
-    // Buscar cotação com detalhes do projeto e equipamento
+    // Buscar cotação com detalhes do projeto
     const { data: quotation, error: quotationError } = await supabase
       .from('supplier_quotations')
       .select(`
         id,
         status,
-        deadline,
+        valid_until,
         created_at,
-        supplier_price,
+        total_price,
+        requested_items,
         responded_at,
         project:event_projects!inner(
           project_number,
@@ -197,15 +191,6 @@ export async function GET(
           event_date,
           venue_city,
           venue_state
-        ),
-        equipment:project_equipment!inner(
-          name,
-          category,
-          subcategory,
-          description,
-          quantity,
-          duration_days,
-          specifications
         )
       `)
       .eq('id', quotationId)
@@ -219,19 +204,19 @@ export async function GET(
     }
 
     // Verificar se ainda pode responder
-    const canRespond = ['pending', 'sent'].includes(quotation.status);
-    const isExpired = quotation.deadline && new Date(quotation.deadline) < new Date();
+    const canRespond = ['pending'].includes(quotation.status);
+    const isExpired = quotation.valid_until && new Date(quotation.valid_until) < new Date();
 
     return NextResponse.json({
       quotation: {
         id: quotation.id,
         status: quotation.status,
-        deadline: quotation.deadline,
+        valid_until: quotation.valid_until,
         canRespond: canRespond && !isExpired,
         isExpired: isExpired,
-        alreadyResponded: !!quotation.supplier_price,
+        alreadyResponded: !!quotation.total_price,
+        requested_items: quotation.requested_items,
         project: quotation.project,
-        equipment: quotation.equipment,
       },
     });
   } catch (error: any) {

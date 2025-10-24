@@ -33,7 +33,6 @@ export async function GET(
     const equipmentType = searchParams.get('equipmentType');
     const maxDistance = parseInt(searchParams.get('maxDistance') || '100');
 
-    console.log('🔍 Buscando fornecedores próximos:', { projectId: id, equipmentType, maxDistance });
 
     // 1. Buscar dados do projeto (para pegar localização do evento)
     const { data: project, error: projectError } = await supabase
@@ -82,7 +81,6 @@ export async function GET(
     const { data: suppliers, error: suppliersError } = await query;
 
     if (suppliersError) {
-      console.error('Erro ao buscar fornecedores:', suppliersError);
       return NextResponse.json({ error: suppliersError.message }, { status: 500 });
     }
 
@@ -100,7 +98,6 @@ export async function GET(
         : 'Frete a combinar conforme distância',
     })) || [];
 
-    console.log(`✅ Encontrados ${suppliers?.length || 0} fornecedores`);
 
     return NextResponse.json({
       suppliers: suppliersWithShipping,
@@ -115,7 +112,6 @@ export async function GET(
       note: 'Configure latitude/longitude dos fornecedores para cálculo automático de frete',
     });
   } catch (error: any) {
-    console.error('Erro ao buscar fornecedores próximos:', error);
     return NextResponse.json(
       { error: error?.message || 'Erro interno do servidor' },
       { status: 500 }

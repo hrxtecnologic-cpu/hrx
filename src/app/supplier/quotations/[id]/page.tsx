@@ -25,26 +25,36 @@ import {
 import { formatCurrency, formatDate } from '@/lib/format';
 
 const quotationResponseSchema = z.object({
-  supplier_price: z.string().min(1, 'Preço é obrigatório'),
-  supplier_notes: z.string().optional(),
-  availability_confirmed: z.boolean().default(true),
-  delivery_date: z.string().optional(),
-  pickup_date: z.string().optional(),
+  total_price: z.string().min(1, 'Preço total é obrigatório'),
+  daily_rate: z.string().optional(),
+  delivery_fee: z.string().optional(),
+  setup_fee: z.string().optional(),
+  payment_terms: z.string().optional(),
+  delivery_details: z.string().optional(),
+  notes: z.string().optional(),
 });
 
 type QuotationResponseData = z.infer<typeof quotationResponseSchema>;
 
 interface QuotationDetails {
   id: string;
-  status: string;
-  supplier_price?: number;
-  supplier_notes?: string;
-  hrx_price?: number;
-  availability_confirmed?: boolean;
-  delivery_date?: string;
-  pickup_date?: string;
+  project_id: string;
+  supplier_id: string;
+  token: string;
+  requested_items: any[];
+  status: 'pending' | 'submitted' | 'accepted' | 'rejected' | 'expired';
+  total_price?: number;
+  daily_rate?: number;
+  delivery_fee?: number;
+  setup_fee?: number;
+  payment_terms?: string;
+  delivery_details?: string;
+  notes?: string;
+  valid_until?: string;
   created_at: string;
-  event_projects: {
+  submitted_at?: string;
+  responded_at?: string;
+  project: {
     project_number: string;
     event_name: string;
     event_description?: string;
@@ -53,12 +63,7 @@ interface QuotationDetails {
     client_name: string;
     venue_name?: string;
     venue_city?: string;
-  };
-  project_equipment: {
-    equipment_type: string;
-    quantity: number;
-    duration_days: number;
-    specific_requirements?: string;
+    venue_state?: string;
   };
 }
 
@@ -82,7 +87,7 @@ export default function SupplierQuotationPage() {
     resolver: zodResolver(quotationResponseSchema),
   });
 
-  const watchPrice = watch('supplier_price');
+  const watchPrice = watch('total_price');
 
   useEffect(() => {
     if (quotationId) {
@@ -106,12 +111,14 @@ export default function SupplierQuotationPage() {
       setQuotation(data.quotation);
 
       // Se já foi respondida, preencher formulário
-      if (data.quotation.supplier_price) {
-        setValue('supplier_price', data.quotation.supplier_price.toString());
-        setValue('supplier_notes', data.quotation.supplier_notes || '');
-        setValue('availability_confirmed', data.quotation.availability_confirmed ?? true);
-        setValue('delivery_date', data.quotation.delivery_date || '');
-        setValue('pickup_date', data.quotation.pickup_date || '');
+      if (data.quotation.total_price) {
+        setValue('total_price', data.quotation.total_price.toString());
+        setValue('daily_rate', data.quotation.daily_rate?.toString() || '');
+        setValue('delivery_fee', data.quotation.delivery_fee?.toString() || '');
+        setValue('setup_fee', data.quotation.setup_fee?.toString() || '');
+        setValue('payment_terms', data.quotation.payment_terms || '');
+        setValue('delivery_details', data.quotation.delivery_details || '');
+        setValue('notes', data.quotation.notes || '');
       }
     } catch (err: any) {
       console.error('Erro ao carregar cotação:', err);
@@ -130,11 +137,13 @@ export default function SupplierQuotationPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          supplier_price: parseFloat(data.supplier_price),
-          supplier_notes: data.supplier_notes,
-          availability_confirmed: data.availability_confirmed,
-          delivery_date: data.delivery_date || null,
-          pickup_date: data.pickup_date || null,
+          total_price: parseFloat(data.total_price),
+          daily_rate: data.daily_rate ? parseFloat(data.daily_rate) : undefined,
+          delivery_fee: data.delivery_fee ? parseFloat(data.delivery_fee) : undefined,
+          setup_fee: data.setup_fee ? parseFloat(data.setup_fee) : undefined,
+          payment_terms: data.payment_terms || null,
+          delivery_details: data.delivery_details || null,
+          notes: data.notes || null,
         }),
       });
 
@@ -146,7 +155,6 @@ export default function SupplierQuotationPage() {
       alert('Cotação enviada com sucesso!');
       router.push('/supplier/dashboard');
     } catch (err: any) {
-      console.error('Erro ao enviar cotação:', err);
       setError(err.message);
     } finally {
       setSubmitting(false);
@@ -223,7 +231,7 @@ export default function SupplierQuotationPage() {
             </Link>
             <h1 className="text-3xl font-bold text-white mb-2">Detalhes da Cotação</h1>
             <p className="text-zinc-400">
-              Projeto #{quotation.event_projects.project_number}
+              Projeto #{quotation.project.project_number}
             </p>
           </div>
           {getStatusBadge(quotation.status)}
@@ -241,72 +249,81 @@ export default function SupplierQuotationPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-zinc-500">Nome do Evento</p>
-                <p className="text-base text-white font-medium">{quotation.event_projects.event_name}</p>
+                <p className="text-base text-white font-medium">{quotation.project.event_name}</p>
               </div>
               <div>
                 <p className="text-sm text-zinc-500">Tipo</p>
-                <p className="text-base text-white">{quotation.event_projects.event_type}</p>
+                <p className="text-base text-white">{quotation.project.event_type}</p>
               </div>
               <div>
                 <p className="text-sm text-zinc-500">Cliente</p>
-                <p className="text-base text-white">{quotation.event_projects.client_name}</p>
+                <p className="text-base text-white">{quotation.project.client_name}</p>
               </div>
               <div>
                 <p className="text-sm text-zinc-500">Data do Evento</p>
                 <p className="text-base text-white flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-zinc-400" />
-                  {formatDate(quotation.event_projects.event_date)}
+                  {formatDate(quotation.project.event_date)}
                 </p>
               </div>
-              {quotation.event_projects.venue_name && (
+              {quotation.project.venue_name && (
                 <div className="md:col-span-2">
                   <p className="text-sm text-zinc-500">Local</p>
                   <p className="text-base text-white">
-                    {quotation.event_projects.venue_name}
-                    {quotation.event_projects.venue_city && ` - ${quotation.event_projects.venue_city}`}
+                    {quotation.project.venue_name}
+                    {quotation.project.venue_city && ` - ${quotation.project.venue_city}`}
                   </p>
                 </div>
               )}
             </div>
 
-            {quotation.event_projects.event_description && (
+            {quotation.project.event_description && (
               <div>
                 <p className="text-sm text-zinc-500">Descrição do Evento</p>
-                <p className="text-base text-zinc-300">{quotation.event_projects.event_description}</p>
+                <p className="text-base text-zinc-300">{quotation.project.event_description}</p>
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Detalhes do Equipamento */}
+        {/* Itens Solicitados */}
         <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
               <Package className="h-5 w-5 text-blue-500" />
-              Equipamento Solicitado
+              Itens Solicitados
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <p className="text-sm text-zinc-500">Tipo de Equipamento</p>
-                <p className="text-lg text-white font-medium">{quotation.project_equipment.equipment_type}</p>
+            {quotation.requested_items && quotation.requested_items.length > 0 ? (
+              <div className="space-y-4">
+                {quotation.requested_items.map((item: any, index: number) => (
+                  <div key={index} className="p-4 bg-zinc-800 rounded-lg">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <p className="text-sm text-zinc-500">Nome</p>
+                        <p className="text-lg text-white font-medium">{item.name || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-zinc-500">Quantidade</p>
+                        <p className="text-lg text-white font-medium">{item.quantity || 1}x</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-zinc-500">Duração</p>
+                        <p className="text-lg text-white font-medium">{item.duration || 1} dia(s)</p>
+                      </div>
+                    </div>
+                    {item.description && (
+                      <div className="mt-4">
+                        <p className="text-sm text-zinc-500">Descrição</p>
+                        <p className="text-base text-zinc-300">{item.description}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
-              <div>
-                <p className="text-sm text-zinc-500">Quantidade</p>
-                <p className="text-lg text-white font-medium">{quotation.project_equipment.quantity}x</p>
-              </div>
-              <div>
-                <p className="text-sm text-zinc-500">Duração</p>
-                <p className="text-lg text-white font-medium">{quotation.project_equipment.duration_days} dia(s)</p>
-              </div>
-            </div>
-
-            {quotation.project_equipment.specific_requirements && (
-              <div className="mt-4">
-                <p className="text-sm text-zinc-500">Requisitos Específicos</p>
-                <p className="text-base text-zinc-300">{quotation.project_equipment.specific_requirements}</p>
-              </div>
+            ) : (
+              <p className="text-zinc-400">Nenhum item especificado</p>
             )}
           </CardContent>
         </Card>
@@ -326,19 +343,19 @@ export default function SupplierQuotationPage() {
             <CardContent>
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <div>
-                  <Label htmlFor="supplier_price" className="text-sm font-medium text-zinc-200">
+                  <Label htmlFor="total_price" className="text-sm font-medium text-zinc-200">
                     Preço Total (R$) *
                   </Label>
                   <Input
-                    id="supplier_price"
+                    id="total_price"
                     type="number"
                     step="0.01"
                     placeholder="0.00"
-                    {...register('supplier_price')}
+                    {...register('total_price')}
                     className="bg-zinc-800 border-zinc-700 text-white mt-1"
                   />
-                  {errors.supplier_price && (
-                    <p className="text-red-500 text-sm mt-1">{errors.supplier_price.message}</p>
+                  {errors.total_price && (
+                    <p className="text-red-500 text-sm mt-1">{errors.total_price.message}</p>
                   )}
                   {watchPrice && (
                     <p className="text-sm text-zinc-400 mt-1">
@@ -347,41 +364,85 @@ export default function SupplierQuotationPage() {
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <Label htmlFor="delivery_date" className="text-sm font-medium text-zinc-200">
-                      Data de Entrega
+                    <Label htmlFor="daily_rate" className="text-sm font-medium text-zinc-200">
+                      Diária (R$)
                     </Label>
                     <Input
-                      id="delivery_date"
-                      type="date"
-                      {...register('delivery_date')}
+                      id="daily_rate"
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      {...register('daily_rate')}
                       className="bg-zinc-800 border-zinc-700 text-white mt-1"
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="pickup_date" className="text-sm font-medium text-zinc-200">
-                      Data de Retirada
+                    <Label htmlFor="delivery_fee" className="text-sm font-medium text-zinc-200">
+                      Taxa de Entrega (R$)
                     </Label>
                     <Input
-                      id="pickup_date"
-                      type="date"
-                      {...register('pickup_date')}
+                      id="delivery_fee"
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      {...register('delivery_fee')}
+                      className="bg-zinc-800 border-zinc-700 text-white mt-1"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="setup_fee" className="text-sm font-medium text-zinc-200">
+                      Taxa de Instalação (R$)
+                    </Label>
+                    <Input
+                      id="setup_fee"
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      {...register('setup_fee')}
                       className="bg-zinc-800 border-zinc-700 text-white mt-1"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <Label htmlFor="supplier_notes" className="text-sm font-medium text-zinc-200">
+                  <Label htmlFor="payment_terms" className="text-sm font-medium text-zinc-200">
+                    Condições de Pagamento
+                  </Label>
+                  <Textarea
+                    id="payment_terms"
+                    rows={2}
+                    placeholder="Ex: 50% antecipado, 50% após o evento"
+                    {...register('payment_terms')}
+                    className="bg-zinc-800 border-zinc-700 text-white mt-1"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="delivery_details" className="text-sm font-medium text-zinc-200">
+                    Detalhes de Entrega
+                  </Label>
+                  <Textarea
+                    id="delivery_details"
+                    rows={2}
+                    placeholder="Informações sobre entrega e retirada"
+                    {...register('delivery_details')}
+                    className="bg-zinc-800 border-zinc-700 text-white mt-1"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="notes" className="text-sm font-medium text-zinc-200">
                     Observações
                   </Label>
                   <Textarea
-                    id="supplier_notes"
-                    rows={4}
-                    placeholder="Informações adicionais sobre sua cotação, condições de pagamento, etc."
-                    {...register('supplier_notes')}
+                    id="notes"
+                    rows={3}
+                    placeholder="Informações adicionais sobre sua cotação"
+                    {...register('notes')}
                     className="bg-zinc-800 border-zinc-700 text-white mt-1"
                   />
                 </div>
@@ -424,25 +485,56 @@ export default function SupplierQuotationPage() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-zinc-500">Preço Cotado</p>
+                  <p className="text-sm text-zinc-500">Preço Total</p>
                   <p className="text-xl text-white font-bold">
-                    {formatCurrency(quotation.supplier_price || 0)}
+                    {formatCurrency(quotation.total_price || 0)}
                   </p>
                 </div>
-                {quotation.hrx_price && (
+                {quotation.daily_rate && (
                   <div>
-                    <p className="text-sm text-zinc-500">Preço Final (HRX)</p>
+                    <p className="text-sm text-zinc-500">Diária</p>
                     <p className="text-xl text-white font-bold">
-                      {formatCurrency(quotation.hrx_price)}
+                      {formatCurrency(quotation.daily_rate)}
                     </p>
                   </div>
                 )}
               </div>
 
-              {quotation.supplier_notes && (
+              {(quotation.delivery_fee || quotation.setup_fee) && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {quotation.delivery_fee && (
+                    <div>
+                      <p className="text-sm text-zinc-500">Taxa de Entrega</p>
+                      <p className="text-base text-white">{formatCurrency(quotation.delivery_fee)}</p>
+                    </div>
+                  )}
+                  {quotation.setup_fee && (
+                    <div>
+                      <p className="text-sm text-zinc-500">Taxa de Instalação</p>
+                      <p className="text-base text-white">{formatCurrency(quotation.setup_fee)}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {quotation.payment_terms && (
+                <div>
+                  <p className="text-sm text-zinc-500">Condições de Pagamento</p>
+                  <p className="text-base text-zinc-300">{quotation.payment_terms}</p>
+                </div>
+              )}
+
+              {quotation.delivery_details && (
+                <div>
+                  <p className="text-sm text-zinc-500">Detalhes de Entrega</p>
+                  <p className="text-base text-zinc-300">{quotation.delivery_details}</p>
+                </div>
+              )}
+
+              {quotation.notes && (
                 <div>
                   <p className="text-sm text-zinc-500">Observações</p>
-                  <p className="text-base text-zinc-300">{quotation.supplier_notes}</p>
+                  <p className="text-base text-zinc-300">{quotation.notes}</p>
                 </div>
               )}
 

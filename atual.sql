@@ -360,6 +360,8 @@ CREATE TABLE public.project_equipment (
   notes text,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
+  daily_rate numeric DEFAULT 0,
+  total_cost numeric DEFAULT 0,
   CONSTRAINT project_equipment_pkey PRIMARY KEY (id),
   CONSTRAINT project_equipment_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.event_projects(id),
   CONSTRAINT project_equipment_selected_supplier_id_fkey FOREIGN KEY (selected_supplier_id) REFERENCES public.equipment_suppliers(id)

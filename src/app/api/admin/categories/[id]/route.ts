@@ -53,7 +53,6 @@ export async function PUT(
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Erro ao atualizar categoria:', error);
     return NextResponse.json(
       { error: 'Erro ao atualizar categoria' },
       { status: 500 }
@@ -130,7 +129,6 @@ export async function DELETE(
       message: `Categoria "${category.name}" deletada com sucesso`
     });
   } catch (error) {
-    console.error('Erro ao deletar categoria:', error);
     return NextResponse.json(
       { error: 'Erro ao deletar categoria' },
       { status: 500 }

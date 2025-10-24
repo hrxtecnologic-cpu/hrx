@@ -110,18 +110,12 @@ export async function POST(
       .eq('id', teamMemberId);
 
     if (updateError) {
-      console.error('❌ Erro ao atualizar status:', updateError);
       return NextResponse.json(
         { error: 'Erro ao processar ação' },
         { status: 500 }
       );
     }
 
-    console.log(
-      `✅ ${action === 'confirm' ? 'Confirmação' : 'Rejeição'} registrada | ` +
-      `Profissional: ${professional.full_name} | ` +
-      `Team Member ID: ${teamMemberId}`
-    );
 
     return NextResponse.json({
       success: true,
@@ -132,7 +126,6 @@ export async function POST(
           : 'Convite recusado. Obrigado por avisar.',
     });
   } catch (error) {
-    console.error('❌ Erro ao processar ação:', error);
     return NextResponse.json(
       { error: 'Erro ao processar ação' },
       { status: 500 }

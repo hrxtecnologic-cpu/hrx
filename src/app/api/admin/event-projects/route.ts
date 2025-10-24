@@ -25,11 +25,9 @@ const supabase = createClient(
 // =============================================
 export async function GET(req: Request) {
   try {
-    console.log('🔍 [GET /api/admin/event-projects] Iniciando...');
 
     // Verificar autenticação
     const { userId } = await auth();
-    console.log('🔑 UserId:', userId);
 
     if (!userId) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
@@ -55,10 +53,8 @@ export async function GET(req: Request) {
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
 
-    console.log('📊 Query params:', { status, isUrgent, clientName, eventType, limit, offset });
 
     // Query direta na tabela event_projects
-    console.log('🔍 Consultando tabela event_projects...');
     let query = supabase
       .from('event_projects')
       .select('*')
@@ -94,19 +90,12 @@ export async function GET(req: Request) {
 
     const { data, error } = await query;
 
-    console.log('📦 Resultado da query:', {
-      success: !error,
-      dataCount: data?.length,
-      hasError: !!error
-    });
 
     if (error) {
-      console.error('❌ Erro Supabase completo:', JSON.stringify(error, null, 2));
       logger.error('Erro ao buscar projetos', error as any, { userId });
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    console.log('✅ Projetos encontrados:', data?.length || 0);
 
     logger.info('Projetos listados com sucesso', {
       userId,
@@ -121,7 +110,6 @@ export async function GET(req: Request) {
       offset,
     });
   } catch (error: any) {
-    console.error('❌ Erro no try/catch:', error);
     logger.error('Erro ao listar projetos', error);
     return NextResponse.json(
       { error: error?.message || 'Erro interno do servidor' },
@@ -223,7 +211,6 @@ export async function POST(req: Request) {
       .single();
 
     if (projectError) {
-      console.error('❌ Erro ao criar projeto:', projectError);
       logger.error('Erro ao criar projeto', projectError as any, { userId });
       return NextResponse.json({ error: projectError.message }, { status: 500 });
     }
@@ -336,7 +323,6 @@ export async function POST(req: Request) {
       { status: 201 }
     );
   } catch (error: any) {
-    console.error('❌ Erro no try/catch do POST:', error);
     logger.error('Erro ao criar projeto', error);
     return NextResponse.json(
       { error: error?.message || 'Erro interno do servidor' },

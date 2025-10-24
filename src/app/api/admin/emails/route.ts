@@ -49,7 +49,6 @@ export async function GET(req: Request) {
       },
     });
   } catch (error) {
-    console.error('Erro ao buscar emails:', error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }

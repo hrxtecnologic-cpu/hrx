@@ -63,24 +63,32 @@ export default async function ProjetoDetailPage({
     .order('created_at', { ascending: true });
 
   // Buscar equipamentos (com fornecedor)
-  const { data: equipment } = await supabase
+  const { data: equipment, error: equipmentError } = await supabase
     .from('project_equipment')
     .select(`
       *,
-      supplier:equipment_suppliers(
+      supplier:equipment_suppliers!selected_supplier_id(
         id,
         company_name,
         contact_name,
         email,
         phone,
-        address_city,
-        address_state,
+        city,
+        state,
         equipment_types,
         status
       )
     `)
     .eq('project_id', id)
     .order('created_at', { ascending: true });
+
+  // DEBUG: Log equipment query
+  console.log('[SERVER] Equipment query result:', {
+    count: equipment?.length || 0,
+    error: equipmentError,
+    sample: equipment?.[0],
+    hasSupplier: equipment?.[0]?.supplier ? true : false,
+  });
 
   // Buscar profissionais disponíveis (apenas aprovados)
   const { data: professionals, error: professionalsError } = await supabase
@@ -168,7 +176,7 @@ export default async function ProjetoDetailPage({
           </div>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <SendProposalButton
             projectId={id}
             clientEmail={project.client_email || ''}
@@ -177,10 +185,10 @@ export default async function ProjetoDetailPage({
             hasEquipment={(equipment?.length || 0) > 0}
             projectStatus={project.status}
           />
-          <Link href="/admin/projetos">
+          <Link href="/admin/projetos" className="w-full sm:w-auto">
             <Button
               variant="outline"
-              className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+              className="w-full sm:w-auto border-zinc-700 text-zinc-300 hover:bg-zinc-800"
             >
               Voltar
             </Button>
@@ -189,7 +197,7 @@ export default async function ProjetoDetailPage({
       </div>
 
       {/* Financial Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="bg-zinc-900 border-zinc-800">
           <CardContent className="p-4">
             <p className="text-xs text-zinc-500 mb-1">Custo Total</p>

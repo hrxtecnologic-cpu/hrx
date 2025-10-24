@@ -64,7 +64,6 @@ export async function GET(req: Request) {
     const { data, error } = await query;
 
     if (error) {
-      console.error('Erro ao buscar orçamentos:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
@@ -75,7 +74,6 @@ export async function GET(req: Request) {
       offset,
     });
   } catch (error) {
-    console.error('Erro ao listar orçamentos:', error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }
@@ -145,7 +143,6 @@ export async function POST(req: Request) {
       .single();
 
     if (quoteError) {
-      console.error('Erro ao criar orçamento:', quoteError);
       return NextResponse.json({ error: quoteError.message }, { status: 500 });
     }
 
@@ -169,7 +166,6 @@ export async function POST(req: Request) {
       .select();
 
     if (itemsError) {
-      console.error('Erro ao criar itens:', itemsError);
       // Rollback: deletar orçamento
       await supabase.from('quote_requests').delete().eq('id', quoteRequest.id);
       return NextResponse.json({ error: itemsError.message }, { status: 500 });
@@ -177,7 +173,6 @@ export async function POST(req: Request) {
 
     // Se for URGENTE, enviar email imediato para admin
     if (body.is_urgent) {
-      console.log('🚨 Orçamento URGENTE criado! Enviando email para admin...');
 
       await sendUrgentQuoteAdminEmail({
         quoteRequestId: quoteRequest.id,
@@ -199,7 +194,6 @@ export async function POST(req: Request) {
       } as QuoteRequest & { items: any[] },
     }, { status: 201 });
   } catch (error) {
-    console.error('Erro ao criar orçamento:', error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }

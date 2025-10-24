@@ -53,7 +53,6 @@ export async function POST(
       .single();
 
     if (teamError || !teamMember) {
-      console.error('❌ Membro da equipe não encontrado:', teamError);
       return NextResponse.json(
         { error: 'Membro da equipe não encontrado' },
         { status: 404 }
@@ -81,7 +80,6 @@ export async function POST(
       .single();
 
     if (professionalError || !professional) {
-      console.error('❌ Profissional não encontrado:', professionalError);
       return NextResponse.json(
         { error: 'Profissional não encontrado' },
         { status: 404 }
@@ -121,7 +119,6 @@ export async function POST(
       .single();
 
     if (projectError || !project) {
-      console.error('❌ Projeto não encontrado:', projectError);
       return NextResponse.json(
         { error: 'Projeto não encontrado' },
         { status: 404 }
@@ -136,7 +133,6 @@ export async function POST(
       .rpc('generate_invitation_token', { team_member_id: memberId });
 
     if (tokenError) {
-      console.error('❌ Erro ao gerar token:', tokenError);
       return NextResponse.json(
         {
           error: 'Erro ao gerar token',
@@ -185,7 +181,6 @@ export async function POST(
     });
 
     if (!emailResult.success) {
-      console.error('❌ Erro ao enviar email:', emailResult.error);
       return NextResponse.json(
         {
           error: 'Erro ao enviar email',
@@ -198,13 +193,6 @@ export async function POST(
     // ========================================
     // 6. LOG E RETORNO
     // ========================================
-    console.log(
-      `✅ Convite enviado com sucesso | ` +
-      `Profissional: ${professional.full_name} (${professional.email}) | ` +
-      `Projeto: ${project.project_number} | ` +
-      `Token: ${invitationToken.substring(0, 8)}... | ` +
-      `Email ID: ${emailResult.emailId}`
-    );
 
     return NextResponse.json(
       {
@@ -218,7 +206,6 @@ export async function POST(
       { status: 200 }
     );
   } catch (error) {
-    console.error('❌ Erro ao enviar convite:', error);
     return NextResponse.json(
       {
         error: 'Erro interno',

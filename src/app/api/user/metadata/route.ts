@@ -29,14 +29,12 @@ export async function PATCH(req: Request) {
       },
     });
 
-    console.log(`✅ Metadata atualizado para usuário: ${userId} - tipo: ${userType}`);
 
     return NextResponse.json({
       success: true,
       userType,
     });
   } catch (error) {
-    console.error('Erro ao atualizar metadata:', error);
     return NextResponse.json(
       { error: 'Erro ao atualizar dados do usuário' },
       { status: 500 }

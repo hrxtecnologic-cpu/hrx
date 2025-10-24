@@ -21,7 +21,6 @@ export async function POST(request: Request) {
       throw error;
     }
 
-    console.log('📬 Novo contato recebido de:', validatedData.email);
 
     // 2. Enviar emails (confirmação + notificação admin)
     try {
@@ -34,17 +33,12 @@ export async function POST(request: Request) {
       });
 
       if (emailResult.errors.length > 0) {
-        console.warn('⚠️ Alguns emails de contato falharam:', emailResult.errors);
       } else {
-        console.log('✅ Todos os emails de contato foram enviados com sucesso');
       }
 
       // Log do resultado
-      console.log('Email confirmação enviado:', emailResult.confirmationEmailSent);
-      console.log('Email admin enviado:', emailResult.adminEmailSent);
     } catch (emailError) {
       // Log o erro mas não falha a requisição
-      console.error('❌ Erro ao enviar emails de contato:', emailError);
     }
 
     // 3. Retorna sucesso
@@ -54,7 +48,6 @@ export async function POST(request: Request) {
     });
 
   } catch (error) {
-    console.error('Erro ao processar contato:', error);
 
     return NextResponse.json(
       {

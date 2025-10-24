@@ -53,7 +53,6 @@ export async function PUT(
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Erro ao atualizar tipo de evento:', error);
     return NextResponse.json(
       { error: 'Erro ao atualizar tipo de evento' },
       { status: 500 }
@@ -132,7 +131,6 @@ export async function DELETE(
       message: `Tipo de evento "${eventType.name}" deletado com sucesso`
     });
   } catch (error) {
-    console.error('Erro ao deletar tipo de evento:', error);
     return NextResponse.json(
       { error: 'Erro ao deletar tipo de evento' },
       { status: 500 }

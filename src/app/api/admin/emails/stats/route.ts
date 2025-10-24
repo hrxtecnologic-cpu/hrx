@@ -28,7 +28,6 @@ export async function GET() {
       stats: result.stats,
     });
   } catch (error) {
-    console.error('Erro ao buscar estatísticas:', error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }

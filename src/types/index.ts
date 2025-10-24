@@ -149,10 +149,12 @@ export type {
   QuoteRequestItem,
   QuoteRequestWithDetails,
   QuoteRequestSummary,
-  SupplierQuote,
   QuoteEmail,
-  CreateQuoteRequestData,
-  SendQuoteRequestBody,
+  // Legacy types - replaced by SupplierQuotation in event-project
+  SupplierQuotationStatus,
+  RequestedItem,
+  CreateSupplierQuotationData,
+  UpdateSupplierQuotationData,
 } from './quote';
 
 // =====================================================

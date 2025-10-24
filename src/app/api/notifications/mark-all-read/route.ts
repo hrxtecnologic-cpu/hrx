@@ -35,7 +35,6 @@ export async function POST(request: NextRequest) {
     });
 
     if (error) {
-      console.error('Erro ao marcar todas como lidas:', error);
       return NextResponse.json(
         { success: false, error: 'Erro ao marcar notificações' },
         { status: 500 }
@@ -47,7 +46,6 @@ export async function POST(request: NextRequest) {
       data: { marked_count: count },
     });
   } catch (error) {
-    console.error('Erro na API:', error);
     return NextResponse.json(
       { success: false, error: 'Erro interno do servidor' },
       { status: 500 }

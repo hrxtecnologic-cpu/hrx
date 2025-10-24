@@ -27,7 +27,6 @@ export async function POST(request: Request) {
       throw error;
     }
 
-    console.log('🏢 Novo cadastro de contratante:', validatedData.companyName);
 
     // 2. Verifica se o CNPJ já está cadastrado
     const { data: existingContractor } = await supabase
@@ -64,11 +63,9 @@ export async function POST(request: Request) {
       .single();
 
     if (insertError) {
-      console.error('Erro ao criar contratante:', insertError);
       throw new Error('Erro ao criar cadastro no banco de dados');
     }
 
-    console.log('✅ Contratante criado com sucesso:', newContractor.id);
 
     // 4. Retorna sucesso
     return NextResponse.json({
@@ -78,7 +75,6 @@ export async function POST(request: Request) {
     });
 
   } catch (error) {
-    console.error('Erro ao processar cadastro de contratante:', error);
 
     return NextResponse.json(
       {

@@ -288,14 +288,12 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    console.log('🗑️ DELETE /api/admin/event-projects/[id] - Iniciando...');
 
     // Verificar autenticação
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     }
-    console.log('✅ Autenticado:', userId);
 
     // Rate limiting
     const rateLimitResult = await rateLimit(userId, RateLimitPresets.API_WRITE);
@@ -305,23 +303,18 @@ export async function DELETE(
         { status: 429 }
       );
     }
-    console.log('✅ Rate limit OK');
 
     const { id: projectId } = await params;
-    console.log('📋 Project ID:', projectId);
 
     // Verificar se existe
-    console.log('🔍 Verificando se projeto existe...');
     const { data: project, error: checkError } = await supabase
       .from('event_projects')
       .select('project_number')
       .eq('id', projectId)
       .single();
 
-    console.log('📊 Resultado da verificação:', { project, checkError });
 
     if (checkError || !project) {
-      console.log('❌ Projeto não encontrado');
       return NextResponse.json(
         { error: 'Projeto não encontrado' },
         { status: 404 }
@@ -329,14 +322,12 @@ export async function DELETE(
     }
 
     // Deletar projeto do banco
-    console.log('🗑️ Deletando projeto do banco...');
     const { error } = await supabase
       .from('event_projects')
       .delete()
       .eq('id', projectId);
 
     if (error) {
-      console.error('❌ Erro ao deletar:', error);
       logger.error('Erro ao deletar projeto', {
         error: error.message,
         projectId,
@@ -345,7 +336,6 @@ export async function DELETE(
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    console.log('✅ Projeto deletado com sucesso');
     logger.info('Projeto deletado', {
       userId,
       projectId,
@@ -357,10 +347,6 @@ export async function DELETE(
       message: 'Projeto deletado com sucesso',
     });
   } catch (error: any) {
-    console.error('💥 CATCH ERROR:', error);
-    console.error('💥 ERROR TYPE:', typeof error);
-    console.error('💥 ERROR MESSAGE:', error?.message);
-    console.error('💥 ERROR STACK:', error?.stack);
 
     logger.error('Erro ao cancelar projeto', {
       error: error?.message || 'Unknown error',

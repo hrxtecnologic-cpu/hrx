@@ -53,7 +53,6 @@ export async function GET(request: NextRequest) {
     const { data: notifications, error: notificationsError } = await query;
 
     if (notificationsError) {
-      console.error('Erro ao buscar notificações:', notificationsError);
       return NextResponse.json(
         { success: false, error: 'Erro ao buscar notificações' },
         { status: 500 }
@@ -80,7 +79,6 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Erro na API de notificações:', error);
     return NextResponse.json(
       { success: false, error: 'Erro interno do servidor' },
       { status: 500 }
@@ -152,7 +150,6 @@ export async function POST(request: NextRequest) {
     );
 
     if (createError) {
-      console.error('Erro ao criar notificação:', createError);
       return NextResponse.json(
         { success: false, error: 'Erro ao criar notificação' },
         { status: 500 }
@@ -164,7 +161,6 @@ export async function POST(request: NextRequest) {
       data: { notification_id: notificationId },
     });
   } catch (error) {
-    console.error('Erro na API de notificações:', error);
     return NextResponse.json(
       { success: false, error: 'Erro interno do servidor' },
       { status: 500 }

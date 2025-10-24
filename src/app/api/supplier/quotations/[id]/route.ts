@@ -55,19 +55,22 @@ export async function GET(
       .select(`
         id,
         project_id,
-        equipment_id,
-        supplier_price,
-        supplier_notes,
-        hrx_price,
-        profit_margin_applied,
-        profit_amount,
-        availability_confirmed,
-        delivery_date,
-        pickup_date,
+        supplier_id,
+        token,
+        requested_items,
         status,
+        total_price,
+        daily_rate,
+        delivery_fee,
+        setup_fee,
+        payment_terms,
+        delivery_details,
+        notes,
+        valid_until,
         created_at,
-        updated_at,
-        event_projects (
+        submitted_at,
+        responded_at,
+        project:event_projects (
           project_number,
           event_name,
           event_description,
@@ -77,12 +80,6 @@ export async function GET(
           venue_name,
           venue_city,
           venue_state
-        ),
-        project_equipment (
-          equipment_type,
-          quantity,
-          duration_days,
-          specific_requirements
         )
       `)
       .eq('id', quotationId)
@@ -101,7 +98,6 @@ export async function GET(
       quotation,
     });
   } catch (error) {
-    console.error('❌ Erro ao buscar cotação:', error);
     return NextResponse.json(
       {
         error: 'Erro interno',

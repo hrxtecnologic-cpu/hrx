@@ -84,7 +84,6 @@ export async function POST(
       .select();
 
     if (createError) {
-      console.error('❌ Erro ao criar solicitações:', createError);
       return NextResponse.json(
         { error: 'Erro ao criar solicitações de orçamento' },
         { status: 500 }
@@ -93,7 +92,6 @@ export async function POST(
 
     // TODO: Enviar emails para fornecedores
     // Por enquanto, apenas retorna sucesso
-    console.log(`✅ ${createdQuotations.length} solicitações de orçamento criadas`);
 
     // Enviar emails em paralelo (não bloqueia resposta)
     Promise.all(
@@ -102,12 +100,10 @@ export async function POST(
         const quoteUrl = `${process.env.NEXT_PUBLIC_APP_URL}/orcamento/${quotation.token}`;
 
         // TODO: Implementar envio de email
-        console.log(`📧 Email para ${supplier.email}: ${quoteUrl}`);
 
         // Aqui você adicionaria a chamada para sendSupplierQuoteRequest()
       })
     ).catch(error => {
-      console.error('❌ Erro ao enviar emails:', error);
     });
 
     return NextResponse.json({
@@ -116,7 +112,6 @@ export async function POST(
       quotations: createdQuotations,
     });
   } catch (error: any) {
-    console.error('❌ Erro ao solicitar orçamentos:', error);
     return NextResponse.json(
       { error: error?.message || 'Erro interno do servidor' },
       { status: 500 }

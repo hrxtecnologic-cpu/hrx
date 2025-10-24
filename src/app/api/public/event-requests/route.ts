@@ -130,11 +130,9 @@ export async function POST(req: Request) {
       .single();
 
     if (projectError) {
-      console.error('❌ Erro ao criar projeto:', projectError);
       throw projectError;
     }
 
-    console.log(`✅ Projeto criado: ${project.project_number} - ${event_name}`);
 
     // Enviar emails em paralelo (não bloqueia a resposta ao cliente)
     Promise.all([
@@ -178,19 +176,14 @@ export async function POST(req: Request) {
     ])
       .then(([clientResult, adminResult]) => {
         if (clientResult.success) {
-          console.log(`✅ Email de confirmação enviado para cliente: ${client_email}`);
         } else {
-          console.error(`❌ Erro ao enviar email para cliente: ${clientResult.error}`);
         }
 
         if (adminResult.success) {
-          console.log(`✅ Email de notificação enviado para admin`);
         } else {
-          console.error(`❌ Erro ao enviar email para admin: ${adminResult.error}`);
         }
       })
       .catch((error) => {
-        console.error('❌ Erro ao enviar emails:', error);
       });
 
     return NextResponse.json(
@@ -202,7 +195,6 @@ export async function POST(req: Request) {
       { status: 201 }
     );
   } catch (error: any) {
-    console.error('❌ Erro ao processar solicitação:', error);
 
     // Se for erro de tabela não existir, retornar mensagem amigável
     if (error.message?.includes('relation') && error.message?.includes('does not exist')) {

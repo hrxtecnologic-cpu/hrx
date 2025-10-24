@@ -51,7 +51,7 @@ export function QuotationsComparison({ projectId }: QuotationsComparisonProps) {
   async function loadQuotations() {
     try {
       setLoading(true);
-      const response = await fetch(`/api/admin/projects/${projectId}/quotations`);
+      const response = await fetch(`/api/admin/event-projects/${projectId}/quotations`);
       if (!response.ok) throw new Error('Erro ao carregar orçamentos');
 
       const data = await response.json();
@@ -69,7 +69,7 @@ export function QuotationsComparison({ projectId }: QuotationsComparisonProps) {
       setAccepting(quotationId);
 
       const response = await fetch(
-        `/api/admin/projects/${projectId}/quotations/${quotationId}/accept`,
+        `/api/admin/event-projects/${projectId}/quotations/${quotationId}/accept`,
         {
           method: 'POST',
         }

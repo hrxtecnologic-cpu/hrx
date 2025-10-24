@@ -35,7 +35,6 @@ export async function GET(
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Erro ao buscar orçamentos:', error);
       return NextResponse.json(
         { error: 'Erro ao buscar orçamentos' },
         { status: 500 }
@@ -47,7 +46,6 @@ export async function GET(
       quotations: quotations || [],
     });
   } catch (error: any) {
-    console.error('Erro no endpoint quotations:', error);
     return NextResponse.json(
       { error: error?.message || 'Erro interno do servidor' },
       { status: 500 }

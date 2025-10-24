@@ -64,36 +64,32 @@ export async function GET() {
       .select(`
         id,
         project_id,
-        equipment_id,
-        supplier_price,
-        supplier_notes,
-        hrx_price,
-        profit_margin_applied,
-        profit_amount,
-        availability_confirmed,
-        delivery_date,
-        pickup_date,
+        supplier_id,
+        token,
+        requested_items,
         status,
+        total_price,
+        daily_rate,
+        delivery_fee,
+        setup_fee,
+        payment_terms,
+        delivery_details,
+        notes,
+        valid_until,
         created_at,
-        updated_at,
-        event_projects (
+        submitted_at,
+        responded_at,
+        project:event_projects (
           project_number,
           event_name,
           event_date,
           client_name
-        ),
-        project_equipment (
-          equipment_type,
-          quantity,
-          duration_days,
-          specific_requirements
         )
       `)
       .eq('supplier_id', supplier.id)
       .order('created_at', { ascending: false });
 
     if (quotationsError) {
-      console.error('❌ Erro ao buscar cotações:', quotationsError);
       throw quotationsError;
     }
 
@@ -102,13 +98,13 @@ export async function GET() {
     // ========================================
     const stats = {
       pending_quotations: quotations?.filter(
-        (q) => q.status === 'pending' || q.status === 'sent'
+        (q) => q.status === 'pending'
       ).length || 0,
       total_quotations: quotations?.length || 0,
       accepted_quotations: quotations?.filter((q) => q.status === 'accepted').length || 0,
       total_value: quotations
-        ?.filter((q) => q.status === 'accepted' && q.supplier_price)
-        .reduce((sum, q) => sum + (q.supplier_price || 0), 0) || 0,
+        ?.filter((q) => q.status === 'accepted' && q.total_price)
+        .reduce((sum, q) => sum + (q.total_price || 0), 0) || 0,
     };
 
     // ========================================
@@ -131,7 +127,6 @@ export async function GET() {
       stats,
     });
   } catch (error) {
-    console.error('❌ Erro ao buscar dashboard fornecedor:', error);
     return NextResponse.json(
       {
         error: 'Erro interno',

@@ -41,7 +41,6 @@ export async function DELETE(
       .eq('project_id', projectId);
 
     if (deleteError) {
-      console.error('Erro ao remover membro:', deleteError);
       return NextResponse.json(
         { success: false, error: 'Erro ao remover membro da equipe' },
         { status: 500 }
@@ -53,7 +52,6 @@ export async function DELETE(
       message: 'Membro removido da equipe com sucesso',
     });
   } catch (error) {
-    console.error('Erro ao remover membro:', error);
     return NextResponse.json(
       { success: false, error: 'Erro interno do servidor' },
       { status: 500 }
@@ -117,7 +115,6 @@ export async function PATCH(
       .single();
 
     if (error) {
-      console.error('Erro ao atualizar membro:', error);
       return NextResponse.json(
         { success: false, error: 'Erro ao atualizar membro' },
         { status: 500 }
@@ -130,7 +127,6 @@ export async function PATCH(
       message: 'Membro atualizado com sucesso',
     });
   } catch (error) {
-    console.error('Erro ao atualizar membro:', error);
     return NextResponse.json(
       { success: false, error: 'Erro interno do servidor' },
       { status: 500 }

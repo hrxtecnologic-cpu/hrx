@@ -43,8 +43,8 @@ interface Supplier {
   email: string;
   phone?: string;
   whatsapp?: string;
-  address_city?: string;
-  address_state?: string;
+  city?: string;
+  state?: string;
   equipment_types?: string[];
   notes?: string;
   status: 'active' | 'inactive';
@@ -122,7 +122,7 @@ export function ProjectEquipmentSection({
   ).sort();
 
   const allStates = Array.from(
-    new Set(suppliers.map((s) => s.address_state).filter(Boolean))
+    new Set(suppliers.map((s) => s.state).filter(Boolean))
   ).sort();
 
   // Carregar sugestões (SEM LIMITE DE DISTÂNCIA)
@@ -167,7 +167,7 @@ export function ProjectEquipmentSection({
       selectedType === 'all' || supplier.equipment_types?.includes(selectedType);
 
     const matchesState =
-      selectedState === 'all' || supplier.address_state === selectedState;
+      selectedState === 'all' || supplier.state === selectedState;
 
     const alreadyInProject = equipment.some(
       (item) => item.supplier?.id === supplier.id
@@ -189,10 +189,22 @@ export function ProjectEquipmentSection({
       category: need.category,
       description: need.notes || need.subcategory,
       quantity: need.quantity || 1,
-      daily_rate: 0, // Admin vai definir
+      daily_rate: need.estimated_daily_rate || 0, // Usar valor do cliente se tiver
     }));
 
-    setSupplierEquipment(clientEquipment);
+    // Se não tiver nenhum equipamento na demanda, criar um padrão para o admin adicionar
+    if (clientEquipment.length === 0) {
+      setSupplierEquipment([{
+        id: 'manual-1',
+        name: 'Equipamento (defina o nome)',
+        category: supplier.equipment_types?.[0] || 'Geral',
+        description: '',
+        quantity: 1,
+        daily_rate: 0,
+      }]);
+    } else {
+      setSupplierEquipment(clientEquipment);
+    }
   };
 
   // Toggle seleção de equipamento
@@ -315,16 +327,20 @@ export function ProjectEquipmentSection({
       );
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Erro ao enviar cotação');
+        const errorData = await response.json();
+        console.error('Erro ao enviar cotação:', errorData);
+        throw new Error(errorData.error || 'Erro ao enviar cotação');
       }
 
       const result = await response.json();
+      console.log('Cotação enviada:', result);
       toast.success(`Cotação enviada para ${result.supplierEmail}!`);
 
       setTimeout(() => window.location.reload(), 1500);
     } catch (error: any) {
+      console.error('Erro completo:', error);
       toast.error(error.message || 'Erro ao enviar cotação');
+      throw error; // Re-throw para o handleSendAllQuotes capturar
     }
   };
 
@@ -588,7 +604,7 @@ export function ProjectEquipmentSection({
                       {/* Localização */}
                       <div className="flex items-center gap-2 text-xs text-zinc-500 mb-3">
                         <MapPin className="h-3 w-3" />
-                        <span>{supplier.address_city}/{supplier.address_state}</span>
+                        <span>{supplier.city}/{supplier.state}</span>
                         <span className="text-red-500">• {supplier.distance_km.toFixed(1)}km</span>
                       </div>
 
@@ -850,7 +866,7 @@ export function ProjectEquipmentSection({
 
                       <div className="flex items-center gap-2 text-xs text-zinc-500 mb-3">
                         <MapPin className="h-3 w-3" />
-                        <span>{supplier.address_city}/{supplier.address_state}</span>
+                        <span>{supplier.city}/{supplier.state}</span>
                       </div>
 
                       <div className="flex flex-wrap gap-1 mb-3">

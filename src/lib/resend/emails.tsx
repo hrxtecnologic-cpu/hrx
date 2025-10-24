@@ -10,6 +10,7 @@ import { UrgentQuoteAdminEmail } from './templates/UrgentQuoteAdminEmail';
 import { QuoteAcceptedEmail } from './templates/QuoteAcceptedEmail';
 import { QuoteRejectedEmail } from './templates/QuoteRejectedEmail';
 import { ProfessionalInvitationEmail } from './templates/ProfessionalInvitationEmail';
+import { QuoteResponseAdminEmail } from './templates/QuoteResponseAdminEmail';
 import { logEmail } from './email-logger';
 
 interface SendProfessionalWelcomeEmailParams {
@@ -2555,6 +2556,77 @@ export async function sendProfessionalInvitation(
       recipientType: 'professional',
       subject,
       templateUsed: 'ProfessionalInvitationEmail',
+      status: 'failed',
+      errorMessage: error instanceof Error ? error.message : 'Erro desconhecido',
+    });
+
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Erro desconhecido'
+    };
+  }
+}
+
+
+/**
+ * Notifica admin quando fornecedor responde cotação
+ */
+export async function sendQuoteResponseAdminNotification(params: {
+  projectNumber: string;
+  projectName: string;
+  supplierName: string;
+  equipmentName: string;
+  totalPrice: number;
+  dailyRate?: number;
+  deliveryFee?: number;
+  setupFee?: number;
+  paymentTerms?: string;
+  quotationUrl: string;
+}): Promise<{ success: boolean; error?: string; emailId?: string }> {
+  const subject = `💰 Nova Cotação Recebida - ${params.supplierName} - Projeto #${params.projectNumber}`;
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: `HRX Sistema <${FROM_EMAIL}>`,
+      to: [ADMIN_EMAIL],
+      subject,
+      react: <QuoteResponseAdminEmail {...params} />,
+    });
+
+    if (error) {
+      console.error('❌ Erro ao enviar notificação de cotação para admin:', error);
+      
+      await logEmail({
+        recipientEmail: ADMIN_EMAIL,
+        recipientType: 'admin',
+        subject,
+        templateUsed: 'QuoteResponseAdminEmail',
+        status: 'failed',
+        errorMessage: error.message,
+      });
+
+      return { success: false, error: error.message };
+    }
+
+    // Log de sucesso
+    await logEmail({
+      recipientEmail: ADMIN_EMAIL,
+      recipientType: 'admin',
+      subject,
+      templateUsed: 'QuoteResponseAdminEmail',
+      status: 'sent',
+      resentId: data?.id,
+    });
+
+    return { success: true, emailId: data?.id };
+  } catch (error) {
+    console.error('❌ Erro ao enviar notificação de cotação para admin:', error);
+
+    await logEmail({
+      recipientEmail: ADMIN_EMAIL,
+      recipientType: 'admin',
+      subject,
+      templateUsed: 'QuoteResponseAdminEmail',
       status: 'failed',
       errorMessage: error instanceof Error ? error.message : 'Erro desconhecido',
     });

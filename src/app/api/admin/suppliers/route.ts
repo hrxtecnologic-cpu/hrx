@@ -33,7 +33,6 @@ export async function GET(req: Request) {
     const { data, error } = await query;
 
     if (error) {
-      console.error('❌ Erro ao buscar fornecedores:', error);
       throw error;
     }
 
@@ -73,7 +72,6 @@ export async function GET(req: Request) {
 
     return NextResponse.json(suppliersWithStats);
   } catch (error) {
-    console.error('Erro ao buscar fornecedores:', error);
     return NextResponse.json(
       { error: 'Erro ao buscar fornecedores' },
       { status: 500 }
@@ -139,14 +137,11 @@ export async function POST(req: Request) {
       .single();
 
     if (error) {
-      console.error('❌ Erro ao criar fornecedor:', error);
       throw error;
     }
 
-    console.log(`✅ Fornecedor criado: ${company_name}`);
     return NextResponse.json(data, { status: 201 });
   } catch (error) {
-    console.error('Erro ao criar fornecedor:', error);
     return NextResponse.json(
       { error: 'Erro ao criar fornecedor' },
       { status: 500 }

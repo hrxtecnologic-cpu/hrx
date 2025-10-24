@@ -24,24 +24,26 @@ import { formatCurrency, formatDate } from '@/lib/format';
 interface QuotationRequest {
   id: string;
   project_id: string;
-  equipment_id: string;
-  status: 'pending' | 'sent' | 'received' | 'accepted' | 'rejected' | 'expired';
-  supplier_price?: number;
-  supplier_notes?: string;
-  hrx_price?: number;
+  supplier_id: string;
+  token: string;
+  requested_items: any[];
+  status: 'pending' | 'submitted' | 'accepted' | 'rejected' | 'expired';
+  total_price?: number;
+  daily_rate?: number;
+  delivery_fee?: number;
+  setup_fee?: number;
+  payment_terms?: string;
+  delivery_details?: string;
+  notes?: string;
+  valid_until?: string;
   created_at: string;
-  updated_at: string;
-  event_projects: {
+  submitted_at?: string;
+  responded_at?: string;
+  project: {
     project_number: string;
     event_name: string;
     event_date: string;
     client_name: string;
-  };
-  project_equipment: {
-    equipment_type: string;
-    quantity: number;
-    duration_days: number;
-    specific_requirements?: string;
   };
 }
 
@@ -241,10 +243,10 @@ export default function SupplierDashboardPage() {
                                 <Package className="h-5 w-5 text-zinc-400" />
                                 <div>
                                   <h3 className="text-lg font-semibold text-white">
-                                    {quotation.project_equipment.equipment_type}
+                                    {quotation.requested_items?.[0]?.name || 'Equipamento'}
                                   </h3>
                                   <p className="text-sm text-zinc-400">
-                                    Projeto #{quotation.event_projects.project_number} - {quotation.event_projects.event_name}
+                                    Projeto #{quotation.project?.project_number} - {quotation.project?.event_name}
                                   </p>
                                 </div>
                               </div>
@@ -252,31 +254,31 @@ export default function SupplierDashboardPage() {
                               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
                                 <div>
                                   <p className="text-xs text-zinc-500">Cliente</p>
-                                  <p className="text-sm text-white">{quotation.event_projects.client_name}</p>
+                                  <p className="text-sm text-white">{quotation.project?.client_name}</p>
                                 </div>
                                 <div>
                                   <p className="text-xs text-zinc-500">Data do Evento</p>
                                   <p className="text-sm text-white">
-                                    {formatDate(quotation.event_projects.event_date)}
+                                    {quotation.project?.event_date ? formatDate(quotation.project.event_date) : 'N/A'}
                                   </p>
                                 </div>
                                 <div>
                                   <p className="text-xs text-zinc-500">Quantidade</p>
-                                  <p className="text-sm text-white">{quotation.project_equipment.quantity}x</p>
+                                  <p className="text-sm text-white">{quotation.requested_items?.[0]?.quantity || 0}x</p>
                                 </div>
                                 <div>
                                   <p className="text-xs text-zinc-500">Duração</p>
                                   <p className="text-sm text-white">
-                                    {quotation.project_equipment.duration_days} dia(s)
+                                    {quotation.requested_items?.[0]?.duration_days || 0} dia(s)
                                   </p>
                                 </div>
                               </div>
 
-                              {quotation.project_equipment.specific_requirements && (
+                              {quotation.requested_items?.[0]?.description && (
                                 <div className="mt-3">
                                   <p className="text-xs text-zinc-500">Requisitos Específicos</p>
                                   <p className="text-sm text-zinc-300">
-                                    {quotation.project_equipment.specific_requirements}
+                                    {quotation.requested_items[0].description}
                                   </p>
                                 </div>
                               )}
@@ -323,17 +325,17 @@ export default function SupplierDashboardPage() {
                               <Package className="h-5 w-5 text-zinc-400" />
                               <div>
                                 <p className="text-sm font-medium text-white">
-                                  {quotation.project_equipment.equipment_type}
+                                  {quotation.requested_items?.[0]?.name || 'Equipamento'}
                                 </p>
                                 <p className="text-xs text-zinc-500">
-                                  Projeto #{quotation.event_projects.project_number}
+                                  Projeto #{quotation.project?.project_number}
                                 </p>
                               </div>
                             </div>
                             <div className="flex items-center gap-4">
-                              {quotation.supplier_price && (
+                              {quotation.total_price && (
                                 <p className="text-sm text-white font-medium">
-                                  {formatCurrency(quotation.supplier_price)}
+                                  {formatCurrency(quotation.total_price)}
                                 </p>
                               )}
                               {getStatusBadge(quotation.status)}

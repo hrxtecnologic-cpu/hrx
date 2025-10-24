@@ -103,7 +103,6 @@ export async function GET(
     );
 
     if (suggestionsError) {
-      console.error('Erro ao buscar sugestões de fornecedores:', suggestionsError);
       return NextResponse.json(
         { success: false, error: 'Erro ao buscar sugestões de fornecedores' },
         { status: 500 }
@@ -149,7 +148,6 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error('Erro na API de sugestões de fornecedores:', error);
     return NextResponse.json(
       { success: false, error: 'Erro interno do servidor' },
       { status: 500 }

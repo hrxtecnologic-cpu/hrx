@@ -99,7 +99,6 @@ export async function GET(
       .single();
 
     if (teamError || !teamMember) {
-      console.error('❌ Evento não encontrado:', teamError);
       return NextResponse.json(
         { error: 'Evento não encontrado' },
         { status: 404 }
@@ -140,7 +139,6 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error('❌ Erro ao buscar evento:', error);
     return NextResponse.json(
       { error: 'Erro ao buscar evento' },
       { status: 500 }

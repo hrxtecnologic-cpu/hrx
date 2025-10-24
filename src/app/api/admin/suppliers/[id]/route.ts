@@ -28,7 +28,6 @@ export async function GET(
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Erro ao buscar fornecedor:', error);
     return NextResponse.json(
       { error: 'Erro ao buscar fornecedor' },
       { status: 500 }
@@ -100,14 +99,11 @@ export async function PUT(
       .single();
 
     if (error) {
-      console.error('❌ Erro ao atualizar fornecedor:', error);
       throw error;
     }
 
-    console.log(`✅ Fornecedor atualizado: ${company_name}`);
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Erro ao atualizar fornecedor:', error);
     return NextResponse.json(
       { error: 'Erro ao atualizar fornecedor' },
       { status: 500 }
@@ -149,14 +145,11 @@ export async function DELETE(
       .eq('id', id);
 
     if (error) {
-      console.error('❌ Erro ao deletar fornecedor:', error);
       throw error;
     }
 
-    console.log(`✅ Fornecedor deletado: ${id}`);
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Erro ao deletar fornecedor:', error);
     return NextResponse.json(
       { error: 'Erro ao deletar fornecedor' },
       { status: 500 }

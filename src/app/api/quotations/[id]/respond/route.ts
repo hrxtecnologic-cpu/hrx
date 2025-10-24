@@ -125,8 +125,8 @@ export async function POST(
       return NextResponse.json({ error: 'Token não fornecido' }, { status: 400 });
     }
 
-    if (!body.supplier_price || body.supplier_price <= 0) {
-      return NextResponse.json({ error: 'Preço de custo é obrigatório' }, { status: 400 });
+    if (!body.total_price || body.total_price <= 0) {
+      return NextResponse.json({ error: 'Preço total é obrigatório' }, { status: 400 });
     }
 
     // Buscar cotação
@@ -150,34 +150,24 @@ export async function POST(
     }
 
     // Verificar se já foi respondida
-    if (quotation.status === 'received' || quotation.status === 'accepted') {
+    if (quotation.status === 'submitted' || quotation.status === 'accepted') {
       return NextResponse.json({ error: 'Cotação já foi respondida' }, { status: 400 });
     }
 
-    // Calcular margem e preço HRX
-    let profitMargin = quotation.project.profit_margin || 35;
-
-    // Se urgente, usar margem de 80%
-    if (quotation.project.is_urgent) {
-      profitMargin = 80;
-    }
-
-    const supplierPrice = parseFloat(body.supplier_price);
-    const hrxPrice = supplierPrice * (1 + profitMargin / 100);
-    const profitAmount = hrxPrice - supplierPrice;
-
-    // Atualizar cotação
+    // Atualizar cotação com campos que existem no banco
     const { error: updateError } = await supabase
       .from('supplier_quotations')
       .update({
-        supplier_price: supplierPrice,
-        hrx_price: hrxPrice,
-        profit_margin_applied: profitMargin,
-        profit_amount: profitAmount,
-        delivery_time_days: body.delivery_time_days || null,
+        total_price: parseFloat(body.total_price),
+        daily_rate: body.daily_rate ? parseFloat(body.daily_rate) : null,
+        delivery_fee: body.delivery_fee ? parseFloat(body.delivery_fee) : 0,
+        setup_fee: body.setup_fee ? parseFloat(body.setup_fee) : 0,
+        payment_terms: body.payment_terms || null,
+        delivery_details: body.delivery_details || null,
         notes: body.notes || null,
-        status: 'received',
-        received_at: new Date().toISOString(),
+        status: 'submitted',
+        submitted_at: new Date().toISOString(),
+        responded_at: new Date().toISOString(),
       })
       .eq('id', quotationId);
 
@@ -195,16 +185,13 @@ export async function POST(
     logger.info('Cotação respondida pelo fornecedor', {
       quotationId,
       supplier: quotation.supplier.company_name,
-      supplierPrice,
-      hrxPrice,
+      totalPrice: body.total_price,
     });
 
     return NextResponse.json({
       success: true,
       message: 'Cotação enviada com sucesso!',
-      supplierPrice,
-      hrxPrice,
-      profitMargin,
+      totalPrice: body.total_price,
     });
   } catch (error: any) {
     logger.error('Erro ao processar resposta de cotação', { error: error.message });
@@ -313,8 +300,12 @@ function generateQuoteFormPage(quotation: any, isExpired: boolean): string {
 
             const formData = {
               token: '${quotation.supplier.email}',
-              supplier_price: parseFloat(form.supplier_price.value),
-              delivery_time_days: parseInt(form.delivery_time_days.value) || null,
+              total_price: parseFloat(form.total_price.value),
+              daily_rate: form.daily_rate?.value ? parseFloat(form.daily_rate.value) : null,
+              delivery_fee: form.delivery_fee?.value ? parseFloat(form.delivery_fee.value) : null,
+              setup_fee: form.setup_fee?.value ? parseFloat(form.setup_fee.value) : null,
+              payment_terms: form.payment_terms?.value || null,
+              delivery_details: form.delivery_details?.value || null,
               notes: form.notes.value || null,
             };
 
@@ -341,10 +332,7 @@ function generateQuoteFormPage(quotation: any, isExpired: boolean): string {
 
                   <div class="success-box">
                     <p><strong>Sua Cotação:</strong></p>
-                    <p class="price">R$ \${data.supplierPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                    <p style="font-size: 14px; color: #a1a1aa; margin-top: 10px;">
-                      Preço HRX (com margem de \${data.profitMargin}%): R$ \${data.hrxPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </p>
+                    <p class="price">R$ \${data.totalPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                   </div>
 
                   <div class="info-box">
@@ -407,31 +395,82 @@ function generateQuoteFormPage(quotation: any, isExpired: boolean): string {
             <h3 style="color: #f5f5f5; margin-bottom: 20px;">💰 Sua Cotação</h3>
 
             <div class="form-group">
-              <label for="supplier_price">Preço de Custo (R$) *</label>
+              <label for="total_price">Preço Total (R$) *</label>
               <input
                 type="number"
-                id="supplier_price"
-                name="supplier_price"
+                id="total_price"
+                name="total_price"
                 step="0.01"
                 min="0"
                 required
                 placeholder="0,00"
                 ${isExpired ? 'disabled' : ''}
               >
-              <small>Digite o valor unitário por dia</small>
+              <small>Valor total do serviço/equipamento</small>
             </div>
 
             <div class="form-group">
-              <label for="delivery_time_days">Prazo de Entrega (dias)</label>
+              <label for="daily_rate">Diária (R$)</label>
               <input
                 type="number"
-                id="delivery_time_days"
-                name="delivery_time_days"
+                id="daily_rate"
+                name="daily_rate"
+                step="0.01"
                 min="0"
-                placeholder="Ex: 5"
+                placeholder="0,00"
                 ${isExpired ? 'disabled' : ''}
               >
-              <small>Quantos dias até a entrega?</small>
+              <small>Valor por dia (opcional)</small>
+            </div>
+
+            <div class="form-group">
+              <label for="delivery_fee">Taxa de Entrega (R$)</label>
+              <input
+                type="number"
+                id="delivery_fee"
+                name="delivery_fee"
+                step="0.01"
+                min="0"
+                placeholder="0,00"
+                ${isExpired ? 'disabled' : ''}
+              >
+              <small>Custo de entrega (opcional)</small>
+            </div>
+
+            <div class="form-group">
+              <label for="setup_fee">Taxa de Instalação (R$)</label>
+              <input
+                type="number"
+                id="setup_fee"
+                name="setup_fee"
+                step="0.01"
+                min="0"
+                placeholder="0,00"
+                ${isExpired ? 'disabled' : ''}
+              >
+              <small>Custo de instalação/montagem (opcional)</small>
+            </div>
+
+            <div class="form-group">
+              <label for="payment_terms">Condições de Pagamento</label>
+              <textarea
+                id="payment_terms"
+                name="payment_terms"
+                rows="2"
+                placeholder="Ex: 50% antecipado, 50% após o evento"
+                ${isExpired ? 'disabled' : ''}
+              ></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="delivery_details">Detalhes de Entrega</label>
+              <textarea
+                id="delivery_details"
+                name="delivery_details"
+                rows="2"
+                placeholder="Informações sobre entrega e retirada"
+                ${isExpired ? 'disabled' : ''}
+              ></textarea>
             </div>
 
             <div class="form-group">
@@ -439,8 +478,8 @@ function generateQuoteFormPage(quotation: any, isExpired: boolean): string {
               <textarea
                 id="notes"
                 name="notes"
-                rows="4"
-                placeholder="Informações adicionais sobre disponibilidade, condições de pagamento, etc."
+                rows="3"
+                placeholder="Informações adicionais sobre sua cotação"
                 ${isExpired ? 'disabled' : ''}
               ></textarea>
             </div>

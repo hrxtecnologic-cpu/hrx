@@ -198,6 +198,10 @@ export interface ProjectEquipment {
   quantity: number;
   duration_days: number;
 
+  // Custos (estimados/planejados)
+  daily_rate?: number | null;
+  total_cost?: number | null;
+
   // Especificações
   specifications: Record<string, any>;
 
@@ -223,36 +227,33 @@ export interface ProjectEquipment {
 export interface SupplierQuotation {
   id: string;
   project_id: string;
-  equipment_id: string;
   supplier_id: string;
+  token: string;
 
-  // Valores do Fornecedor
-  supplier_price: number;
-  supplier_notes?: string | null;
+  // Items solicitados (JSONB array)
+  requested_items: any[]; // Array de equipamentos solicitados
 
-  // Cálculos HRX
-  profit_margin_applied: ProfitMargin;
-  hrx_price: number;
-  profit_amount: number;
+  // Valores
+  total_price?: number | null;
+  daily_rate?: number | null;
+  delivery_fee?: number | null;
+  setup_fee?: number | null;
 
-  // Disponibilidade
-  availability_confirmed: boolean;
-  delivery_date?: string | null;
-  pickup_date?: string | null;
+  // Termos
+  payment_terms?: string | null;
+  delivery_details?: string | null;
+  notes?: string | null;
 
   // Status
   status: QuotationStatus;
 
   // Prazos
-  deadline?: string | null;
+  valid_until?: string | null;
 
   // Metadados
   created_at: string;
-  updated_at: string;
-  sent_at?: string | null;
-  received_at?: string | null;
-  accepted_at?: string | null;
-  rejected_at?: string | null;
+  submitted_at?: string | null;
+  responded_at?: string | null;
 }
 
 // =====================================================

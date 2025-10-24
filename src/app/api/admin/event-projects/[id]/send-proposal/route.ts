@@ -111,7 +111,7 @@ export async function POST(
         if (quoteIds.length > 0) {
           const { data: quotations } = await supabase
             .from('supplier_quotations')
-            .select('id, hrx_price, supplier_price')
+            .select('id, total_price, daily_rate, delivery_fee, setup_fee')
             .in('id', quoteIds);
 
           // Mapear cotações para equipamentos
@@ -154,9 +154,15 @@ export async function POST(
     // 5. Preparar dados dos equipamentos para o email
     const equipmentItems = (equipment || []).map((item: any) => {
       // Pegar preço da cotação selecionada, se houver
-      const quotationPrice = item.selected_quotation?.hrx_price || 0;
+      const quotationPrice = item.selected_quotation?.total_price || 0;
+      const deliveryFee = item.selected_quotation?.delivery_fee || 0;
+      const setupFee = item.selected_quotation?.setup_fee || 0;
       const quantity = item.quantity || 1;
       const duration = item.duration_days || 1;
+
+      // Calcular preço total incluindo taxas
+      const basePrice = quotationPrice * quantity * duration;
+      const totalPrice = basePrice + deliveryFee + setupFee;
 
       return {
         name: item.name,
@@ -164,7 +170,7 @@ export async function POST(
         quantity: quantity,
         duration_days: duration,
         unit_price: quotationPrice,
-        total_price: quantity * quotationPrice * duration,
+        total_price: totalPrice,
       };
     });
 

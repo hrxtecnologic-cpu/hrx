@@ -1,5 +1,6 @@
 // =============================================
 // TIPOS: Sistema de Orçamentos
+// Atualizado para refletir o schema real do banco (supplier_quotations)
 // =============================================
 
 // Status possíveis para solicitação de orçamento
@@ -8,8 +9,8 @@ export type QuoteRequestStatus = 'draft' | 'sent' | 'analyzing' | 'finalized' | 
 // Status possíveis para itens
 export type QuoteItemStatus = 'pending' | 'quoted' | 'assigned' | 'confirmed';
 
-// Status possíveis para cotações de fornecedores
-export type SupplierQuoteStatus = 'pending' | 'sent' | 'received' | 'accepted' | 'rejected';
+// Status possíveis para cotações de fornecedores (conforme atual.sql)
+export type SupplierQuotationStatus = 'pending' | 'submitted' | 'accepted' | 'rejected' | 'expired';
 
 // Tipo de item
 export type QuoteItemType = 'equipment' | 'professional' | 'service' | 'other';
@@ -29,10 +30,79 @@ export type QuoteEmailStatus = 'pending' | 'sent' | 'delivered' | 'failed';
 export type ProfitMargin = 35.00 | 80.00;
 
 // =============================================
-// INTERFACES
+// INTERFACES - REFLETEM SCHEMA REAL DO BANCO
 // =============================================
 
-// Solicitação de orçamento
+// Item solicitado dentro de uma cotação (JSONB no banco)
+export interface RequestedItem {
+  equipment_id?: string;
+  name: string;
+  category: string;
+  subcategory?: string;
+  quantity: number;
+  duration_days: number;
+  description?: string;
+  specifications?: Record<string, any>;
+}
+
+// Cotação de fornecedor (tabela supplier_quotations)
+export interface SupplierQuotation {
+  id: string;
+  project_id: string;
+  supplier_id: string;
+  token: string;
+
+  // Items solicitados (JSONB array)
+  requested_items: RequestedItem[];
+
+  // Status (conforme banco)
+  status: SupplierQuotationStatus;
+
+  // Preços (campos que EXISTEM no banco)
+  total_price?: number;
+  daily_rate?: number;
+  delivery_fee?: number;
+  setup_fee?: number;
+
+  // Detalhes
+  payment_terms?: string;
+  delivery_details?: string;
+  notes?: string;
+
+  // Timestamps
+  valid_until?: string;
+  created_at: string;
+  submitted_at?: string;
+  responded_at?: string;
+}
+
+// Cotação com informações do fornecedor
+export interface SupplierQuotationWithSupplier extends SupplierQuotation {
+  supplier: {
+    id: string;
+    company_name: string;
+    contact_name: string;
+    email: string;
+    phone: string;
+  };
+}
+
+// Cotação com informações do projeto
+export interface SupplierQuotationWithProject extends SupplierQuotation {
+  project: {
+    id: string;
+    project_number: string;
+    event_name: string;
+    event_date?: string;
+    client_name: string;
+  };
+}
+
+// =============================================
+// INTERFACES LEGADAS (para compatibilidade)
+// =============================================
+
+// Solicitação de orçamento (QuoteRequest - tabela antiga/externa)
 export interface QuoteRequest {
   id: string;
 
@@ -90,36 +160,6 @@ export interface QuoteRequestItem {
   updated_at: string;
 }
 
-// Orçamento do fornecedor
-export interface SupplierQuote {
-  id: string;
-  quote_request_id: string;
-  quote_request_item_id?: string;
-  supplier_id: string;
-
-  // Preços
-  supplier_price: number;  // Custo do fornecedor
-  hrx_price: number;       // Preço com margem
-  profit_margin_applied: ProfitMargin;
-  profit_amount: number;   // Lucro em R$
-
-  // Detalhes
-  description?: string;
-  notes?: string;
-  availability_confirmed: boolean;
-
-  // Status
-  status: SupplierQuoteStatus;
-
-  // Timestamps
-  sent_at?: string;
-  received_at?: string;
-  accepted_at?: string;
-  rejected_at?: string;
-  created_at: string;
-  updated_at: string;
-}
-
 // Email de orçamento
 export interface QuoteEmail {
   id: string;
@@ -147,48 +187,36 @@ export interface QuoteEmail {
 // TIPOS PARA FORMULÁRIOS E REQUESTS
 // =============================================
 
-// Criar nova solicitação de orçamento
-export interface CreateQuoteRequestData {
-  client_name: string;
-  client_email?: string;
-  client_phone?: string;
-  event_date?: string;
-  event_type?: string;
-  event_location?: string;
-  description?: string;
-  is_urgent: boolean;
-  items: CreateQuoteItemData[];
-}
-
-// Criar item de orçamento
-export interface CreateQuoteItemData {
-  item_type: QuoteItemType;
-  category: string;
-  subcategory?: string;
-  name: string;
-  description?: string;
-  quantity: number;
-  duration_days: number;
-  specifications?: Record<string, any>;
-}
-
-// Criar cotação de fornecedor
-export interface CreateSupplierQuoteData {
-  quote_request_id: string;
-  quote_request_item_id?: string;
-  supplier_id: string;
-  supplier_price: number;
-  description?: string;
+// Criar nova cotação de fornecedor (dados do formulário público)
+export interface CreateSupplierQuotationData {
+  token: string;
+  total_price: number;
+  daily_rate?: number;
+  delivery_fee?: number;
+  setup_fee?: number;
+  payment_terms?: string;
+  delivery_details?: string;
   notes?: string;
 }
 
 // Atualizar cotação de fornecedor
-export interface UpdateSupplierQuoteData {
-  supplier_price?: number;
-  description?: string;
+export interface UpdateSupplierQuotationData {
+  total_price?: number;
+  daily_rate?: number;
+  delivery_fee?: number;
+  setup_fee?: number;
+  payment_terms?: string;
+  delivery_details?: string;
   notes?: string;
-  availability_confirmed?: boolean;
-  status?: SupplierQuoteStatus;
+  status?: SupplierQuotationStatus;
+}
+
+// Solicitar cotação para fornecedor (usado pelo admin)
+export interface RequestQuotationData {
+  project_id: string;
+  supplier_id: string;
+  requested_items: RequestedItem[];
+  valid_until: string;
 }
 
 // =============================================
@@ -202,22 +230,11 @@ export interface QuoteRequestSummary extends QuoteRequest {
   accepted_quotes: number;
 }
 
-// Solicitação completa (com itens e cotações)
+// Solicitação completa (com itens e cotações) - LEGADO
 export interface QuoteRequestWithDetails extends QuoteRequest {
   items: QuoteRequestItem[];
-  quotes: SupplierQuoteWithSupplier[];
+  quotes: SupplierQuotationWithSupplier[];
   emails: QuoteEmail[];
-}
-
-// Cotação com informações do fornecedor
-export interface SupplierQuoteWithSupplier extends SupplierQuote {
-  supplier: {
-    id: string;
-    company_name: string;
-    contact_name: string;
-    email: string;
-    phone: string;
-  };
 }
 
 // =============================================
@@ -228,7 +245,7 @@ export interface SupplierQuoteWithSupplier extends SupplierQuote {
 export interface QuoteRequestEmailData {
   supplierName: string;
   supplierEmail: string;
-  quoterequestId: string;
+  quoteRequestId: string;
   clientName: string;
   eventDate?: string;
   eventType?: string;
@@ -282,14 +299,22 @@ export function getProfitMargin(isUrgent: boolean): ProfitMargin {
   return isUrgent ? 80.00 : 35.00;
 }
 
-// Calcular preço HRX com margem
-export function calculateHRXPrice(supplierPrice: number, margin: ProfitMargin): number {
+// Calcular preço para cliente (com margem)
+export function calculateClientPrice(supplierPrice: number, margin: ProfitMargin): number {
   return supplierPrice * (1 + margin / 100);
 }
 
 // Calcular lucro
-export function calculateProfit(hrxPrice: number, supplierPrice: number): number {
-  return hrxPrice - supplierPrice;
+export function calculateProfit(clientPrice: number, supplierPrice: number): number {
+  return clientPrice - supplierPrice;
+}
+
+// Calcular preço total de uma cotação
+export function calculateQuotationTotal(quotation: Partial<SupplierQuotation>): number {
+  const base = quotation.total_price || 0;
+  const delivery = quotation.delivery_fee || 0;
+  const setup = quotation.setup_fee || 0;
+  return base + delivery + setup;
 }
 
 // Formatar valores para exibição
@@ -310,4 +335,15 @@ export function isEventUrgent(eventDate?: string): boolean {
 
   // Urgente se faltam 7 dias ou menos
   return diffDays <= 7;
+}
+
+// Verificar se cotação está expirada
+export function isQuotationExpired(quotation: SupplierQuotation): boolean {
+  if (!quotation.valid_until) return false;
+  return new Date(quotation.valid_until) < new Date();
+}
+
+// Verificar se cotação pode ser respondida
+export function canRespondToQuotation(quotation: SupplierQuotation): boolean {
+  return quotation.status === 'pending' && !isQuotationExpired(quotation);
 }

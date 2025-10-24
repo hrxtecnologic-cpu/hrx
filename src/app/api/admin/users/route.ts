@@ -45,7 +45,6 @@ export async function GET() {
     return NextResponse.json(users);
 
   } catch (error) {
-    console.error('[API] Erro ao buscar usuários:', error);
     return NextResponse.json(
       { error: 'Erro ao buscar usuários' },
       { status: 500 }

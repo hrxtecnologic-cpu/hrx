@@ -27,7 +27,6 @@ export async function GET() {
       .single();
 
     if (error) {
-      console.error('❌ Erro ao buscar configuração:', error);
       return NextResponse.json(
         { error: 'Erro ao buscar configuração', details: error },
         { status: 500 }
@@ -36,7 +35,6 @@ export async function GET() {
 
     return NextResponse.json({ success: true, config: data });
   } catch (error) {
-    console.error('❌ Erro ao buscar configuração:', error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }
@@ -66,7 +64,6 @@ export async function PUT(req: Request) {
       .single();
 
     if (fetchError) {
-      console.error('❌ Erro ao buscar configuração atual:', fetchError);
       return NextResponse.json(
         { error: 'Erro ao buscar configuração atual' },
         { status: 500 }
@@ -82,14 +79,12 @@ export async function PUT(req: Request) {
       .single();
 
     if (error) {
-      console.error('❌ Erro ao atualizar configuração:', error);
       return NextResponse.json(
         { error: 'Erro ao atualizar configuração', details: error },
         { status: 500 }
       );
     }
 
-    console.log('✅ Configuração de email atualizada:', currentConfig.id);
 
     return NextResponse.json({
       success: true,
@@ -97,7 +92,6 @@ export async function PUT(req: Request) {
       message: 'Configuração atualizada com sucesso',
     });
   } catch (error) {
-    console.error('❌ Erro ao atualizar configuração:', error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }
@@ -171,7 +165,6 @@ export async function POST(req: Request) {
       );
     }
 
-    console.log('✅ Configuração resetada para padrão');
 
     return NextResponse.json({
       success: true,
@@ -179,7 +172,6 @@ export async function POST(req: Request) {
       message: 'Configuração resetada com sucesso',
     });
   } catch (error) {
-    console.error('❌ Erro ao resetar configuração:', error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }

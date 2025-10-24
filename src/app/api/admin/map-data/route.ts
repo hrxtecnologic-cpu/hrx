@@ -83,7 +83,6 @@ export async function GET() {
       total: markers.length,
     });
   } catch (error) {
-    console.error('Erro ao buscar dados do mapa:', error);
     return NextResponse.json(
       { success: false, error: 'Erro ao buscar dados do mapa' },
       { status: 500 }

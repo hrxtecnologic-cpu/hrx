@@ -68,7 +68,6 @@ export async function GET(req: Request) {
     }
 
     if (!professional) {
-      console.error('❌ Profissional não encontrado:', professionalError);
       return NextResponse.json(
         {
           error: 'Profissional não encontrado',
@@ -114,7 +113,6 @@ export async function GET(req: Request) {
       .order('invited_at', { ascending: false });
 
     if (teamError) {
-      console.error('❌ Erro ao buscar eventos:', teamError);
       return NextResponse.json(
         {
           error: 'Erro ao buscar eventos',
@@ -218,7 +216,6 @@ export async function GET(req: Request) {
       completed_events: completedEvents,
     });
   } catch (error) {
-    console.error('❌ Erro ao buscar dashboard:', error);
     return NextResponse.json(
       {
         error: 'Erro interno',

@@ -20,7 +20,6 @@ export async function POST() {
     let after: string | undefined;
     const limit = 100; // Maximo permitido pela API
 
-    console.log('🔄 Iniciando importacao de emails do Resend...');
 
     // Buscar emails em lotes ate nao ter mais
     while (hasMore) {
@@ -30,7 +29,6 @@ export async function POST() {
       });
 
       if (result.error) {
-        console.error('❌ Erro ao buscar emails do Resend:', result.error);
         return NextResponse.json(
           { error: 'Erro ao buscar emails do Resend', details: result.error },
           { status: 500 }
@@ -38,16 +36,13 @@ export async function POST() {
       }
 
       // Verificar estrutura da resposta
-      console.log('📦 Estrutura da resposta:', JSON.stringify(result.data, null, 2));
 
       const emailsData = result.data?.data || [];
       const has_more = result.data?.has_more || false;
       hasMore = has_more;
 
-      console.log(`📧 Processando lote de ${emailsData.length} emails...`);
 
       if (emailsData.length === 0) {
-        console.log('⚠️ Nenhum email encontrado neste lote');
         break;
       }
 
@@ -117,7 +112,6 @@ export async function POST() {
 
           totalImported++;
         } catch (emailError) {
-          console.error(`⚠️ Erro ao importar email ${email.id}:`, emailError);
           // Continuar mesmo se um email falhar
         }
       }
@@ -129,7 +123,6 @@ export async function POST() {
       }
     }
 
-    console.log(`✅ Importacao concluida! Total: ${totalImported} emails`);
 
     return NextResponse.json({
       success: true,
@@ -137,7 +130,6 @@ export async function POST() {
       message: `${totalImported} emails importados com sucesso`,
     });
   } catch (error) {
-    console.error('❌ Erro ao importar emails:', error);
     return NextResponse.json(
       { error: 'Erro interno do servidor', details: error },
       { status: 500 }

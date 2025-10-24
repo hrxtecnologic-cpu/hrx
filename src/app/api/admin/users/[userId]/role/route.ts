@@ -46,11 +46,6 @@ export async function PUT(
       },
     });
 
-    console.log('[API] Role atualizada:', {
-      targetUserId: targetUserId.substring(0, 10),
-      newRole: role,
-      updatedBy: currentUserEmail,
-    });
 
     return NextResponse.json({
       success: true,
@@ -58,7 +53,6 @@ export async function PUT(
     });
 
   } catch (error) {
-    console.error('[API] Erro ao atualizar role:', error);
     return NextResponse.json(
       { error: 'Erro ao atualizar role' },
       { status: 500 }

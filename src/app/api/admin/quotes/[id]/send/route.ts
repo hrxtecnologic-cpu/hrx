@@ -130,10 +130,6 @@ export async function POST(
             {
               quote_request_id: quoteId,
               supplier_id: supplier.id,
-              supplier_price: 0, // Será preenchido pelo fornecedor
-              hrx_price: 0,
-              profit_margin_applied: quote.profit_margin,
-              profit_amount: 0,
               status: 'pending',
             },
           ])
@@ -141,7 +137,6 @@ export async function POST(
           .single();
 
         if (quoteInsertError) {
-          console.error(`Erro ao criar cotação para ${supplier.company_name}:`, quoteInsertError);
           results.push({
             supplier: supplier.company_name,
             success: false,
@@ -194,7 +189,6 @@ export async function POST(
           error: emailResult.error,
         });
       } catch (error) {
-        console.error(`Erro ao processar fornecedor ${supplier.company_name}:`, error);
         results.push({
           supplier: supplier.company_name,
           success: false,
@@ -224,7 +218,6 @@ export async function POST(
       results,
     });
   } catch (error) {
-    console.error('Erro ao enviar solicitações:', error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }

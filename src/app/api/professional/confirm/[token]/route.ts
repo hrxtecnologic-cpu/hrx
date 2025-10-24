@@ -61,7 +61,6 @@ export async function POST(
       .single();
 
     if (teamMemberError || !teamMember) {
-      console.error('❌ Token não encontrado:', teamMemberError);
       return NextResponse.json(
         {
           error: 'Token inválido',
@@ -156,7 +155,6 @@ export async function POST(
       .single();
 
     if (projectError || !project) {
-      console.error('❌ Projeto não encontrado:', projectError);
       return NextResponse.json(
         {
           error: 'Projeto não encontrado',
@@ -193,7 +191,6 @@ export async function POST(
       .eq('id', teamMember.id);
 
     if (updateError) {
-      console.error('❌ Erro ao atualizar status:', updateError);
       return NextResponse.json(
         {
           error: 'Erro ao processar confirmação',
@@ -220,12 +217,6 @@ export async function POST(
     // ========================================
     // 6. LOG DA AÇÃO
     // ========================================
-    console.log(
-      `✅ Convite ${action === 'confirm' ? 'confirmado' : 'rejeitado'} | ` +
-      `Profissional: ${professionalData?.full_name || teamMember.external_name || 'N/A'} | ` +
-      `Projeto: ${project.project_number} | ` +
-      `Evento: ${project.event_name}`
-    );
 
     // ========================================
     // 7. RETORNAR SUCESSO
@@ -279,7 +270,6 @@ export async function POST(
       { status: 200 }
     );
   } catch (error) {
-    console.error('❌ Erro ao processar confirmação:', error);
     return NextResponse.json(
       {
         error: 'Erro interno',
@@ -429,7 +419,6 @@ export async function GET(
       confirmedAt: teamMember.confirmed_at,
     });
   } catch (error) {
-    console.error('❌ Erro ao buscar dados do convite:', error);
     return NextResponse.json(
       {
         error: 'Erro interno',

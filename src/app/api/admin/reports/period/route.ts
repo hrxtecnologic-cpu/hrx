@@ -50,7 +50,6 @@ export async function GET(request: NextRequest) {
     });
 
     if (reportError) {
-      console.error('Erro ao gerar relatório:', reportError);
       return NextResponse.json(
         { success: false, error: 'Erro ao gerar relatório' },
         { status: 500 }
@@ -79,7 +78,6 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Erro na API de relatórios:', error);
     return NextResponse.json(
       { success: false, error: 'Erro interno do servidor' },
       { status: 500 }

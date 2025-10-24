@@ -124,22 +124,22 @@ export default function MapPage() {
   };
 
   return (
-    <div className="max-w-[1800px] mx-auto">
+    <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-0">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
           Mapa Geográfico
         </h1>
-        <p className="text-zinc-400">
+        <p className="text-sm sm:text-base text-zinc-400">
           Visualize profissionais, fornecedores e eventos no mapa interativo com filtros por tipo
         </p>
       </div>
 
       {/* Content */}
       {markers.length === 0 ? (
-        <div className="bg-yellow-900/20 border border-yellow-700/50 rounded-lg p-8 text-center">
+        <div className="bg-yellow-900/20 border border-yellow-700/50 rounded-lg p-6 sm:p-8 text-center">
           <div className="max-w-md mx-auto">
-            <p className="text-yellow-400 font-semibold mb-3 text-lg">
+            <p className="text-yellow-400 font-semibold mb-3 text-base sm:text-lg">
               Nenhuma localização disponível
             </p>
             <p className="text-yellow-500/80 text-sm leading-relaxed mb-6">
@@ -148,14 +148,14 @@ export default function MapPage() {
             <button
               onClick={handleGeocodeAll}
               disabled={loading}
-              className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
+              className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white font-semibold px-6 py-3 rounded-lg transition-colors text-sm sm:text-base"
             >
               {loading ? 'Processando...' : 'Geocodificar Todos Automaticamente'}
             </button>
           </div>
         </div>
       ) : (
-        <div className="bg-white rounded-xl shadow-2xl p-6">
+        <div className="bg-zinc-950 border border-zinc-800 rounded-xl shadow-2xl p-3 sm:p-6">
           <MapView markers={markers} />
         </div>
       )}

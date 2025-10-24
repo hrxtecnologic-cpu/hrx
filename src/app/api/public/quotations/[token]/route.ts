@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { rateLimit, createRateLimitError } from '@/lib/rate-limit';
+import { sendQuoteResponseAdminNotification } from '@/lib/resend/emails';
+import { logger } from '@/lib/logger';
 
 /**
  * GET /api/public/quotations/[token]
@@ -11,6 +14,20 @@ export async function GET(
   { params }: { params: Promise<{ token: string }> }
 ) {
   try {
+    // Rate limiting por IP (rota pública)
+    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'anonymous';
+    const rateLimitResult = await rateLimit(ip, {
+      interval: 60000, // 1 minuto
+      maxRequests: 20, // 20 requests por minuto
+    });
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        createRateLimitError(rateLimitResult),
+        { status: 429 }
+      );
+    }
+
     const { token } = await params;
     const supabase = await createClient();
 
@@ -71,7 +88,6 @@ export async function GET(
       quotation,
     });
   } catch (error: any) {
-    console.error('❌ Erro ao buscar solicitação:', error);
     return NextResponse.json(
       { error: error?.message || 'Erro interno do servidor' },
       { status: 500 }
@@ -89,6 +105,20 @@ export async function POST(
   { params }: { params: Promise<{ token: string }> }
 ) {
   try {
+    // Rate limiting por IP (rota pública) - mais restritivo para POST
+    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'anonymous';
+    const rateLimitResult = await rateLimit(ip, {
+      interval: 60000, // 1 minuto
+      maxRequests: 5, // 5 submissions por minuto (proteção contra spam)
+    });
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        createRateLimitError(rateLimitResult),
+        { status: 429 }
+      );
+    }
+
     const { token } = await params;
     const body = await req.json();
 
@@ -111,10 +141,25 @@ export async function POST(
 
     const supabase = await createClient();
 
-    // Buscar quotation
+    // Buscar quotation com dados do projeto e fornecedor
     const { data: quotation, error: findError } = await supabase
       .from('supplier_quotations')
-      .select('id, status, valid_until')
+      .select(`
+        id,
+        status,
+        valid_until,
+        project:event_projects(
+          id,
+          project_number,
+          event_name
+        ),
+        supplier:equipment_suppliers!supplier_id(
+          id,
+          company_name,
+          contact_name
+        ),
+        requested_items
+      `)
       .eq('token', token)
       .single();
 
@@ -160,16 +205,48 @@ export async function POST(
       .single();
 
     if (updateError) {
-      console.error('❌ Erro ao atualizar orçamento:', updateError);
       return NextResponse.json(
         { error: 'Erro ao salvar orçamento' },
         { status: 500 }
       );
     }
 
-    console.log(`✅ Orçamento recebido via token ${token}`);
+    // Enviar notificação para admin sobre nova cotação recebida
+    try {
+      const equipmentName = quotation.requested_items?.[0]?.name || 'Equipamento';
+      const quotationUrl = `${process.env.NEXT_PUBLIC_APP_URL}/admin/projetos/${quotation.project?.id}?tab=quotations`;
 
-    // TODO: Notificar admin
+      const emailResult = await sendQuoteResponseAdminNotification({
+        projectNumber: quotation.project?.project_number || 'N/A',
+        projectName: quotation.project?.event_name || 'Projeto',
+        supplierName: quotation.supplier?.company_name || 'Fornecedor',
+        equipmentName: equipmentName,
+        totalPrice: total_price,
+        dailyRate: daily_rate,
+        deliveryFee: delivery_fee,
+        setupFee: setup_fee,
+        paymentTerms: payment_terms,
+        quotationUrl: quotationUrl,
+      });
+
+      if (emailResult.success) {
+        logger.info('Email de notificação enviado para admin', {
+          emailId: emailResult.emailId,
+          quotationId: updated.id,
+          projectNumber: quotation.project?.project_number,
+        });
+      } else {
+        logger.error('Erro ao enviar email de notificação para admin', undefined, {
+          error: emailResult.error,
+          quotationId: updated.id,
+        });
+      }
+    } catch (emailError) {
+      // Não falha a requisição se email falhar
+      logger.error('Exceção ao enviar email de notificação', emailError instanceof Error ? emailError : undefined, {
+        quotationId: updated.id,
+      });
+    }
 
     return NextResponse.json({
       success: true,
@@ -177,7 +254,6 @@ export async function POST(
       quotation: updated,
     });
   } catch (error: any) {
-    console.error('❌ Erro ao enviar orçamento:', error);
     return NextResponse.json(
       { error: error?.message || 'Erro interno do servidor' },
       { status: 500 }

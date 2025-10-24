@@ -15,7 +15,6 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    console.log('[NOTIFY] Iniciando envio de email de documentos pendentes');
 
     const { userId } = await auth();
     if (!userId) {
@@ -31,7 +30,6 @@ export async function POST(
     const supabase = await createClient();
 
     // Buscar dados do profissional
-    console.log('[NOTIFY] Buscando profissional...');
     const { data: professional, error: professionalError } = await supabase
       .from('professionals')
       .select('*')
@@ -39,14 +37,12 @@ export async function POST(
       .single();
 
     if (professionalError || !professional) {
-      console.error('[NOTIFY] Profissional não encontrado:', professionalError);
       return NextResponse.json(
         { error: 'Profissional não encontrado' },
         { status: 404 }
       );
     }
 
-    console.log('[NOTIFY] Profissional encontrado:', professional.full_name);
 
     // Buscar status de validações dos documentos
     const { data: validations } = await supabase
@@ -111,14 +107,11 @@ export async function POST(
       );
     }
 
-    console.log('[NOTIFY] Documentos pendentes:', pendingDocuments);
-    console.log('[NOTIFY] Documentos rejeitados:', rejectedDocuments);
 
     // URL do perfil do profissional
     const profileUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.hrxeventos.com.br'}/cadastro-profissional`;
 
     // Enviar email
-    console.log('[NOTIFY] Enviando email para:', professional.email);
     const { data, error } = await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL || 'HRX Eventos <onboarding@resend.dev>',
       to: [professional.email],
@@ -135,14 +128,12 @@ export async function POST(
     });
 
     if (error) {
-      console.error('[NOTIFY] Erro ao enviar email:', error);
       return NextResponse.json(
         { error: 'Erro ao enviar email', details: error },
         { status: 500 }
       );
     }
 
-    console.log('[NOTIFY] Email enviado com sucesso:', data?.id);
 
     // Registrar no histórico
     const { data: adminUser } = await supabase
@@ -166,7 +157,6 @@ export async function POST(
       rejectedCount: rejectedDocuments.length,
     });
   } catch (error) {
-    console.error('[NOTIFY] Erro ao processar notificação:', error);
     const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
     return NextResponse.json(
       {

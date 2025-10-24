@@ -101,7 +101,6 @@ export async function GET(
     );
 
     if (suggestionsError) {
-      console.error('Erro ao buscar sugestões:', suggestionsError);
       return NextResponse.json(
         { success: false, error: 'Erro ao buscar sugestões de profissionais' },
         { status: 500 }
@@ -148,7 +147,6 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error('Erro na API de sugestões:', error);
     return NextResponse.json(
       { success: false, error: 'Erro interno do servidor' },
       { status: 500 }

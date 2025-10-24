@@ -41,7 +41,6 @@ export async function GET(
 
     return NextResponse.json({ history: history || [] });
   } catch (error) {
-    console.error('Erro ao buscar histórico:', error);
     return NextResponse.json(
       { error: 'Erro ao buscar histórico' },
       { status: 500 }

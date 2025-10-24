@@ -376,17 +376,27 @@ export default function QuoteDetailPage() {
                         </h4>
                         <div className="flex flex-wrap gap-4 text-xs text-zinc-300 mt-2">
                           <span>
-                            <strong className="text-zinc-400">Valor Fornecedor:</strong>{' '}
-                            R$ {supplierQuote.supplier_price?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
+                            <strong className="text-zinc-400">Preço Total:</strong>{' '}
+                            R$ {supplierQuote.total_price?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
                           </span>
-                          <span>
-                            <strong className="text-zinc-400">Valor HRX:</strong>{' '}
-                            R$ {supplierQuote.hrx_price?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
-                          </span>
-                          <span>
-                            <strong className="text-zinc-400">Lucro:</strong>{' '}
-                            R$ {supplierQuote.profit_amount?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
-                          </span>
+                          {supplierQuote.daily_rate && (
+                            <span>
+                              <strong className="text-zinc-400">Diária:</strong>{' '}
+                              R$ {supplierQuote.daily_rate.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </span>
+                          )}
+                          {supplierQuote.delivery_fee && (
+                            <span>
+                              <strong className="text-zinc-400">Taxa Entrega:</strong>{' '}
+                              R$ {supplierQuote.delivery_fee.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </span>
+                          )}
+                          {supplierQuote.setup_fee && (
+                            <span>
+                              <strong className="text-zinc-400">Taxa Instalação:</strong>{' '}
+                              R$ {supplierQuote.setup_fee.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </span>
+                          )}
                           <Badge
                             className={
                               supplierQuote.status === 'accepted'
