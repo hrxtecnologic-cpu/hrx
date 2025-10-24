@@ -15,6 +15,12 @@
     "test:e2e:report": "playwright show-report",
     "test:e2e:prof": "playwright test tests/cadastro-profissional.spec.ts",
     "test:e2e:cont": "playwright test tests/solicitar-equipe.spec.ts",
+    "test:cadastros": "playwright test tests/cadastros-completo.spec.ts",
+    "test:cadastros:headed": "playwright test tests/cadastros-completo.spec.ts --headed",
+    "test:cadastros:debug": "playwright test tests/cadastros-completo.spec.ts --debug",
+    "test:api": "playwright test tests/cadastros-api.spec.ts",
+    "test:api:headed": "playwright test tests/cadastros-api.spec.ts --headed",
+    "test:api:debug": "playwright test tests/cadastros-api.spec.ts --debug",
     "test:install": "playwright install",
     "seed": "tsx scripts/seed-test-data.ts"
   },

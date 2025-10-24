@@ -71,13 +71,11 @@ export async function POST(req: Request) {
 
       const supabase = await createClient();
 
-      // Tentar obter userId se usuário estiver autenticado (seguindo padrão profissional)
-      let userId: string | null = null;
-      try {
-        const authResult = await auth();
-        userId = authResult.userId;
-      } catch {
-        // Usuário não autenticado - não deve cadastrar fornecedor sem auth
+      // Verificar autenticação (obrigatório para fornecedor)
+      const authResult = await auth();
+      const userId = authResult.userId;
+
+      if (!userId) {
         return NextResponse.json(
           { error: 'Autenticação necessária para cadastrar como fornecedor' },
           { status: 401 }

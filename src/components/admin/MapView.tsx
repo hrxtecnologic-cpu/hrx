@@ -10,8 +10,8 @@
  */
 
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import Map, { Marker, Popup, NavigationControl, GeolocateControl, Source, Layer } from 'react-map-gl/mapbox';
-import { MapPin, User, Package, Clock, Route, X, DollarSign } from 'lucide-react';
+import Map, { Marker, Popup, NavigationControl, GeolocateControl, Source, Layer, FullscreenControl } from 'react-map-gl/mapbox';
+import { MapPin, User, Package, Clock, Route, X, DollarSign, Maximize2, Minimize2 } from 'lucide-react';
 
 // =====================================================
 // Types
@@ -69,6 +69,7 @@ export function MapView({
   const [routeData, setRouteData] = useState<any>(null);
   const [isLoadingRoute, setIsLoadingRoute] = useState(false);
   const [routeCache, setRouteCache] = useState<Record<string, any>>({});
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
@@ -537,63 +538,75 @@ export function MapView({
         </div>
       </div>
 
-      {/* Filtros - Tabs responsivos com scroll horizontal */}
-      <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
-        <div className="flex gap-2 p-1 bg-zinc-900 rounded-lg w-fit min-w-min border border-zinc-800">
-          <button
-            onClick={() => setFilter('all')}
-            className={`px-4 sm:px-6 py-2.5 rounded-md font-medium transition-all whitespace-nowrap ${
-              filter === 'all'
-                ? 'bg-zinc-800 text-white shadow-sm'
-                : 'text-zinc-400 hover:text-zinc-200'
-            }`}
-          >
-            Todos
-            <span className="ml-2 text-sm font-bold">{markers.length}</span>
-          </button>
-          <button
-            onClick={() => setFilter('professional')}
-            className={`px-4 sm:px-6 py-2.5 rounded-md font-medium transition-all flex items-center gap-2 whitespace-nowrap ${
-              filter === 'professional'
-                ? 'bg-zinc-800 text-blue-500 shadow-sm'
-                : 'text-zinc-400 hover:text-zinc-200'
-            }`}
-          >
-            <div className="w-3 h-3 rounded-full bg-blue-500 flex-shrink-0"></div>
-            <span className="hidden xs:inline">Profissionais</span>
-            <span className="xs:hidden">Prof.</span>
-            <span className="ml-1 text-sm font-bold">{markers.filter(m => m.type === 'professional').length}</span>
-          </button>
-          <button
-            onClick={() => setFilter('supplier')}
-            className={`px-4 sm:px-6 py-2.5 rounded-md font-medium transition-all flex items-center gap-2 whitespace-nowrap ${
-              filter === 'supplier'
-                ? 'bg-zinc-800 text-emerald-500 shadow-sm'
-                : 'text-zinc-400 hover:text-zinc-200'
-            }`}
-          >
-            <div className="w-3 h-3 rounded-full bg-emerald-500 flex-shrink-0"></div>
-            <span className="hidden xs:inline">Fornecedores</span>
-            <span className="xs:hidden">Forn.</span>
-            <span className="ml-1 text-sm font-bold">{markers.filter(m => m.type === 'supplier').length}</span>
-          </button>
-          <button
-            onClick={() => setFilter('event')}
-            className={`px-4 sm:px-6 py-2.5 rounded-md font-medium transition-all flex items-center gap-2 whitespace-nowrap ${
-              filter === 'event'
-                ? 'bg-zinc-800 text-rose-500 shadow-sm'
-                : 'text-zinc-400 hover:text-zinc-200'
-            }`}
-          >
-            <div className="w-3 h-3 rounded-full bg-rose-500 flex-shrink-0"></div>
-            Eventos
-            <span className="ml-1 text-sm font-bold">{markers.filter(m => m.type === 'event').length}</span>
-          </button>
-        </div>
+      {/* Filtros - Grid responsivo: 2 colunas no mobile, 4 no desktop */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-1 bg-zinc-900 border border-zinc-800 rounded-lg">
+        <button
+          onClick={() => setFilter('all')}
+          className={`px-3 sm:px-6 py-2.5 rounded-md font-medium transition-all whitespace-nowrap text-sm ${
+            filter === 'all'
+              ? 'bg-zinc-800 text-white shadow-sm'
+              : 'text-zinc-400 hover:text-zinc-200'
+          }`}
+        >
+          Todos
+          <span className="ml-2 text-sm font-bold">{markers.length}</span>
+        </button>
+        <button
+          onClick={() => setFilter('professional')}
+          className={`px-3 sm:px-6 py-2.5 rounded-md font-medium transition-all flex items-center justify-center gap-2 whitespace-nowrap text-sm ${
+            filter === 'professional'
+              ? 'bg-zinc-800 text-blue-500 shadow-sm'
+              : 'text-zinc-400 hover:text-zinc-200'
+          }`}
+        >
+          <div className="w-3 h-3 rounded-full bg-blue-500 flex-shrink-0"></div>
+          <span className="hidden sm:inline">Profissionais</span>
+          <span className="sm:hidden">Prof.</span>
+          <span className="ml-1 text-sm font-bold">{markers.filter(m => m.type === 'professional').length}</span>
+        </button>
+        <button
+          onClick={() => setFilter('supplier')}
+          className={`px-3 sm:px-6 py-2.5 rounded-md font-medium transition-all flex items-center justify-center gap-2 whitespace-nowrap text-sm ${
+            filter === 'supplier'
+              ? 'bg-zinc-800 text-emerald-500 shadow-sm'
+              : 'text-zinc-400 hover:text-zinc-200'
+          }`}
+        >
+          <div className="w-3 h-3 rounded-full bg-emerald-500 flex-shrink-0"></div>
+          <span className="hidden sm:inline">Fornecedores</span>
+          <span className="sm:hidden">Forn.</span>
+          <span className="ml-1 text-sm font-bold">{markers.filter(m => m.type === 'supplier').length}</span>
+        </button>
+        <button
+          onClick={() => setFilter('event')}
+          className={`px-3 sm:px-6 py-2.5 rounded-md font-medium transition-all flex items-center justify-center gap-2 whitespace-nowrap text-sm ${
+            filter === 'event'
+              ? 'bg-zinc-800 text-rose-500 shadow-sm'
+              : 'text-zinc-400 hover:text-zinc-200'
+          }`}
+        >
+          <div className="w-3 h-3 rounded-full bg-rose-500 flex-shrink-0"></div>
+          <span className="hidden sm:inline">Eventos</span>
+          <span className="sm:hidden">Event.</span>
+          <span className="ml-1 text-sm font-bold">{markers.filter(m => m.type === 'event').length}</span>
+        </button>
       </div>
 
-      {/* Mapa - Altura responsiva */}
-      <div className="h-[400px] sm:h-[500px] lg:h-[600px] rounded-lg overflow-hidden border border-zinc-800">
+      {/* Mapa - Altura responsiva com fullscreen */}
+      <div className={`rounded-lg overflow-hidden border border-zinc-800 transition-all duration-300 ${
+        isFullscreen
+          ? 'fixed inset-0 z-50 rounded-none border-none h-screen'
+          : 'h-[400px] sm:h-[500px] lg:h-[600px] relative'
+      }`}>
+        {/* Botão Fullscreen customizado */}
+        <button
+          onClick={() => setIsFullscreen(!isFullscreen)}
+          className="absolute top-4 right-4 z-10 bg-zinc-900/90 hover:bg-zinc-800 text-white p-2 rounded-lg border border-zinc-700 transition-colors shadow-lg backdrop-blur-sm"
+          title={isFullscreen ? 'Sair do modo tela cheia' : 'Tela cheia'}
+        >
+          {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
+        </button>
+
         <Map
           {...viewState}
           onMove={evt => setViewState(evt.viewState)}
@@ -601,8 +614,8 @@ export function MapView({
           mapboxAccessToken={mapboxToken}
         >
           {/* Controles */}
-          <NavigationControl position="top-right" />
-          <GeolocateControl position="top-right" />
+          <NavigationControl position="top-right" style={{ marginTop: isFullscreen ? '60px' : '10px' }} />
+          <GeolocateControl position="top-right" style={{ marginTop: isFullscreen ? '110px' : '60px' }} />
 
           {/* Markers */}
           {filteredMarkers.map((marker) => {
@@ -618,8 +631,8 @@ export function MapView({
                 onClick={() => handleMarkerClick(marker)}
               >
                 <div className="cursor-pointer transform hover:scale-125 transition-all duration-200">
-                  <div className={`${bgColor} rounded-full p-2 shadow-lg border-2 border-zinc-700`}>
-                    <Icon className="w-5 h-5 text-white" />
+                  <div className={`${bgColor} rounded-full p-1.5 shadow-lg border border-zinc-700`}>
+                    <Icon className="w-2.5 h-2.5 text-white" />
                   </div>
                 </div>
               </Marker>

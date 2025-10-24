@@ -75,16 +75,48 @@ export async function GET(req: Request) {
       console.error('Erro ao buscar profissionais:', profError);
     }
 
+    // Buscar contratantes
+    const { data: contractors, error: contractorError } = await supabase
+      .from('contractors')
+      .select('id, clerk_id, user_id, full_name, email, company_name, status, created_at, updated_at');
+
+    if (contractorError) {
+      console.error('Erro ao buscar contratantes:', contractorError);
+    }
+
+    // Buscar fornecedores
+    const { data: suppliers, error: supplierError } = await supabase
+      .from('equipment_suppliers')
+      .select('id, clerk_id, company_name, contact_name, email, status, created_at, updated_at');
+
+    if (supplierError) {
+      console.error('Erro ao buscar fornecedores:', supplierError);
+    }
+
     // Criar mapa de profissionais por clerk_id e user_id
     const professionalsByClerkId = new Map();
     const professionalsByUserId = new Map();
+    const contractorsByClerkId = new Map();
+    const suppliersByClerkId = new Map();
 
     professionals?.forEach(prof => {
       if (prof.clerk_id) {
-        professionalsByClerkId.set(prof.clerk_id, prof);
+        professionalsByClerkId.set(prof.clerk_id, { ...prof, type: 'professional' });
       }
       if (prof.user_id) {
-        professionalsByUserId.set(prof.user_id, prof);
+        professionalsByUserId.set(prof.user_id, { ...prof, type: 'professional' });
+      }
+    });
+
+    contractors?.forEach(contractor => {
+      if (contractor.clerk_id) {
+        contractorsByClerkId.set(contractor.clerk_id, { ...contractor, type: 'contractor' });
+      }
+    });
+
+    suppliers?.forEach(supplier => {
+      if (supplier.clerk_id) {
+        suppliersByClerkId.set(supplier.clerk_id, { ...supplier, type: 'supplier' });
       }
     });
 
@@ -92,12 +124,29 @@ export async function GET(req: Request) {
     const enrichedUsers = allUsers.map(user => {
       const clerkId = user.id;
       const professional = professionalsByClerkId.get(clerkId) || professionalsByUserId.get(clerkId);
+      const contractor = contractorsByClerkId.get(clerkId);
+      const supplier = suppliersByClerkId.get(clerkId);
+
+      // Determinar o tipo primário do usuário (prioridade: professional > contractor > supplier)
+      let userType = null;
+      let profile = null;
+
+      if (professional) {
+        userType = 'professional';
+        profile = professional;
+      } else if (contractor) {
+        userType = 'contractor';
+        profile = contractor;
+      } else if (supplier) {
+        userType = 'supplier';
+        profile = supplier;
+      }
 
       // Contar documentos
       let documentsCount = 0;
       let hasDocuments = false;
 
-      if (professional) {
+      if (professional && professional.type === 'professional') {
         // Contar documentos no campo documents (JSONB)
         if (professional.documents && typeof professional.documents === 'object') {
           documentsCount = Object.keys(professional.documents).length;
@@ -125,6 +174,9 @@ export async function GET(req: Request) {
         role: (user.publicMetadata as any)?.role || null,
         clerkCreatedAt: user.createdAt,
 
+        // Tipo de cadastro (professional/contractor/supplier)
+        userType,
+
         // Dados do Supabase (Professional)
         hasProfessionalProfile: !!professional,
         professionalId: professional?.id || null,
@@ -134,12 +186,22 @@ export async function GET(req: Request) {
         professionalApprovedAt: professional?.approved_at || null,
         professionalRejectionReason: professional?.rejection_reason || null,
 
+        // Dados do Contratante
+        hasContractorProfile: !!contractor,
+        contractorId: contractor?.id || null,
+        contractorCompanyName: contractor?.company_name || null,
+
+        // Dados do Fornecedor
+        hasSupplierProfile: !!supplier,
+        supplierId: supplier?.id || null,
+        supplierCompanyName: supplier?.company_name || null,
+
         // Documentos
         hasDocuments,
         documentsCount,
 
         // Estado geral
-        userState: getUserState(user, professional, hasDocuments),
+        userState: getUserState(user, profile, hasDocuments),
       };
     });
 

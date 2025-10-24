@@ -11,6 +11,7 @@ import { QuoteAcceptedEmail } from './templates/QuoteAcceptedEmail';
 import { QuoteRejectedEmail } from './templates/QuoteRejectedEmail';
 import { ProfessionalInvitationEmail } from './templates/ProfessionalInvitationEmail';
 import { QuoteResponseAdminEmail } from './templates/QuoteResponseAdminEmail';
+import { IncompleteRegistrationReminderEmail } from './templates/IncompleteRegistrationReminderEmail';
 import { logEmail } from './email-logger';
 
 interface SendProfessionalWelcomeEmailParams {
@@ -2637,3 +2638,65 @@ export async function sendQuoteResponseAdminNotification(params: {
     };
   }
 }
+
+
+/**
+ * Envia lembrete para usuário com cadastro incompleto
+ */
+export async function sendIncompleteRegistrationReminder(params: {
+  userName: string;
+  userEmail: string;
+  userType: 'professional' | 'contractor' | 'supplier' | null;
+  hasProfessionalProfile: boolean;
+  hasContractorProfile: boolean;
+  hasSupplierProfile: boolean;
+  hasDocuments: boolean;
+}): Promise<{ success: boolean; error?: string }> {
+  const subject = `⚠️ ${params.userName}, complete seu cadastro na HRX`;
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: `HRX <${FROM_EMAIL}>`,
+      to: [params.userEmail],
+      subject,
+      react: <IncompleteRegistrationReminderEmail {...params} />,
+    });
+
+    if (error) {
+      console.error('❌ Erro ao enviar lembrete de cadastro:', error);
+      await logEmail({
+        recipientEmail: params.userEmail,
+        recipientType: params.userType || 'professional',
+        subject,
+        templateUsed: 'IncompleteRegistrationReminderEmail',
+        status: 'failed',
+        errorMessage: error.message,
+      });
+      return { success: false, error: error.message };
+    }
+
+    await logEmail({
+      recipientEmail: params.userEmail,
+      recipientType: params.userType || 'professional',
+      subject,
+      templateUsed: 'IncompleteRegistrationReminderEmail',
+      status: 'sent',
+      externalId: data?.id,
+    });
+
+    console.log(`✅ Lembrete de cadastro enviado para: ${params.userEmail} (ID: ${data?.id})`);
+    return { success: true };
+  } catch (error) {
+    console.error('❌ Erro ao enviar lembrete:', error);
+    await logEmail({
+      recipientEmail: params.userEmail,
+      recipientType: params.userType || 'professional',
+      subject,
+      templateUsed: 'IncompleteRegistrationReminderEmail',
+      status: 'failed',
+      errorMessage: error instanceof Error ? error.message : 'Erro desconhecido',
+    });
+    return { success: false, error: error instanceof Error ? error.message : 'Erro desconhecido' };
+  }
+}
+

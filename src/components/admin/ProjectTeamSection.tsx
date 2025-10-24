@@ -181,6 +181,14 @@ export function ProjectTeamSection({
     return matchesSearch && matchesCategory && matchesState && !alreadyInProject;
   });
 
+  // Filtrar sugestões (remover profissionais já adicionados)
+  const filteredSuggestions = suggestedProfessionals.filter((prof) => {
+    const alreadyInProject = teamMembers.some(
+      (member) => member.professional?.id === prof.id
+    );
+    return !alreadyInProject;
+  });
+
   // Abrir modal para adicionar profissional
   const openAddModal = (professional: Professional) => {
     setSelectedProfessional(professional);
@@ -481,7 +489,7 @@ export function ProjectTeamSection({
                 className="data-[state=active]:bg-red-600 data-[state=active]:text-white"
               >
                 <Sparkles className="h-4 w-4 mr-2" />
-                Sugestões ({suggestedProfessionals.length})
+                Sugestões ({filteredSuggestions.length})
               </TabsTrigger>
               <TabsTrigger
                 value="todos"
@@ -503,9 +511,9 @@ export function ProjectTeamSection({
                   <Clock className="h-8 w-8 text-red-500 mx-auto mb-3 animate-spin" />
                   <p className="text-sm text-zinc-400">Calculando sugestões...</p>
                 </div>
-              ) : suggestedProfessionals.length > 0 ? (
+              ) : filteredSuggestions.length > 0 ? (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {suggestedProfessionals.slice(0, 10).map((prof) => (
+                  {filteredSuggestions.slice(0, 10).map((prof) => (
                     <div
                       key={prof.id}
                       className="p-4 bg-zinc-950 border border-red-900/20 rounded-lg hover:border-red-800/40 transition-all"

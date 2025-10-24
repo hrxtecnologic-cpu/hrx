@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Users, Shield, ShieldCheck, ShieldX, Search, Loader2, FileCheck, FileX, AlertCircle, CheckCircle2, XCircle } from 'lucide-react';
+import { Users, Shield, ShieldCheck, ShieldX, Search, Loader2, FileCheck, FileX, AlertCircle, CheckCircle2, XCircle, Briefcase, Building2, Package, Mail } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@clerk/nextjs';
 
@@ -16,6 +16,7 @@ interface DetailedUser {
   lastName: string | null;
   fullName: string | null;
   role: 'admin' | 'professional' | 'contractor' | null;
+  userType: 'professional' | 'contractor' | 'supplier' | null;
   clerkCreatedAt: number;
   hasProfessionalProfile: boolean;
   professionalId: string | null;
@@ -24,6 +25,12 @@ interface DetailedUser {
   professionalUpdatedAt: string | null;
   professionalApprovedAt: string | null;
   professionalRejectionReason: string | null;
+  hasContractorProfile: boolean;
+  contractorId: string | null;
+  contractorCompanyName: string | null;
+  hasSupplierProfile: boolean;
+  supplierId: string | null;
+  supplierCompanyName: string | null;
   hasDocuments: boolean;
   documentsCount: number;
   userState: 'clerk_only' | 'profile_incomplete' | 'pending_review' | 'approved' | 'rejected';
@@ -40,6 +47,7 @@ export default function UsuariosPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [filterState, setFilterState] = useState<string>('all');
+  const [sendingEmail, setSendingEmail] = useState<string | null>(null);
 
   useEffect(() => {
     fetchUsers();
@@ -117,9 +125,39 @@ export default function UsuariosPage() {
     }
   };
 
-  const openDialog = (user: ClerkUser) => {
+  const openDialog = (user: DetailedUser) => {
     setSelectedUser(user);
     setIsDialogOpen(true);
+  };
+
+  const handleSendReminder = async (userId: string, userEmail: string) => {
+    if (!confirm(`Enviar lembrete para finalizar cadastro para ${userEmail}?`)) {
+      return;
+    }
+
+    setSendingEmail(userId);
+    try {
+      const token = await getToken();
+      const response = await fetch(`/api/admin/users/${userId}/send-reminder`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        alert('✅ E-mail de lembrete enviado com sucesso!');
+      } else {
+        const error = await response.json();
+        alert(`❌ Erro ao enviar e-mail: ${error.error || 'Erro desconhecido'}`);
+      }
+    } catch (error) {
+      console.error('Erro ao enviar lembrete:', error);
+      alert('❌ Erro ao enviar e-mail');
+    } finally {
+      setSendingEmail(null);
+    }
   };
 
   const getRoleBadge = (role?: string | null) => {
@@ -152,6 +190,34 @@ export default function UsuariosPage() {
             Sem role
           </span>
         );
+    }
+  };
+
+  const getUserTypeBadge = (type?: string | null) => {
+    switch (type) {
+      case 'professional':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-blue-600/20 text-blue-500 border border-blue-600/30">
+            <Briefcase className="h-3 w-3" />
+            Profissional
+          </span>
+        );
+      case 'contractor':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-purple-600/20 text-purple-500 border border-purple-600/30">
+            <Building2 className="h-3 w-3" />
+            Contratante
+          </span>
+        );
+      case 'supplier':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-emerald-600/20 text-emerald-500 border border-emerald-600/30">
+            <Package className="h-3 w-3" />
+            Fornecedor
+          </span>
+        );
+      default:
+        return null;
     }
   };
 
@@ -320,6 +386,7 @@ export default function UsuariosPage() {
                         <h4 className="font-medium text-white truncate">
                           {user.fullName || user.email || 'Sem nome'}
                         </h4>
+                        {getUserTypeBadge(user.userType)}
                         {getRoleBadge(user.role)}
                         {getStateBadge(user.userState)}
                       </div>
@@ -359,6 +426,24 @@ export default function UsuariosPage() {
                     </div>
 
                     <div className="flex items-center gap-2 sm:ml-4">
+                      {/* Botão de Lembrete - apenas para cadastros incompletos */}
+                      {(user.userState === 'profile_incomplete' || user.userState === 'clerk_only') && user.email && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleSendReminder(user.id, user.email!)}
+                          disabled={sendingEmail === user.id}
+                          className="border-orange-600 text-orange-500 hover:bg-orange-600 hover:text-white hover:border-orange-600"
+                        >
+                          {sendingEmail === user.id ? (
+                            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                          ) : (
+                            <Mail className="h-3 w-3 mr-1" />
+                          )}
+                          {sendingEmail === user.id ? 'Enviando...' : 'Enviar Lembrete'}
+                        </Button>
+                      )}
+
                       <Button
                         size="sm"
                         variant="outline"

@@ -8,6 +8,7 @@ const isPublicRoute = createRouteMatcher([
   '/',
   '/entrar(.*)',
   '/cadastrar(.*)',
+  '/onboarding(.*)', // Página de seleção de tipo de usuário (público)
   '/sobre',
   '/servicos',
   '/contato',

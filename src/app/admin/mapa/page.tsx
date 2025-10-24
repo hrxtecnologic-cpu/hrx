@@ -173,7 +173,7 @@ export default function MapPage() {
             </button>
           </div>
 
-          <div className="bg-zinc-950 border border-zinc-800 rounded-xl shadow-2xl p-3 sm:p-6">
+          <div className="bg-zinc-950 border border-zinc-800 rounded-xl shadow-2xl p-1 sm:p-2">
             <MapView markers={markers} />
           </div>
         </>
