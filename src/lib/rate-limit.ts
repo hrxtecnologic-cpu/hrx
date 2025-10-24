@@ -1,51 +1,11 @@
 /**
- * Rate Limiting System
+ * Rate Limiting System usando Supabase
  *
  * Protege endpoints contra abuso limitando requisições por usuário/IP
- * Usa memória (Redis desabilitado temporariamente)
+ * Storage: Supabase (tabela rate_limits)
  */
 
-// import { rateLimit as redisRateLimit } from './redis'; // Desabilitado - Redis não instalado
-
-interface RateLimitStore {
-  [key: string]: {
-    count: number;
-    resetTime: number;
-  };
-}
-
-// Store em memória (fallback se Redis não disponível)
-const memoryStore: RateLimitStore = {};
-
-// Limpar registros expirados a cada 1 minuto
-if (typeof setInterval !== 'undefined') {
-  setInterval(() => {
-    const now = Date.now();
-    Object.keys(memoryStore).forEach(key => {
-      if (memoryStore[key].resetTime < now) {
-        delete memoryStore[key];
-      }
-    });
-  }, 60000);
-}
-
-interface RateLimitConfig {
-  /**
-   * Número máximo de requisições permitidas
-   */
-  limit: number;
-
-  /**
-   * Janela de tempo em milissegundos
-   * @example 60000 = 1 minuto
-   */
-  window: number;
-
-  /**
-   * Prefixo para a chave (identifica o endpoint)
-   */
-  prefix: string;
-}
+import { createClient } from '@/lib/supabase/server';
 
 export interface RateLimitResult {
   success: boolean;
@@ -54,133 +14,138 @@ export interface RateLimitResult {
   reset: number;
 }
 
-/**
- * Rate limit em memória (fallback)
- */
-async function rateLimitMemory(
-  identifier: string,
-  config: RateLimitConfig
-): Promise<RateLimitResult> {
-  const key = `${config.prefix}:${identifier}`;
-  const now = Date.now();
-
-  // Buscar ou criar registro
-  let record = memoryStore[key];
-
-  if (!record || record.resetTime < now) {
-    // Criar novo registro
-    record = {
-      count: 0,
-      resetTime: now + config.window,
-    };
-    memoryStore[key] = record;
-  }
-
-  // Incrementar contador
-  record.count++;
-
-  // Verificar se excedeu o limite
-  const success = record.count <= config.limit;
-  const remaining = Math.max(0, config.limit - record.count);
-
-  return {
-    success,
-    limit: config.limit,
-    remaining,
-    reset: record.resetTime,
-  };
+interface RateLimitConfig {
+  limit: number;
+  window: number; // em milissegundos
+  prefix: string;
 }
 
 /**
- * Verifica se a requisição está dentro do rate limit
- *
- * @param identifier - Identificador único (userId, IP, etc)
- * @param config - Configuração do rate limit
- * @returns Resultado do rate limit
+ * Rate limiting usando Supabase como storage
  */
 export async function rateLimit(
   identifier: string,
   config: RateLimitConfig
 ): Promise<RateLimitResult> {
-  // Redis desabilitado temporariamente - usando apenas memória
-  /*
-  if (process.env.REDIS_URL) {
-    try {
-      const result = await redisRateLimit(identifier, {
-        limit: config.limit,
-        window: Math.floor(config.window / 1000), // converter ms para segundos
-        prefix: config.prefix,
+  try {
+    const supabase = await createClient();
+    const key = `${config.prefix}:${identifier}`;
+    const now = new Date();
+    const windowSeconds = config.window / 1000;
+    const expiresAt = new Date(now.getTime() + config.window);
+
+    // Buscar registro atual
+    const { data: existing, error: fetchError } = await supabase
+      .from('rate_limits')
+      .select('count, window_start')
+      .eq('identifier', key)
+      .maybeSingle();
+
+    if (fetchError) {
+      console.error('[Rate Limit] Erro ao buscar:', fetchError);
+      // Fail open - permitir em caso de erro
+      return { success: true, remaining: config.limit - 1, reset: expiresAt.getTime(), limit: config.limit };
+    }
+
+    if (existing) {
+      const windowStart = new Date(existing.window_start);
+      const elapsed = (now.getTime() - windowStart.getTime()) / 1000;
+
+      if (elapsed < windowSeconds) {
+        // Dentro da janela atual
+        if (existing.count >= config.limit) {
+          // Limite excedido
+          const resetTime = windowStart.getTime() + config.window;
+          return {
+            success: false,
+            remaining: 0,
+            reset: resetTime,
+            limit: config.limit,
+          };
+        }
+
+        // Incrementar contador
+        await supabase
+          .from('rate_limits')
+          .update({
+            count: existing.count + 1,
+            expires_at: expiresAt,
+          })
+          .eq('identifier', key);
+
+        return {
+          success: true,
+          remaining: config.limit - existing.count - 1,
+          reset: windowStart.getTime() + config.window,
+          limit: config.limit,
+        };
+      }
+    }
+
+    // Nova janela
+    await supabase
+      .from('rate_limits')
+      .upsert({
+        identifier: key,
+        count: 1,
+        window_start: now,
+        expires_at: expiresAt,
+      }, {
+        onConflict: 'identifier'
       });
 
-      return {
-        success: result.success,
-        limit: result.limit,
-        remaining: result.remaining,
-        reset: result.reset * 1000, // converter segundos para ms
-      };
-    } catch (error) {
-      console.warn('[RateLimit] Redis falhou, usando memória:', error);
-      return rateLimitMemory(identifier, config);
-    }
+    return {
+      success: true,
+      remaining: config.limit - 1,
+      reset: expiresAt.getTime(),
+      limit: config.limit,
+    };
+  } catch (error) {
+    console.error('[Rate Limit] Erro:', error);
+    // Fail open - permitir em caso de erro
+    const expiresAt = new Date(Date.now() + config.window);
+    return { success: true, remaining: config.limit - 1, reset: expiresAt.getTime(), limit: config.limit };
   }
-  */
-
-  // Usando memória (Redis não instalado)
-  return rateLimitMemory(identifier, config);
 }
 
 /**
- * Presets de rate limiting para diferentes casos de uso
+ * Presets de rate limiting
  */
 export const RateLimitPresets = {
-  /**
-   * Upload de arquivos: 20 uploads por minuto (aumentado para cadastros completos)
-   */
   UPLOAD: {
     limit: 20,
     window: 60000, // 1 minuto
     prefix: 'upload',
   },
-
-  /**
-   * Cadastro de profissional: 20 cadastros por hora
-   */
   REGISTRATION: {
     limit: 20,
     window: 3600000, // 1 hora
     prefix: 'registration',
   },
-
-  /**
-   * APIs de consulta: 100 requisições por minuto
-   */
   API_READ: {
     limit: 100,
-    window: 60000, // 1 minuto
+    window: 60000,
     prefix: 'api-read',
   },
-
-  /**
-   * APIs de escrita: 30 requisições por minuto
-   */
   API_WRITE: {
     limit: 30,
-    window: 60000, // 1 minuto
+    window: 60000,
     prefix: 'api-write',
   },
-
-  /**
-   * Login/Auth: 5 tentativas por 15 minutos
-   */
   AUTH: {
     limit: 5,
     window: 900000, // 15 minutos
     prefix: 'auth',
   },
+  PUBLIC_API: {
+    limit: 20,
+    window: 60000, // 1 minuto
+    prefix: 'public-api',
+  },
 } as const;
 
 /**
- * Helper para criar resposta de erro de rate limit
+ * Helper para criar resposta de erro
  */
 export function createRateLimitError(result: RateLimitResult) {
   const resetDate = new Date(result.reset);

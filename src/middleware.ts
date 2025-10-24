@@ -23,8 +23,8 @@ const isPublicRoute = createRouteMatcher([
   '/api/send-test(.*)',
   '/api/contact(.*)',
   '/api/requests(.*)',
-  '/api/contractors(.*)',
   '/api/public(.*)', // APIs públicas (event-requests, quotations, etc)
+  // '/api/contractors(.*)' <- REMOVIDO: agora precisa autenticação (auditoria 2025-10-24)
   // '/api/professionals(.*)' <- REMOVIDO: precisa autenticação
   // '/api/upload(.*)' <- REMOVIDO: precisa autenticação
   // '/api/user/check-registration' <- Precisa autenticação mas não é pública

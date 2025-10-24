@@ -5,6 +5,7 @@ import {
   sendEventRequestClientConfirmation,
   sendEventRequestAdminNotification,
 } from '@/lib/resend/emails';
+import { rateLimit, RateLimitPresets, createRateLimitError } from '@/lib/rate-limit';
 
 /**
  * API PÚBLICA para receber:
@@ -14,6 +15,28 @@ import {
  */
 export async function POST(req: Request) {
   try {
+    // Rate limiting por IP (20 requisições por minuto)
+    const ip = req.headers.get('x-forwarded-for') ||
+               req.headers.get('x-real-ip') ||
+               'unknown';
+
+    const rateLimitResult = await rateLimit(ip, RateLimitPresets.PUBLIC_API);
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        createRateLimitError(rateLimitResult),
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': new Date(rateLimitResult.reset).toISOString(),
+            'Retry-After': Math.ceil((rateLimitResult.reset - Date.now()) / 1000).toString(),
+          },
+        }
+      );
+    }
+
     const body = await req.json();
     const { request_type } = body;
 

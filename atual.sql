@@ -23,6 +23,7 @@ CREATE TABLE public.contractors (
   status character varying DEFAULT 'active'::character varying CHECK (status::text = ANY (ARRAY['active'::character varying, 'inactive'::character varying]::text[])),
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
+  clerk_id character varying,
   CONSTRAINT contractors_pkey PRIMARY KEY (id),
   CONSTRAINT contractors_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
 );
@@ -111,6 +112,7 @@ CREATE TABLE public.equipment_suppliers (
   zip_code text,
   delivery_radius_km integer DEFAULT 50,
   shipping_fee_per_km numeric DEFAULT 0,
+  clerk_id character varying,
   CONSTRAINT equipment_suppliers_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.event_allocations (
@@ -162,8 +164,8 @@ CREATE TABLE public.event_projects (
   migrated_from_contractor_request_id uuid,
   migrated_from_quote_request_id uuid,
   equipment_supplier_id uuid,
-  professionals_needed jsonb DEFAULT '[]'::jsonb,
-  equipment_needed jsonb DEFAULT '[]'::jsonb,
+  professionals_needed jsonb DEFAULT '[]'::jsonb CHECK (professionals_needed IS NULL OR jsonb_typeof(professionals_needed) = 'array'::text),
+  equipment_needed jsonb DEFAULT '[]'::jsonb CHECK (equipment_needed IS NULL OR jsonb_typeof(equipment_needed) = 'array'::text),
   latitude numeric,
   longitude numeric,
   CONSTRAINT event_projects_pkey PRIMARY KEY (id),
@@ -307,7 +309,7 @@ CREATE TABLE public.professionals (
   approved_by uuid,
   documents jsonb DEFAULT '{}'::jsonb,
   portfolio jsonb DEFAULT '[]'::jsonb,
-  clerk_id character varying,
+  clerk_id character varying UNIQUE,
   rejection_reason text,
   cnh_number character varying,
   cnh_validity date,
@@ -390,6 +392,15 @@ CREATE TABLE public.project_team (
   CONSTRAINT project_team_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.event_projects(id),
   CONSTRAINT project_team_professional_id_fkey FOREIGN KEY (professional_id) REFERENCES public.professionals(id)
 );
+CREATE TABLE public.rate_limits (
+  identifier character varying NOT NULL,
+  count integer NOT NULL DEFAULT 1,
+  window_start timestamp with time zone NOT NULL DEFAULT now(),
+  expires_at timestamp with time zone NOT NULL DEFAULT (now() + '00:01:00'::interval),
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT rate_limits_pkey PRIMARY KEY (identifier)
+);
 CREATE TABLE public.requests (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   request_number character varying NOT NULL UNIQUE,
@@ -471,10 +482,968 @@ CREATE TABLE public.users (
   email character varying NOT NULL,
   full_name character varying,
   avatar_url character varying,
-  user_type character varying CHECK (user_type::text = ANY (ARRAY['professional'::character varying, 'contractor'::character varying, NULL::character varying]::text[])),
+  user_type character varying CHECK (user_type::text = ANY (ARRAY['professional'::character varying, 'contractor'::character varying, 'supplier'::character varying, 'admin'::character varying]::text[])),
   status character varying DEFAULT 'active'::character varying CHECK (status::text = ANY (ARRAY['active'::character varying, 'inactive'::character varying, 'deleted'::character varying]::text[])),
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   role character varying DEFAULT 'user'::character varying CHECK (role::text = ANY (ARRAY['user'::character varying, 'admin'::character varying]::text[])),
   CONSTRAINT users_pkey PRIMARY KEY (id)
 );
+
+
+
+
+
+
+----------------------------------------------------------------
+
+##TRIGGERS ABAIXO
+
+email_template_config_updated_at	
+email_template_config
+
+update_email_template_config_updated_at
+
+BEFORE UPDATE
+ROW
+
+
+ensure_single_active_config_trigger	
+email_template_config
+
+ensure_single_active_config
+
+BEFORE UPDATE
+BEFORE INSERT
+ROW
+
+
+trigger_calculate_project_profit_margin	
+event_projects
+
+calculate_project_profit_margin
+
+BEFORE INSERT
+BEFORE UPDATE
+ROW
+
+
+trigger_calculate_team_member_cost	
+project_team
+
+calculate_team_member_cost
+
+BEFORE INSERT
+BEFORE UPDATE
+ROW
+
+
+trigger_document_validations_updated_at	
+document_validations
+
+update_updated_at_column
+
+BEFORE UPDATE
+ROW
+
+
+trigger_equipment_allocations_updated_at	
+equipment_allocations
+
+update_equipment_allocations_updated_at
+
+BEFORE UPDATE
+ROW
+
+
+trigger_equipment_suppliers_updated_at	
+equipment_suppliers
+
+update_equipment_suppliers_updated_at
+
+BEFORE UPDATE
+ROW
+
+
+trigger_event_projects_updated_at	
+event_projects
+
+update_updated_at_column
+
+BEFORE UPDATE
+ROW
+
+
+trigger_generate_project_number	
+event_projects
+
+generate_project_number
+
+BEFORE INSERT
+ROW
+
+
+trigger_log_professional_changes	
+professionals
+
+log_professional_changes
+
+AFTER UPDATE
+AFTER INSERT
+ROW
+
+
+trigger_notify_invitation_responded	
+project_team
+
+notify_invitation_responded
+
+AFTER UPDATE
+ROW
+
+
+trigger_notify_invitation_sent	
+project_team
+
+notify_invitation_sent
+
+AFTER UPDATE
+ROW
+
+
+trigger_professional_reviews_updated_at	
+professional_reviews
+
+update_professional_reviews_updated_at
+
+BEFORE UPDATE
+ROW
+
+
+trigger_project_equipment_updated_at	
+project_equipment
+
+update_updated_at_column
+
+BEFORE UPDATE
+ROW
+
+
+trigger_project_team_updated_at	
+project_team
+
+update_updated_at_column
+
+BEFORE UPDATE
+ROW
+
+
+trigger_supplier_reviews_updated_at	
+supplier_reviews
+
+update_supplier_reviews_updated_at
+
+BEFORE UPDATE
+ROW
+
+
+trigger_update_project_equipment_cost_equipment	
+project_equipment
+
+update_project_equipment_cost
+
+AFTER UPDATE
+ROW
+
+
+trigger_update_project_team_cost	
+project_team
+
+update_project_team_cost
+
+AFTER DELETE
+AFTER UPDATE
+AFTER INSERT
+ROW
+
+
+trigger_update_project_totals	
+event_projects
+
+update_project_totals
+
+BEFORE UPDATE
+ROW
+
+
+update_categories_updated_at	
+categories
+
+update_updated_at_column
+
+BEFORE UPDATE
+ROW
+
+
+update_contractors_updated_at	
+contractors
+
+update_updated_at_column
+
+BEFORE UPDATE
+ROW
+
+
+update_event_allocations_updated_at	
+event_allocations
+
+update_updated_at_column
+
+BEFORE UPDATE
+ROW
+
+
+update_event_types_updated_at	
+event_types
+
+update_updated_at_column
+
+BEFORE UPDATE
+ROW
+
+
+update_professionals_updated_at	
+professionals
+
+update_updated_at_column
+
+BEFORE UPDATE
+ROW
+
+
+update_requests_updated_at	
+requests
+
+update_updated_at_column
+
+BEFORE UPDATE
+ROW
+
+
+update_users_updated_at	
+users
+
+update_updated_at_column
+
+BEFORE UPDATE
+ROW
+
+
+validate_certifications_trigger	
+professionals
+
+validate_certifications
+
+BEFORE INSERT
+BEFORE UPDATE
+ROW
+
+
+
+
+Database Functions
+Docs
+
+schema
+
+public
+
+Search for a function
+
+Return Type
+
+Security
+
+Create a new function
+
+Name	Arguments	Return type	Security	
+
+calculate_distance
+lat1 numeric, lon1 numeric, lat2 numeric, lon2 numeric
+
+numeric
+
+Invoker
+
+
+
+calculate_hrx_price
+-
+
+trigger	
+Invoker
+
+
+
+calculate_professional_score
+professional_categories text[], required_categories text[], distance_km numeric, has_experience boolean, years_of_experience text, availability jsonb, event_date timestamp with time zone
+
+jsonb
+
+Invoker
+
+
+
+calculate_profit_margin
+-
+
+trigger	
+Invoker
+
+
+
+calculate_project_profit_margin
+-
+
+trigger	
+Invoker
+
+
+
+calculate_quotation_hrx_values
+-
+
+trigger	
+Invoker
+
+
+
+calculate_supplier_score
+supplier_equipment_types text[], required_equipment_types text[], distance_km numeric, delivery_radius_km integer, max_distance_km integer, shipping_fee_per_km numeric
+
+jsonb
+
+Invoker
+
+
+
+calculate_supplier_score_v2
+p_supplier_id uuid, p_event_lat double precision, p_event_lon double precision, p_required_equipment_types text[]
+
+TABLE(supplier_id uuid, total_score numeric, distance_score numeric, equipment_score numeric, performance_score numeric, breakdown jsonb)
+
+Invoker
+
+
+
+calculate_team_member_cost
+-
+
+trigger	
+Invoker
+
+
+
+check_expiring_documents
+-
+
+integer
+
+Invoker
+
+
+
+check_incomplete_teams
+-
+
+integer
+
+Invoker
+
+
+
+check_pending_invitations
+-
+
+integer
+
+Invoker
+
+
+
+cleanup_expired_tokens
+-
+
+TABLE(cleaned_count integer, message text)
+
+Invoker
+
+
+
+cleanup_old_notifications
+p_days_to_keep integer DEFAULT 30
+
+integer
+
+Invoker
+
+
+
+confirm_invitation_token
+token character varying
+
+jsonb
+
+Invoker
+
+
+
+create_notification
+p_user_id uuid, p_user_type text, p_notification_type text, p_title text, p_message text, p_action_url text DEFAULT NULL::text, p_project_id uuid DEFAULT NULL::uuid, p_professional_id uuid DEFAULT NULL::uuid, p_supplier_id uuid DEFAULT NULL::uuid, p_priority text DEFAULT 'normal'::text, p_metadata jsonb DEFAULT '{}'::jsonb
+
+uuid
+
+Invoker
+
+
+
+ensure_single_active_config
+-
+
+trigger	
+Invoker
+
+
+
+generate_invitation_token
+team_member_id uuid
+
+character varying
+
+Invoker
+
+
+
+generate_period_report
+p_start_date date, p_end_date date
+
+TABLE(metric_name text, metric_value numeric, metric_unit text, metric_category text)
+
+Invoker
+
+
+
+generate_project_number
+-
+
+trigger	
+Invoker
+
+
+
+generate_request_number
+-
+
+trigger	
+Invoker
+
+
+
+get_current_month_kpis
+-
+
+TABLE(kpi_name text, kpi_value numeric, previous_month_value numeric, change_percentage numeric, trend text)
+
+Invoker
+
+
+
+get_geocoding_stats
+-
+
+TABLE(entity_type text, total_records bigint, with_coordinates bigint, pending_geocoding bigint, percentage_complete numeric)
+
+Invoker
+
+
+
+get_professional_history
+prof_id uuid
+
+TABLE(id uuid, action_type character varying, description text, action_by_email character varying, created_at timestamp with time zone)
+
+Invoker
+
+
+
+get_professional_recent_reviews
+p_professional_id uuid, p_limit integer DEFAULT 5
+
+TABLE(id uuid, project_number text, event_name text, rating integer, comment text, would_hire_again boolean, created_at timestamp with time zone)
+
+Invoker
+
+
+
+get_professionals_by_subcategory
+category_name text, subcategory_name text
+
+TABLE(id uuid, full_name character varying, email character varying, phone character varying, subcategories jsonb, certifications jsonb)
+
+Invoker
+
+
+
+get_suggested_professionals
+p_event_lat numeric, p_event_lon numeric, p_event_date timestamp with time zone, p_required_categories text[] DEFAULT NULL::text[], p_max_distance_km integer DEFAULT 999999, p_min_score numeric DEFAULT 0, p_limit integer DEFAULT 100
+
+TABLE(id uuid, full_name character varying, email character varying, phone character varying, categories text[], city character varying, state character varying, distance_km numeric, total_score numeric, category_score numeric, distance_score numeric, experience_score numeric, availability_score numeric, performance_score numeric, score_breakdown jsonb, has_experience boolean, years_of_experience character varying)
+
+Invoker
+
+
+
+get_suggested_suppliers
+p_event_lat numeric, p_event_lon numeric, p_required_equipment_types text[] DEFAULT NULL::text[], p_max_distance_km integer DEFAULT 999999, p_min_score numeric DEFAULT 0, p_limit integer DEFAULT 100
+
+TABLE(id uuid, company_name text, contact_name text, email text, phone text, equipment_types text[], city text, state text, distance_km numeric, total_score numeric, equipment_score numeric, distance_score numeric, performance_score numeric, score_breakdown jsonb, delivery_radius_km integer, shipping_fee_per_km numeric)
+
+Invoker
+
+
+
+get_suggested_suppliers_v2
+p_event_lat double precision, p_event_lon double precision, p_required_equipment_types text[] DEFAULT NULL::text[], p_max_distance_km integer DEFAULT 100, p_min_score numeric DEFAULT 0, p_limit integer DEFAULT 100
+
+TABLE(id uuid, company_name text, contact_name text, email text, phone text, equipment_types text[], city text, state text, distance_km numeric, total_score numeric, distance_score numeric, equipment_score numeric, performance_score numeric, score_breakdown jsonb, delivery_radius_km integer, shipping_fee_per_km numeric)
+
+Invoker
+
+
+
+get_supplier_recent_reviews
+p_supplier_id uuid, p_limit integer DEFAULT 5
+
+TABLE(id uuid, project_number text, event_name text, rating integer, comment text, would_hire_again boolean, created_at timestamp with time zone)
+
+Invoker
+
+
+
+gin_extract_query_trgm
+text, internal, smallint, internal, internal, internal, internal
+
+internal
+
+Invoker
+
+
+
+gin_extract_value_trgm
+text, internal
+
+internal
+
+Invoker
+
+
+
+gin_trgm_consistent
+internal, smallint, text, integer, internal, internal, internal, internal
+
+boolean
+
+Invoker
+
+
+
+gin_trgm_triconsistent
+internal, smallint, text, integer, internal, internal, internal
+
+"char"
+
+Invoker
+
+
+
+gtrgm_compress
+internal
+
+internal
+
+Invoker
+
+
+
+gtrgm_consistent
+internal, text, smallint, oid, internal
+
+boolean
+
+Invoker
+
+
+
+gtrgm_decompress
+internal
+
+internal
+
+Invoker
+
+
+
+gtrgm_distance
+internal, text, smallint, oid, internal
+
+double precision
+
+Invoker
+
+
+
+gtrgm_in
+cstring
+
+gtrgm
+
+Invoker
+
+
+
+gtrgm_options
+internal
+
+void
+
+Invoker
+
+
+
+gtrgm_out
+gtrgm
+
+cstring
+
+Invoker
+
+
+
+gtrgm_penalty
+internal, internal, internal
+
+internal
+
+Invoker
+
+
+
+gtrgm_picksplit
+internal, internal
+
+internal
+
+Invoker
+
+
+
+gtrgm_same
+gtrgm, gtrgm, internal
+
+internal
+
+Invoker
+
+
+
+gtrgm_union
+internal, internal
+
+gtrgm
+
+Invoker
+
+
+
+has_valid_certification
+prof_certifications jsonb, cert_type text
+
+boolean
+
+Invoker
+
+
+
+log_professional_changes
+-
+
+trigger	
+Invoker
+
+
+
+mark_all_notifications_as_read
+p_user_id uuid
+
+integer
+
+Invoker
+
+
+
+mark_notification_as_read
+p_notification_id uuid
+
+boolean
+
+Invoker
+
+
+
+notify_invitation_responded
+-
+
+trigger	
+Invoker
+
+
+
+notify_invitation_sent
+-
+
+trigger	
+Invoker
+
+
+
+set_limit
+real
+
+real
+
+Invoker
+
+
+
+show_limit
+-
+
+real
+
+Invoker
+
+
+
+show_trgm
+text
+
+text[]
+
+Invoker
+
+
+
+similarity
+text, text
+
+real
+
+Invoker
+
+
+
+similarity_dist
+text, text
+
+real
+
+Invoker
+
+
+
+similarity_op
+text, text
+
+boolean
+
+Invoker
+
+
+
+strict_word_similarity
+text, text
+
+real
+
+Invoker
+
+
+
+strict_word_similarity_commutator_op
+text, text
+
+boolean
+
+Invoker
+
+
+
+strict_word_similarity_dist_commutator_op
+text, text
+
+real
+
+Invoker
+
+
+
+strict_word_similarity_dist_op
+text, text
+
+real
+
+Invoker
+
+
+
+strict_word_similarity_op
+text, text
+
+boolean
+
+Invoker
+
+
+
+update_email_template_config_updated_at
+-
+
+trigger	
+Invoker
+
+
+
+update_equipment_allocations_updated_at
+-
+
+trigger	
+Invoker
+
+
+
+update_equipment_suppliers_updated_at
+-
+
+trigger	
+Invoker
+
+
+
+update_professional_reviews_updated_at
+-
+
+trigger	
+Invoker
+
+
+
+update_project_equipment_cost
+-
+
+trigger	
+Invoker
+
+
+
+update_project_team_cost
+-
+
+trigger	
+Invoker
+
+
+
+update_project_totals
+-
+
+trigger	
+Invoker
+
+
+
+update_quote_updated_at
+-
+
+trigger	
+Invoker
+
+
+
+update_supplier_reviews_updated_at
+-
+
+trigger	
+Invoker
+
+
+
+update_updated_at_column
+-
+
+trigger	
+Invoker
+
+
+
+validate_certifications
+-
+
+trigger	
+Invoker
+
+
+
+word_similarity
+text, text
+
+real
+
+Invoker
+
+
+
+word_similarity_commutator_op
+text, text
+
+boolean
+
+Invoker
+
+
+
+word_similarity_dist_commutator_op
+text, text
+
+real
+
+Invoker
+
+
+
+word_similarity_dist_op
+text, text
+
+real
+
+Invoker
+
+
+
+word_similarity_op
+text, text
+
+boolean
+
+Invoker
+
+

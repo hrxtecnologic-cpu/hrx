@@ -1,17 +1,24 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { auth } from '@clerk/nextjs/server';
+import { createClient } from '@/lib/supabase/server';
 import { contractorRegistrationSchema } from '@/lib/validations/contractor-registration';
 import { z } from 'zod';
 
-// Cliente Supabase com service_role para bypass do RLS
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
 export async function POST(request: Request) {
   try {
-    // 1. Parse e valida o body
+    // 1. Verificar autenticação (seguindo padrão profissional)
+    const { userId } = await auth();
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Autenticação necessária' },
+        { status: 401 }
+      );
+    }
+
+    const supabase = await createClient();
+
+    // 2. Parse e valida o body
     const body = await request.json();
 
     let validatedData;
@@ -45,10 +52,25 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3. Cria o contratante
+    // 3. Verificar se usuário já tem cadastro de contractor
+    const { data: existing } = await supabase
+      .from('contractors')
+      .select('id')
+      .eq('clerk_id', userId)
+      .maybeSingle();
+
+    if (existing) {
+      return NextResponse.json(
+        { error: 'Você já possui um cadastro de contratante' },
+        { status: 400 }
+      );
+    }
+
+    // 4. Cria o contratante vinculado ao clerk_id
     const { data: newContractor, error: insertError } = await supabase
       .from('contractors')
       .insert({
+        clerk_id: userId,  // Vincular ao usuário autenticado
         company_name: validatedData.companyName,
         cnpj: validatedData.cnpj,
         responsible_name: validatedData.responsibleName,
@@ -67,7 +89,7 @@ export async function POST(request: Request) {
     }
 
 
-    // 4. Retorna sucesso
+    // 5. Retorna sucesso
     return NextResponse.json({
       success: true,
       contractorId: newContractor.id,
