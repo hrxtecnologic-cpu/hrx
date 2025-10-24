@@ -4,6 +4,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { ptBR } from "@clerk/localizations";
 import { Toaster } from "@/components/ui/toaster";
 import { PWAInstaller } from "@/components/PWAInstaller";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import "./mapbox-gl.css";
 
@@ -55,6 +56,7 @@ export default function RootLayout({
           {children}
           <Toaster />
           <PWAInstaller />
+          <Analytics />
         </body>
       </html>
     </ClerkProvider>

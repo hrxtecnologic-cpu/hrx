@@ -20,7 +20,9 @@ interface Delivery {
   actual_delivery_time: string | null;
   event_project: {
     event_name: string;
-    event_location: string;
+    venue_address: string;
+    venue_city: string;
+    venue_state: string;
   };
 }
 

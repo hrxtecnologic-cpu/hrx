@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import Map, { Marker, Popup, NavigationControl, Source, Layer } from 'react-map-gl/mapbox';
-import { MapPin, Package, Navigation } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import Map, { Marker, Popup, NavigationControl } from 'react-map-gl/mapbox';
+import { MapPin, Package, Wifi, WifiOff, Navigation } from 'lucide-react';
+import { useRealtimeDeliveries } from '@/hooks/useRealtimeDeliveries';
+import { AnimatedDeliveryMarker } from './AnimatedDeliveryMarker';
 
 interface DeliveryItem {
   id: string;
@@ -14,16 +16,16 @@ interface DeliveryItem {
   supplier: {
     company_name: string;
   };
-  driver: {
-    name: string;
-  } | null;
 }
 
 interface DeliveryTrackingMapProps {
   deliveries: DeliveryItem[];
 }
 
-export function DeliveryTrackingMap({ deliveries }: DeliveryTrackingMapProps) {
+export function DeliveryTrackingMap({ deliveries: initialDeliveries }: DeliveryTrackingMapProps) {
+  // 🔥 Usar Realtime ao invés de polling!
+  const { deliveries, isConnected } = useRealtimeDeliveries(initialDeliveries);
+
   const [selectedDelivery, setSelectedDelivery] = useState<DeliveryItem | null>(null);
   const [viewState, setViewState] = useState({
     longitude: -46.6333,
@@ -68,23 +70,6 @@ export function DeliveryTrackingMap({ deliveries }: DeliveryTrackingMapProps) {
     });
   }, [deliveries]);
 
-  // Criar rotas para deliveries em trânsito
-  const routes = useMemo(() => {
-    return deliveries
-      .filter(d => d.status === 'in_transit' && d.current_latitude && d.current_longitude)
-      .map(d => ({
-        id: d.id,
-        type: 'Feature' as const,
-        geometry: {
-          type: 'LineString' as const,
-          coordinates: [
-            [d.current_longitude!, d.current_latitude!],
-            [d.destination_longitude, d.destination_latitude],
-          ],
-        },
-      }));
-  }, [deliveries]);
-
   return (
     <div className="relative w-full h-[600px] rounded-lg overflow-hidden">
       <Map
@@ -117,45 +102,18 @@ export function DeliveryTrackingMap({ deliveries }: DeliveryTrackingMapProps) {
           </Marker>
         ))}
 
-        {/* Veículos em trânsito */}
+        {/* Veículos em trânsito com animação suave e rota real */}
         {deliveries.map((delivery) => {
           if (!delivery.current_latitude || !delivery.current_longitude) return null;
 
           return (
-            <Marker
+            <AnimatedDeliveryMarker
               key={`vehicle-${delivery.id}`}
-              latitude={delivery.current_latitude}
-              longitude={delivery.current_longitude}
-              anchor="center"
-              onClick={(e) => {
-                e.originalEvent.stopPropagation();
-                setSelectedDelivery(delivery);
-              }}
-            >
-              <div className="cursor-pointer hover:scale-110 transition-transform">
-                <div className="bg-blue-500 rounded-full p-3 shadow-lg border-2 border-zinc-700 animate-pulse">
-                  <Navigation className="w-5 h-5 text-white" />
-                </div>
-              </div>
-            </Marker>
+              delivery={delivery}
+              onClick={() => setSelectedDelivery(delivery)}
+            />
           );
         })}
-
-        {/* Linhas de rota */}
-        {routes.map((route) => (
-          <Source key={route.id} id={route.id} type="geojson" data={route}>
-            <Layer
-              id={`route-${route.id}`}
-              type="line"
-              paint={{
-                'line-color': '#3b82f6',
-                'line-width': 3,
-                'line-dasharray': [2, 2],
-                'line-opacity': 0.6,
-              }}
-            />
-          </Source>
-        ))}
 
         {/* Popup */}
         {selectedDelivery && (
@@ -175,12 +133,6 @@ export function DeliveryTrackingMap({ deliveries }: DeliveryTrackingMapProps) {
                 </h3>
               </div>
 
-              {selectedDelivery.driver && (
-                <p className="text-xs text-zinc-600 mb-1">
-                  Motorista: {selectedDelivery.driver.name}
-                </p>
-              )}
-
               <div className="mt-2">
                 {selectedDelivery.current_latitude && selectedDelivery.current_longitude ? (
                   <span className="inline-block px-2 py-1 bg-blue-500/10 text-blue-600 text-xs rounded">
@@ -196,6 +148,21 @@ export function DeliveryTrackingMap({ deliveries }: DeliveryTrackingMapProps) {
           </Popup>
         )}
       </Map>
+
+      {/* Indicador de Conexão Realtime */}
+      <div className="absolute top-4 left-4 bg-zinc-900/95 backdrop-blur border border-zinc-800 rounded-lg px-3 py-2 text-sm flex items-center gap-2">
+        {isConnected ? (
+          <>
+            <Wifi className="w-4 h-4 text-emerald-500 animate-pulse" />
+            <span className="text-emerald-400 font-medium">Tempo Real</span>
+          </>
+        ) : (
+          <>
+            <WifiOff className="w-4 h-4 text-zinc-500" />
+            <span className="text-zinc-400">Conectando...</span>
+          </>
+        )}
+      </div>
 
       {/* Legenda */}
       <div className="absolute bottom-4 left-4 bg-zinc-900/95 backdrop-blur border border-zinc-800 rounded-lg p-3 text-sm">

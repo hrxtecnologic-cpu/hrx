@@ -21,12 +21,8 @@ interface Delivery {
   actual_delivery_time: string | null;
   supplier: {
     company_name: string;
-    contact_phone: string;
-  };
-  driver: {
-    name: string;
     phone: string;
-  } | null;
+  };
 }
 
 export default function EventTrackingPage() {
@@ -212,12 +208,10 @@ export default function EventTrackingPage() {
                     </div>
                   </div>
 
-                  {/* Motorista */}
-                  {delivery.driver && (
-                    <div className="text-sm text-zinc-400">
-                      Motorista: {delivery.driver.name} • {delivery.driver.phone}
-                    </div>
-                  )}
+                  {/* Fornecedor */}
+                  <div className="text-sm text-zinc-400">
+                    Contato: {delivery.supplier.phone}
+                  </div>
                 </div>
               );
             })}

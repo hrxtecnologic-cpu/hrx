@@ -40,17 +40,14 @@ export async function GET(req: Request) {
           id,
           event_name,
           event_date,
-          event_location,
+          venue_address,
+          venue_city,
+          venue_state,
           created_by
         ),
         supplier:equipment_suppliers(
           id,
           company_name,
-          contact_phone
-        ),
-        driver:users!supplier_user_id(
-          id,
-          name,
           phone
         )
       `)

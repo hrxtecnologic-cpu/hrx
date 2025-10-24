@@ -23,7 +23,7 @@ CREATE TABLE public.contractors (
   status character varying DEFAULT 'active'::character varying CHECK (status::text = ANY (ARRAY['active'::character varying, 'inactive'::character varying]::text[])),
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
-  clerk_id character varying,
+  clerk_id character varying UNIQUE,
   CONSTRAINT contractors_pkey PRIMARY KEY (id),
   CONSTRAINT contractors_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
 );
@@ -112,7 +112,7 @@ CREATE TABLE public.equipment_suppliers (
   zip_code text,
   delivery_radius_km integer DEFAULT 50,
   shipping_fee_per_km numeric DEFAULT 0,
-  clerk_id character varying,
+  clerk_id character varying UNIQUE,
   CONSTRAINT equipment_suppliers_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.event_allocations (
@@ -490,9 +490,81 @@ CREATE TABLE public.users (
   CONSTRAINT users_pkey PRIMARY KEY (id)
 );
 
+-- =====================================================
+-- DELIVERY TRACKING TABLES (Migration 026)
+-- =====================================================
 
+CREATE TABLE public.delivery_trackings (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  event_project_id uuid NOT NULL REFERENCES public.event_projects(id) ON DELETE CASCADE,
+  supplier_id uuid NOT NULL REFERENCES public.equipment_suppliers(id) ON DELETE CASCADE,
+  supplier_user_id uuid REFERENCES public.users(id) ON DELETE SET NULL,
+  status character varying(50) NOT NULL DEFAULT 'pending',
+  equipment_items jsonb NOT NULL DEFAULT '[]'::jsonb,
+  current_latitude numeric(10,8),
+  current_longitude numeric(11,8),
+  last_location_update timestamp with time zone,
+  origin_address text,
+  origin_latitude numeric(10,8),
+  origin_longitude numeric(11,8),
+  destination_address text NOT NULL,
+  destination_latitude numeric(10,8) NOT NULL,
+  destination_longitude numeric(11,8) NOT NULL,
+  scheduled_pickup_time timestamp with time zone,
+  scheduled_delivery_time timestamp with time zone NOT NULL,
+  actual_pickup_time timestamp with time zone,
+  actual_delivery_time timestamp with time zone,
+  estimated_distance_km numeric(10,2),
+  estimated_duration_minutes integer,
+  notes text,
+  delivery_notes text,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT delivery_trackings_pkey PRIMARY KEY (id)
+);
 
+CREATE TABLE public.delivery_location_history (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  delivery_tracking_id uuid NOT NULL REFERENCES public.delivery_trackings(id) ON DELETE CASCADE,
+  latitude numeric(10,8) NOT NULL,
+  longitude numeric(11,8) NOT NULL,
+  speed_kmh numeric(5,2),
+  recorded_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT delivery_location_history_pkey PRIMARY KEY (id)
+);
 
+CREATE TABLE public.delivery_status_updates (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  delivery_tracking_id uuid NOT NULL REFERENCES public.delivery_trackings(id) ON DELETE CASCADE,
+  old_status character varying(50),
+  new_status character varying(50) NOT NULL,
+  updated_by_user_id uuid REFERENCES public.users(id) ON DELETE SET NULL,
+  notes text,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT delivery_status_updates_pkey PRIMARY KEY (id)
+);
+
+-- Índices para performance
+CREATE INDEX idx_delivery_trackings_event ON public.delivery_trackings(event_project_id);
+CREATE INDEX idx_delivery_trackings_supplier ON public.delivery_trackings(supplier_id);
+CREATE INDEX idx_delivery_trackings_status ON public.delivery_trackings(status);
+CREATE INDEX idx_delivery_trackings_scheduled ON public.delivery_trackings(scheduled_delivery_time);
+CREATE INDEX idx_delivery_trackings_location ON public.delivery_trackings(current_latitude, current_longitude);
+CREATE INDEX idx_delivery_location_history_tracking ON public.delivery_location_history(delivery_tracking_id, recorded_at DESC);
+CREATE INDEX idx_delivery_status_updates_tracking ON public.delivery_status_updates(delivery_tracking_id, created_at DESC);
+
+-- Habilitar RLS
+ALTER TABLE public.delivery_trackings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.delivery_location_history ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.delivery_status_updates ENABLE ROW LEVEL SECURITY;
+
+-- Habilitar Realtime (Migration 027)
+ALTER PUBLICATION supabase_realtime ADD TABLE public.delivery_trackings;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.delivery_location_history;
+
+-- Comentários
+COMMENT ON TABLE public.delivery_trackings IS 'Rastreamento de entregas em tempo real com Supabase Realtime habilitado';
+COMMENT ON TABLE public.delivery_location_history IS 'Histórico de localizações GPS com Realtime habilitado';
 
 
 ----------------------------------------------------------------

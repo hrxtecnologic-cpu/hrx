@@ -12,6 +12,7 @@
 import { useEffect, useState } from 'react';
 import { Bell, X, Check, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
 import {
   Notification,
   NotificationStats,
@@ -37,9 +38,50 @@ export function NotificationBell() {
   useEffect(() => {
     loadNotifications();
 
-    // Polling a cada 30 segundos
-    const interval = setInterval(loadNotifications, 30000);
-    return () => clearInterval(interval);
+    // 🔥 Realtime ao invés de polling!
+    const supabase = createClient();
+
+    const channel = supabase
+      .channel('notifications-realtime')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notifications',
+      }, (payload) => {
+        // Nova notificação chegou
+        const newNotification = payload.new as Notification;
+        setNotifications((prev) => [newNotification, ...prev.slice(0, 9)]);
+
+        // Atualizar stats
+        setStats((prev) => prev ? {
+          ...prev,
+          total_notifications: prev.total_notifications + 1,
+          unread_count: prev.unread_count + 1,
+          urgent_count: newNotification.priority === 'urgent' ? prev.urgent_count + 1 : prev.urgent_count,
+          high_count: newNotification.priority === 'high' ? prev.high_count + 1 : prev.high_count,
+        } : null);
+
+        // Toast para notificação nova
+        toast.info(newNotification.title, {
+          description: newNotification.message,
+        });
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'notifications',
+      }, (payload) => {
+        // Notificação atualizada (ex: marcada como lida)
+        const updated = payload.new as Notification;
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === updated.id ? updated : n))
+        );
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   async function loadNotifications() {
