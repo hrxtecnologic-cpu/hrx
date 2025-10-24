@@ -19,32 +19,22 @@ export async function GET() {
     const supabase = await createClient();
 
     // ========================================
-    // 1. BUSCAR FORNECEDOR PELO CLERK ID
+    // 1. BUSCAR FORNECEDOR PELO CLERK ID (seguindo padrão profissional)
     // ========================================
-    // Buscar no users table
-    const { data: userData } = await supabase
-      .from('users')
-      .select('id, email')
-      .eq('clerk_id', userId)
-      .single();
-
-    if (!userData) {
-      return NextResponse.json(
-        { error: 'Usuário não encontrado' },
-        { status: 404 }
-      );
-    }
-
-    // Buscar fornecedor pelo email do usuário
     const { data: supplier, error: supplierError } = await supabase
       .from('equipment_suppliers')
       .select('id, company_name, contact_name, email, phone, equipment_types, proposed_budget, notes, status')
-      .eq('email', userData.email)
-      .single();
+      .eq('clerk_id', userId)
+      .maybeSingle();
 
-    if (supplierError || !supplier) {
+    if (supplierError) {
+      console.error('Erro ao buscar fornecedor:', supplierError);
+      throw supplierError;
+    }
+
+    if (!supplier) {
       return NextResponse.json(
-        { error: 'Fornecedor não encontrado' },
+        { error: 'Fornecedor não encontrado. Complete seu cadastro primeiro.' },
         { status: 404 }
       );
     }

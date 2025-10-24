@@ -157,17 +157,17 @@ export default function MapPage() {
       ) : (
         <>
           {/* Botão para geocodificar registros faltantes */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 flex items-center justify-between">
-            <div>
-              <p className="text-white font-medium">Geocodificação</p>
-              <p className="text-sm text-zinc-400">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-white font-medium text-sm sm:text-base">Geocodificação</p>
+              <p className="text-xs sm:text-sm text-zinc-400 mt-1">
                 Adicionar coordenadas para profissionais, fornecedores e eventos sem localização
               </p>
             </div>
             <button
               onClick={handleGeocodeAll}
               disabled={loading}
-              className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white font-semibold px-6 py-2.5 rounded-lg transition-colors text-sm whitespace-nowrap"
+              className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white font-semibold px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg transition-colors text-xs sm:text-sm whitespace-nowrap w-full sm:w-auto"
             >
               {loading ? 'Processando...' : 'Geocodificar Pendentes'}
             </button>

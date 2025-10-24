@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -55,8 +55,10 @@ const equipmentSchema = z.object({
   notes: z.string().optional(),
 });
 
-// Schema completo do formulário
-const eventRequestSchema = z.object({
+// Schema para CLIENTE (solicitar evento)
+const clientRequestSchema = z.object({
+  request_type: z.literal('client'),
+
   // Cliente
   client_name: z.string().min(2, 'Nome é obrigatório'),
   client_email: z.string().email('Email inválido'),
@@ -94,13 +96,56 @@ const eventRequestSchema = z.object({
   additional_notes: z.string().optional(),
 });
 
-type EventRequestFormData = z.infer<typeof eventRequestSchema>;
+// Schema para FORNECEDOR (cadastro)
+const supplierRequestSchema = z.object({
+  request_type: z.literal('supplier'),
 
-export default function SolicitarEventoPage() {
+  // Dados da empresa
+  company_name: z.string().min(2, 'Nome da empresa é obrigatório'),
+  contact_name: z.string().min(2, 'Nome do contato é obrigatório'),
+  email: z.string().email('Email inválido'),
+  phone: z.string().min(10, 'Telefone é obrigatório'),
+
+  // Equipamentos que fornece
+  equipment_types: z.array(z.string()).min(1, 'Selecione pelo menos um tipo de equipamento'),
+
+  // Preços (opcional)
+  pricing: z.object({
+    daily: z.string().optional(),
+    three_days: z.string().optional(),
+    weekly: z.string().optional(),
+    discount_notes: z.string().optional(),
+  }).optional(),
+
+  // Observações
+  notes: z.string().optional(),
+});
+
+// Schema unificado
+const requestSchema = z.discriminatedUnion('request_type', [
+  clientRequestSchema,
+  supplierRequestSchema,
+]);
+
+type RequestFormData = z.infer<typeof requestSchema>;
+
+function SolicitarEventoPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [requestType, setRequestType] = useState<'client' | 'supplier' | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [selectedEquipment, setSelectedEquipment] = useState<string[]>([]);
+  const [selectedEquipmentTypes, setSelectedEquipmentTypes] = useState<string[]>([]);
+
+  // Detectar tipo da URL (?type=client ou ?type=supplier)
+  useEffect(() => {
+    const typeFromUrl = searchParams.get('type');
+    if (typeFromUrl === 'client' || typeFromUrl === 'supplier') {
+      setRequestType(typeFromUrl);
+      setValue('request_type', typeFromUrl);
+    }
+  }, [searchParams]);
 
   const {
     register,
@@ -109,11 +154,13 @@ export default function SolicitarEventoPage() {
     watch,
     control,
     formState: { errors },
-  } = useForm<EventRequestFormData>({
-    resolver: zodResolver(eventRequestSchema),
+  } = useForm<any>({
+    resolver: zodResolver(requestType === 'client' ? clientRequestSchema : requestType === 'supplier' ? supplierRequestSchema : z.any()),
     defaultValues: {
+      request_type: requestType,
       professionals: [{ category_group: '', category: '', quantity: 1, requirements: '' }],
       equipment: [],
+      equipment_types: [],
       is_urgent: false,
     },
   });
@@ -153,7 +200,7 @@ export default function SolicitarEventoPage() {
     });
   };
 
-  // Contar equipamentos selecionados por categoria
+  // Contar equipamentos selecionados por categoria (para CLIENTE)
   const getSelectedCountByCategory = (categoryName: string): number => {
     const category = EQUIPMENT_CATEGORIES.find((c) => c.name === categoryName);
     if (!category) return 0;
@@ -162,7 +209,34 @@ export default function SolicitarEventoPage() {
     ).length;
   };
 
-  const onSubmit = async (data: EventRequestFormData) => {
+  // Contar equipamentos selecionados por categoria (para FORNECEDOR)
+  const getSelectedTypesCountByCategory = (categoryName: string): number => {
+    const category = EQUIPMENT_CATEGORIES.find((c) => c.name === categoryName);
+    if (!category) return 0;
+    return category.subtypes.filter((s) => selectedEquipmentTypes.includes(s.label)).length;
+  };
+
+  // Toggle tipo de equipamento (para FORNECEDOR)
+  const toggleEquipmentType = (type: string) => {
+    const current = selectedEquipmentTypes;
+    const newTypes = current.includes(type)
+      ? current.filter((t) => t !== type)
+      : [...current, type];
+    setSelectedEquipmentTypes(newTypes);
+    setValue('equipment_types', newTypes);
+  };
+
+  // Toggle equipamento (para CLIENTE - lista de equipamentos para o evento)
+  const toggleEquipment = (label: string) => {
+    const current = selectedEquipment;
+    if (current.includes(label)) {
+      setSelectedEquipment(current.filter((item) => item !== label));
+    } else {
+      setSelectedEquipment([...current, label]);
+    }
+  };
+
+  const onSubmit = async (data: any) => {
     setIsSubmitting(true);
 
     try {
@@ -180,15 +254,126 @@ export default function SolicitarEventoPage() {
         throw new Error(result.error || 'Erro ao enviar solicitação');
       }
 
-      toast.success('Solicitação enviada com sucesso!');
-      router.push('/solicitar-evento/sucesso');
+      toast.success(requestType === 'supplier' ? 'Cadastro enviado com sucesso!' : 'Solicitação enviada com sucesso!');
+
+      // Redirecionar para página correta
+      if (requestType === 'supplier') {
+        router.push('/solicitar-evento/sucesso-fornecedor');
+      } else {
+        router.push('/solicitar-evento/sucesso');
+      }
     } catch (error: any) {
-      console.error('Erro ao enviar solicitação:', error);
+      console.error('Erro ao enviar:', error);
       toast.error(error.message || 'Erro ao enviar solicitação');
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  // Se ainda não selecionou o tipo, mostra tela de seleção
+  if (!requestType) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-950 flex items-center justify-center p-4">
+        <div className="max-w-4xl w-full">
+          {/* Header */}
+          <div className="text-center mb-12">
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+              O que você precisa?
+            </h1>
+            <p className="text-lg text-zinc-300">
+              Escolha a opção que melhor descreve sua necessidade
+            </p>
+            <div className="flex items-center justify-center gap-2 mt-6">
+              <div className="h-1 w-20 bg-gradient-to-r from-red-600 to-red-500 rounded-full" />
+            </div>
+          </div>
+
+          {/* Cards de seleção */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Card Cliente/Evento */}
+            <button
+              onClick={() => {
+                setRequestType('client');
+                setValue('request_type', 'client');
+              }}
+              className="group relative p-8 bg-gradient-to-br from-zinc-900 to-zinc-900/50 border-2 border-zinc-800 hover:border-red-600 rounded-2xl transition-all hover:scale-105 overflow-hidden text-left"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-red-600/0 to-red-600/0 group-hover:from-red-600/5 group-hover:to-red-600/10 transition-all duration-300" />
+
+              <div className="relative z-10">
+                <div className="text-6xl mb-6 group-hover:scale-110 transition-transform">
+                  🎪
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-3 group-hover:text-red-500 transition">
+                  Solicitar Evento
+                </h2>
+                <p className="text-zinc-400 leading-relaxed mb-6">
+                  Preciso de profissionais e/ou equipamentos para meu evento
+                </p>
+
+                <div className="pt-6 border-t border-zinc-800">
+                  <ul className="text-sm text-zinc-500 space-y-3">
+                    <li className="flex items-start gap-2">
+                      <span className="text-green-500 mt-0.5">✓</span>
+                      <span>Equipe completa de profissionais</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-green-500 mt-0.5">✓</span>
+                      <span>Equipamentos para eventos</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-green-500 mt-0.5">✓</span>
+                      <span>Orçamento personalizado</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </button>
+
+            {/* Card Fornecedor */}
+            <button
+              onClick={() => {
+                setRequestType('supplier');
+                setValue('request_type', 'supplier');
+              }}
+              className="group relative p-8 bg-gradient-to-br from-zinc-900 to-zinc-900/50 border-2 border-zinc-800 hover:border-red-600 rounded-2xl transition-all hover:scale-105 overflow-hidden text-left"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-red-600/0 to-red-600/0 group-hover:from-red-600/5 group-hover:to-red-600/10 transition-all duration-300" />
+
+              <div className="relative z-10">
+                <div className="text-6xl mb-6 group-hover:scale-110 transition-transform">
+                  🚚
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-3 group-hover:text-red-500 transition">
+                  Sou Fornecedor
+                </h2>
+                <p className="text-zinc-400 leading-relaxed mb-6">
+                  Quero cadastrar minha empresa para fornecer equipamentos
+                </p>
+
+                <div className="pt-6 border-t border-zinc-800">
+                  <ul className="text-sm text-zinc-500 space-y-3">
+                    <li className="flex items-start gap-2">
+                      <span className="text-green-500 mt-0.5">✓</span>
+                      <span>Receba solicitações de orçamentos</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-green-500 mt-0.5">✓</span>
+                      <span>Cadastro rápido e simples</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-green-500 mt-0.5">✓</span>
+                      <span>Aumente suas vendas</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-950">
@@ -196,20 +381,306 @@ export default function SolicitarEventoPage() {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-            Solicite seu Evento Completo
+            {requestType === 'supplier' ? 'Cadastro de Fornecedor' : 'Solicite seu Evento Completo'}
           </h1>
           <p className="text-lg text-zinc-300">
-            Preencha o formulário detalhado e receba uma proposta personalizada com equipe e
-            equipamentos
+            {requestType === 'supplier'
+              ? 'Preencha os dados da sua empresa para começar a receber solicitações'
+              : 'Preencha o formulário detalhado e receba uma proposta personalizada'}
           </p>
           <div className="flex items-center justify-center gap-2 mt-6">
             <div className="h-1 w-20 bg-gradient-to-r from-red-600 to-red-500 rounded-full" />
           </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setRequestType(null)}
+            className="mt-4 border-zinc-700 text-zinc-400 hover:bg-zinc-800"
+          >
+            ← Voltar para seleção
+          </Button>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Seus Dados */}
-          <Card className="bg-zinc-900 border-zinc-800">
+          {/* ============================================ */}
+          {/* FORMULÁRIO FORNECEDOR */}
+          {/* ============================================ */}
+          {requestType === 'supplier' && (
+            <>
+              {/* Dados da Empresa */}
+              <Card className="bg-zinc-900 border-zinc-800">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center gap-2">
+                    <Building2 className="h-5 w-5 text-red-600" />
+                    Dados da Empresa
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2">
+                      <Label htmlFor="company_name" className="text-sm font-medium text-zinc-200">
+                        Nome da Empresa *
+                      </Label>
+                      <Input
+                        id="company_name"
+                        {...register('company_name')}
+                        className="bg-zinc-800 border-zinc-700 text-white mt-2"
+                        placeholder="Ex: Equipamentos XYZ Ltda"
+                      />
+                      {errors.company_name && (
+                        <p className="text-xs text-red-400 mt-1.5">{errors.company_name?.message}</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <Label htmlFor="contact_name" className="text-sm font-medium text-zinc-200">
+                        Nome do Contato *
+                      </Label>
+                      <Input
+                        id="contact_name"
+                        {...register('contact_name')}
+                        className="bg-zinc-800 border-zinc-700 text-white mt-2"
+                        placeholder="Seu nome"
+                      />
+                      {errors.contact_name && (
+                        <p className="text-xs text-red-400 mt-1.5">{errors.contact_name?.message}</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <Label htmlFor="phone" className="text-sm font-medium text-zinc-200">
+                        <Phone className="h-4 w-4 inline mr-1" />
+                        Telefone/WhatsApp *
+                      </Label>
+                      <Input
+                        id="phone"
+                        {...register('phone')}
+                        className="bg-zinc-800 border-zinc-700 text-white mt-2"
+                        placeholder="(00) 00000-0000"
+                      />
+                      {errors.phone && (
+                        <p className="text-xs text-red-400 mt-1.5">{errors.phone?.message}</p>
+                      )}
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <Label htmlFor="email" className="text-sm font-medium text-zinc-200">
+                        <Mail className="h-4 w-4 inline mr-1" />
+                        Email *
+                      </Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        {...register('email')}
+                        className="bg-zinc-800 border-zinc-700 text-white mt-2"
+                        placeholder="contato@empresa.com"
+                      />
+                      {errors.email && (
+                        <p className="text-xs text-red-400 mt-1.5">{errors.email?.message}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Preços por Período */}
+                  <div className="space-y-4 pt-4 border-t border-zinc-800">
+                    <Label className="text-sm font-medium text-zinc-200">
+                      Valores por Período (Opcional)
+                    </Label>
+                    <p className="text-xs text-zinc-500">
+                      Defina os valores médios de locação/serviço por período
+                    </p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div>
+                        <Label htmlFor="pricing.daily" className="text-xs text-zinc-400">
+                          Diária
+                        </Label>
+                        <Input
+                          id="pricing.daily"
+                          {...register('pricing.daily')}
+                          placeholder="Ex: R$ 500,00"
+                          className="bg-zinc-800 border-zinc-700 text-white mt-1.5"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="pricing.three_days" className="text-xs text-zinc-400">
+                          3 Dias
+                        </Label>
+                        <Input
+                          id="pricing.three_days"
+                          {...register('pricing.three_days')}
+                          placeholder="Ex: R$ 1.200,00"
+                          className="bg-zinc-800 border-zinc-700 text-white mt-1.5"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="pricing.weekly" className="text-xs text-zinc-400">
+                          Semanal (7 dias)
+                        </Label>
+                        <Input
+                          id="pricing.weekly"
+                          {...register('pricing.weekly')}
+                          placeholder="Ex: R$ 2.000,00"
+                          className="bg-zinc-800 border-zinc-700 text-white mt-1.5"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="pricing.discount_notes" className="text-xs text-zinc-400">
+                        Observações sobre Descontos
+                      </Label>
+                      <Input
+                        id="pricing.discount_notes"
+                        {...register('pricing.discount_notes')}
+                        placeholder="Ex: 10% de desconto para períodos acima de 7 dias"
+                        className="bg-zinc-800 border-zinc-700 text-white mt-1.5"
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Tipos de Equipamentos que Fornece */}
+              <Card className="bg-zinc-900 border-zinc-800">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center gap-2">
+                    <Package className="h-5 w-5 text-red-600" />
+                    Tipos de Equipamentos que Fornece
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-zinc-300 mb-4">
+                    Selecione todos os tipos de equipamento que sua empresa pode fornecer
+                  </p>
+
+                  <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
+                    {EQUIPMENT_CATEGORIES.map((category) => {
+                      const isExpanded = expandedCategories.has(category.name);
+                      const selectedCount = getSelectedTypesCountByCategory(category.name);
+
+                      return (
+                        <div
+                          key={category.name}
+                          className="border border-zinc-800 bg-zinc-800/50 rounded-md overflow-hidden"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => toggleCategory(category.name)}
+                            className="w-full px-3 py-2 flex items-center justify-between hover:bg-zinc-700/50 transition-colors"
+                          >
+                            <div className="flex items-center gap-2 flex-1">
+                              <ChevronDown
+                                className={cn(
+                                  'h-4 w-4 text-zinc-400 transition-transform',
+                                  isExpanded && 'rotate-180'
+                                )}
+                              />
+                              <span className="text-sm font-medium text-zinc-200">
+                                {category.label}
+                              </span>
+                            </div>
+                            {selectedCount > 0 && (
+                              <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded-full">
+                                {selectedCount} selecionado(s)
+                              </span>
+                            )}
+                          </button>
+
+                          {isExpanded && (
+                            <div className="px-3 py-2 space-y-2 bg-zinc-900/50 border-t border-zinc-800">
+                              {category.subtypes.map((subtype) => (
+                                <div key={subtype.label} className="flex items-center gap-2">
+                                  <Checkbox
+                                    id={`supplier-equipment-${subtype.label}`}
+                                    checked={selectedEquipmentTypes.includes(subtype.label)}
+                                    onCheckedChange={() => toggleEquipmentType(subtype.label)}
+                                    className="border-zinc-700 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
+                                  />
+                                  <Label
+                                    htmlFor={`supplier-equipment-${subtype.label}`}
+                                    className="text-sm font-medium text-zinc-200 cursor-pointer flex-1"
+                                  >
+                                    {subtype.label}
+                                  </Label>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {errors.equipment_types && (
+                    <p className="text-xs text-red-400 mt-4">{errors.equipment_types?.message}</p>
+                  )}
+
+                  {selectedEquipmentTypes.length > 0 && (
+                    <div className="mt-4 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+                      <p className="text-sm text-green-400">
+                        ✓ {selectedEquipmentTypes.length} tipo(s) de equipamento selecionado(s)
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Observações */}
+              <Card className="bg-zinc-900 border-zinc-800">
+                <CardHeader>
+                  <CardTitle className="text-white">Informações Adicionais</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Textarea
+                    id="notes"
+                    {...register('notes')}
+                    className="bg-zinc-800 border-zinc-700 text-white"
+                    placeholder="Conte mais sobre sua empresa: horários de atendimento, área de atuação, diferenciais, etc."
+                    rows={4}
+                  />
+                </CardContent>
+              </Card>
+
+              {/* Botão de Enviar para Fornecedor */}
+              <div className="flex flex-col items-center gap-4 pt-6">
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  size="lg"
+                  className="w-full md:w-auto bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white px-12 py-6 text-lg"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                      Enviando...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-5 w-5 mr-2" />
+                      Cadastrar Empresa
+                    </>
+                  )}
+                </Button>
+
+                <p className="text-sm text-zinc-400 text-center max-w-md">
+                  Ao enviar, nossa equipe entrará em contato para validar seu cadastro e você
+                  começará a receber solicitações de orçamentos.
+                </p>
+              </div>
+            </>
+          )}
+
+          {/* ============================================ */}
+          {/* FORMULÁRIO CLIENTE (evento) - mantém o original */}
+          {/* ============================================ */}
+          {requestType === 'client' && (
+            <>
+              {/* Seus Dados */}
+              <Card className="bg-zinc-900 border-zinc-800">
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
                 <Building2 className="h-5 w-5 text-red-600" />
@@ -777,34 +1248,54 @@ export default function SolicitarEventoPage() {
             </CardContent>
           </Card>
 
-          {/* Botão de Enviar */}
-          <div className="flex flex-col items-center gap-4 pt-6">
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              size="lg"
-              className="w-full md:w-auto bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white px-12 py-6 text-lg"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                  Enviando...
-                </>
-              ) : (
-                <>
-                  <Send className="h-5 w-5 mr-2" />
-                  Enviar Solicitação Completa
-                </>
-              )}
-            </Button>
+              {/* Botão de Enviar */}
+              <div className="flex flex-col items-center gap-4 pt-6">
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  size="lg"
+                  className="w-full md:w-auto bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white px-12 py-6 text-lg"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                      Enviando...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-5 w-5 mr-2" />
+                      Enviar Solicitação Completa
+                    </>
+                  )}
+                </Button>
 
-            <p className="text-sm text-zinc-400 text-center max-w-md">
-              Ao enviar, nossa equipe analisará todos os detalhes e preparará uma proposta completa
-              com equipe, equipamentos e orçamento detalhado.
-            </p>
-          </div>
+                <p className="text-sm text-zinc-400 text-center max-w-md">
+                  Ao enviar, nossa equipe analisará todos os detalhes e preparará uma proposta completa
+                  com equipe, equipamentos e orçamento detalhado.
+                </p>
+              </div>
+            </>
+          )}
         </form>
       </div>
     </div>
+  );
+}
+
+// Wrapper com Suspense para o useSearchParams
+export default function SolicitarEventoPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-950 flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="h-12 w-12 text-red-600 animate-spin mx-auto mb-4" />
+            <p className="text-zinc-400">Carregando...</p>
+          </div>
+        </div>
+      }
+    >
+      <SolicitarEventoPageContent />
+    </Suspense>
   );
 }

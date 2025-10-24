@@ -72,12 +72,22 @@ export default function SucessoPage() {
               </div>
             </div>
 
-            <Link href="/">
-              <Button className="bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white">
-                <Home className="h-4 w-4 mr-2" />
-                Voltar para o Início
-              </Button>
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link href="/dashboard/contratante">
+                <Button className="bg-red-600 hover:bg-red-500 text-white px-8 py-6 text-lg w-full sm:w-auto">
+                  Acessar Meu Dashboard
+                </Button>
+              </Link>
+              <Link href="/">
+                <Button
+                  variant="outline"
+                  className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 px-8 py-6 text-lg w-full sm:w-auto"
+                >
+                  <Home className="h-4 w-4 mr-2" />
+                  Voltar para Home
+                </Button>
+              </Link>
+            </div>
           </CardContent>
         </Card>
       </div>

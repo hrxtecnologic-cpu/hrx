@@ -7,13 +7,115 @@ import {
 } from '@/lib/resend/emails';
 
 /**
- * API PÚBLICA para receber solicitações de eventos de clientes
+ * API PÚBLICA para receber:
+ * - Solicitações de eventos de clientes (request_type: 'client')
+ * - Cadastros de fornecedores (request_type: 'supplier')
  * Endpoint: POST /api/public/event-requests
  */
 export async function POST(req: Request) {
   try {
     const body = await req.json();
+    const { request_type } = body;
 
+    // ========================================
+    // FORNECEDOR - Cadastro de empresa fornecedora
+    // ========================================
+    if (request_type === 'supplier') {
+      const {
+        company_name,
+        contact_name,
+        email,
+        phone,
+        equipment_types,
+        pricing,
+        notes,
+      } = body;
+
+      // Validações
+      if (!company_name || !contact_name || !email || !phone) {
+        return NextResponse.json(
+          { error: 'Dados da empresa são obrigatórios (nome, contato, email, telefone)' },
+          { status: 400 }
+        );
+      }
+
+      if (!equipment_types || equipment_types.length === 0) {
+        return NextResponse.json(
+          { error: 'Selecione pelo menos um tipo de equipamento que fornece' },
+          { status: 400 }
+        );
+      }
+
+      const supabase = await createClient();
+
+      // Tentar obter userId se usuário estiver autenticado (seguindo padrão profissional)
+      let userId: string | null = null;
+      try {
+        const authResult = await auth();
+        userId = authResult.userId;
+      } catch {
+        // Usuário não autenticado - não deve cadastrar fornecedor sem auth
+        return NextResponse.json(
+          { error: 'Autenticação necessária para cadastrar como fornecedor' },
+          { status: 401 }
+        );
+      }
+
+      // Verificar se já existe fornecedor com este clerk_id
+      const { data: existing } = await supabase
+        .from('equipment_suppliers')
+        .select('id')
+        .eq('clerk_id', userId)
+        .maybeSingle();
+
+      if (existing) {
+        return NextResponse.json(
+          { error: 'Você já tem um cadastro de fornecedor' },
+          { status: 400 }
+        );
+      }
+
+      // Criar fornecedor vinculado ao clerk_id
+      const { data: supplier, error: supplierError } = await supabase
+        .from('equipment_suppliers')
+        .insert([
+          {
+            clerk_id: userId,
+            company_name,
+            contact_name,
+            email,
+            phone,
+            equipment_types,
+            pricing: pricing || {},
+            notes: notes || null,
+            status: 'active',
+          },
+        ])
+        .select()
+        .single();
+
+      if (supplierError) {
+        console.error('Erro ao criar fornecedor:', supplierError);
+        throw supplierError;
+      }
+
+      // TODO: Enviar email de confirmação para fornecedor
+      // await sendSupplierConfirmationEmail(supplier);
+
+      return NextResponse.json({
+        success: true,
+        message: 'Fornecedor cadastrado com sucesso',
+        supplier: {
+          id: supplier.id,
+          company_name: supplier.company_name,
+          email: supplier.email,
+        },
+      });
+    }
+
+    // ========================================
+    // CLIENTE - Solicitação de evento (código original)
+    // ========================================
     const {
       client_name,
       client_email,

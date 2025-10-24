@@ -5,54 +5,71 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Users, Shield, ShieldCheck, ShieldX, Search, Loader2 } from 'lucide-react';
+import { Users, Shield, ShieldCheck, ShieldX, Search, Loader2, FileCheck, FileX, AlertCircle, CheckCircle2, XCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@clerk/nextjs';
 
-interface ClerkUser {
+interface DetailedUser {
   id: string;
-  emailAddresses: Array<{ emailAddress: string }>;
+  email: string | null;
   firstName: string | null;
   lastName: string | null;
-  publicMetadata: {
-    role?: 'admin' | 'professional' | 'contractor';
-  };
-  createdAt: number;
+  fullName: string | null;
+  role: 'admin' | 'professional' | 'contractor' | null;
+  clerkCreatedAt: number;
+  hasProfessionalProfile: boolean;
+  professionalId: string | null;
+  professionalStatus: string | null;
+  professionalCreatedAt: string | null;
+  professionalUpdatedAt: string | null;
+  professionalApprovedAt: string | null;
+  professionalRejectionReason: string | null;
+  hasDocuments: boolean;
+  documentsCount: number;
+  userState: 'clerk_only' | 'profile_incomplete' | 'pending_review' | 'approved' | 'rejected';
 }
 
 export default function UsuariosPage() {
   const router = useRouter();
   const { getToken } = useAuth();
-  const [users, setUsers] = useState<ClerkUser[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<ClerkUser[]>([]);
+  const [users, setUsers] = useState<DetailedUser[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<DetailedUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedUser, setSelectedUser] = useState<ClerkUser | null>(null);
+  const [selectedUser, setSelectedUser] = useState<DetailedUser | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [filterState, setFilterState] = useState<string>('all');
 
   useEffect(() => {
     fetchUsers();
   }, []);
 
   useEffect(() => {
+    let filtered = users;
+
+    // Filtrar por estado
+    if (filterState !== 'all') {
+      filtered = filtered.filter(user => user.userState === filterState);
+    }
+
+    // Filtrar por busca
     if (searchTerm) {
-      const filtered = users.filter(user => {
-        const email = user.emailAddresses[0]?.emailAddress.toLowerCase() || '';
-        const fullName = `${user.firstName || ''} ${user.lastName || ''}`.toLowerCase();
-        const search = searchTerm.toLowerCase();
+      const search = searchTerm.toLowerCase();
+      filtered = filtered.filter(user => {
+        const email = user.email?.toLowerCase() || '';
+        const fullName = user.fullName?.toLowerCase() || '';
         return email.includes(search) || fullName.includes(search);
       });
-      setFilteredUsers(filtered);
-    } else {
-      setFilteredUsers(users);
     }
-  }, [searchTerm, users]);
+
+    setFilteredUsers(filtered);
+  }, [searchTerm, filterState, users]);
 
   const fetchUsers = async () => {
     try {
       const token = await getToken();
-      const response = await fetch('/api/admin/users', {
+      const response = await fetch('/api/admin/users/detailed', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -60,8 +77,8 @@ export default function UsuariosPage() {
 
       if (response.ok) {
         const data = await response.json();
-        setUsers(data);
-        setFilteredUsers(data);
+        setUsers(data.users || []);
+        setFilteredUsers(data.users || []);
       } else {
         console.error('Erro ao buscar usuários');
       }
@@ -105,7 +122,7 @@ export default function UsuariosPage() {
     setIsDialogOpen(true);
   };
 
-  const getRoleBadge = (role?: string) => {
+  const getRoleBadge = (role?: string | null) => {
     switch (role) {
       case 'admin':
         return (
@@ -138,6 +155,48 @@ export default function UsuariosPage() {
     }
   };
 
+  const getStateBadge = (state: string) => {
+    switch (state) {
+      case 'approved':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-green-600/20 text-green-500 border border-green-600/30">
+            <CheckCircle2 className="h-3 w-3" />
+            Aprovado
+          </span>
+        );
+      case 'pending_review':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-yellow-600/20 text-yellow-500 border border-yellow-600/30">
+            <AlertCircle className="h-3 w-3" />
+            Aguardando Aprovação
+          </span>
+        );
+      case 'rejected':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-red-600/20 text-red-500 border border-red-600/30">
+            <XCircle className="h-3 w-3" />
+            Rejeitado
+          </span>
+        );
+      case 'profile_incomplete':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-orange-600/20 text-orange-500 border border-orange-600/30">
+            <FileX className="h-3 w-3" />
+            Sem Documentos
+          </span>
+        );
+      case 'clerk_only':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-zinc-700/50 text-zinc-400 border border-zinc-700">
+            <Users className="h-3 w-3" />
+            Apenas Clerk
+          </span>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -155,9 +214,9 @@ export default function UsuariosPage() {
         </div>
       </div>
 
-      {/* Search */}
+      {/* Search & Filters */}
       <Card className="bg-zinc-900 border-zinc-800">
-        <CardContent className="pt-6">
+        <CardContent className="pt-6 space-y-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
             <Input
@@ -166,6 +225,63 @@ export default function UsuariosPage() {
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Buscar por email ou nome..."
             />
+          </div>
+
+          {/* Filtros de Estado */}
+          <div className="flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              variant={filterState === 'all' ? 'default' : 'outline'}
+              onClick={() => setFilterState('all')}
+              className={filterState === 'all' ? 'bg-red-600 hover:bg-red-700' : 'border-zinc-700 text-zinc-400 hover:text-white'}
+            >
+              Todos ({users.length})
+            </Button>
+            <Button
+              size="sm"
+              variant={filterState === 'clerk_only' ? 'default' : 'outline'}
+              onClick={() => setFilterState('clerk_only')}
+              className={filterState === 'clerk_only' ? 'bg-red-600 hover:bg-red-700' : 'border-zinc-700 text-zinc-400 hover:text-white'}
+            >
+              <Users className="h-3 w-3 mr-1" />
+              Apenas Clerk ({users.filter(u => u.userState === 'clerk_only').length})
+            </Button>
+            <Button
+              size="sm"
+              variant={filterState === 'profile_incomplete' ? 'default' : 'outline'}
+              onClick={() => setFilterState('profile_incomplete')}
+              className={filterState === 'profile_incomplete' ? 'bg-red-600 hover:bg-red-700' : 'border-zinc-700 text-zinc-400 hover:text-white'}
+            >
+              <FileX className="h-3 w-3 mr-1" />
+              Sem Docs ({users.filter(u => u.userState === 'profile_incomplete').length})
+            </Button>
+            <Button
+              size="sm"
+              variant={filterState === 'pending_review' ? 'default' : 'outline'}
+              onClick={() => setFilterState('pending_review')}
+              className={filterState === 'pending_review' ? 'bg-red-600 hover:bg-red-700' : 'border-zinc-700 text-zinc-400 hover:text-white'}
+            >
+              <AlertCircle className="h-3 w-3 mr-1" />
+              Aguardando ({users.filter(u => u.userState === 'pending_review').length})
+            </Button>
+            <Button
+              size="sm"
+              variant={filterState === 'approved' ? 'default' : 'outline'}
+              onClick={() => setFilterState('approved')}
+              className={filterState === 'approved' ? 'bg-red-600 hover:bg-red-700' : 'border-zinc-700 text-zinc-400 hover:text-white'}
+            >
+              <CheckCircle2 className="h-3 w-3 mr-1" />
+              Aprovados ({users.filter(u => u.userState === 'approved').length})
+            </Button>
+            <Button
+              size="sm"
+              variant={filterState === 'rejected' ? 'default' : 'outline'}
+              onClick={() => setFilterState('rejected')}
+              className={filterState === 'rejected' ? 'bg-red-600 hover:bg-red-700' : 'border-zinc-700 text-zinc-400 hover:text-white'}
+            >
+              <XCircle className="h-3 w-3 mr-1" />
+              Rejeitados ({users.filter(u => u.userState === 'rejected').length})
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -195,34 +311,64 @@ export default function UsuariosPage() {
               {filteredUsers.map((user) => (
                 <div
                   key={user.id}
-                  className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg hover:bg-zinc-800 transition"
+                  className="p-4 bg-zinc-800/50 rounded-lg hover:bg-zinc-800 transition"
                 >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-1">
-                      <h4 className="font-medium text-white truncate">
-                        {user.firstName && user.lastName
-                          ? `${user.firstName} ${user.lastName}`
-                          : user.emailAddresses[0]?.emailAddress || 'Sem nome'}
-                      </h4>
-                      {getRoleBadge(user.publicMetadata?.role)}
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      {/* Nome e Email */}
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                        <h4 className="font-medium text-white truncate">
+                          {user.fullName || user.email || 'Sem nome'}
+                        </h4>
+                        {getRoleBadge(user.role)}
+                        {getStateBadge(user.userState)}
+                      </div>
+
+                      {user.email && user.fullName && (
+                        <p className="text-sm text-zinc-400 truncate mb-2">
+                          {user.email}
+                        </p>
+                      )}
+
+                      {/* Informações do Profissional */}
+                      {user.hasProfessionalProfile && (
+                        <div className="flex flex-wrap gap-3 text-xs text-zinc-500 mb-2">
+                          <span className="flex items-center gap-1">
+                            <FileCheck className="h-3 w-3" />
+                            {user.documentsCount} {user.documentsCount === 1 ? 'documento' : 'documentos'}
+                          </span>
+                          {user.professionalStatus && (
+                            <span>Status Supabase: {user.professionalStatus}</span>
+                          )}
+                          {user.professionalApprovedAt && (
+                            <span>Aprovado: {new Date(user.professionalApprovedAt).toLocaleDateString('pt-BR')}</span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Motivo de rejeição */}
+                      {user.professionalRejectionReason && (
+                        <p className="text-xs text-red-400 mb-2">
+                          Motivo: {user.professionalRejectionReason}
+                        </p>
+                      )}
+
+                      <p className="text-xs text-zinc-500">
+                        Cadastrado em {new Date(user.clerkCreatedAt).toLocaleDateString('pt-BR')}
+                      </p>
                     </div>
-                    <p className="text-sm text-zinc-400 truncate">
-                      {user.emailAddresses[0]?.emailAddress || 'Sem email'}
-                    </p>
-                    <p className="text-xs text-zinc-500 mt-1">
-                      Cadastrado em {new Date(user.createdAt).toLocaleDateString('pt-BR')}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 ml-4">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => openDialog(user)}
-                      className="border-white text-white hover:bg-red-600 hover:border-red-600"
-                    >
-                      <Shield className="h-3 w-3 mr-1" />
-                      Gerenciar Role
-                    </Button>
+
+                    <div className="flex items-center gap-2 sm:ml-4">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openDialog(user)}
+                        className="border-white text-white hover:bg-red-600 hover:border-red-600"
+                      >
+                        <Shield className="h-3 w-3 mr-1" />
+                        Gerenciar Role
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -237,17 +383,17 @@ export default function UsuariosPage() {
           <DialogHeader>
             <DialogTitle className="text-white">Gerenciar Role</DialogTitle>
             <DialogDescription className="text-zinc-400">
-              Alterar permissões de {selectedUser?.emailAddresses[0]?.emailAddress}
+              Alterar permissões de {selectedUser?.email}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <p className="text-sm text-zinc-300 mb-3">Role Atual: {getRoleBadge(selectedUser?.publicMetadata?.role)}</p>
+              <p className="text-sm text-zinc-300 mb-3">Role Atual: {getRoleBadge(selectedUser?.role)}</p>
 
               <div className="grid grid-cols-2 gap-3">
                 <Button
                   onClick={() => selectedUser && handleUpdateRole(selectedUser.id, 'admin')}
-                  disabled={submitting || selectedUser?.publicMetadata?.role === 'admin'}
+                  disabled={submitting || selectedUser?.role === 'admin'}
                   className="bg-red-600 hover:bg-red-500 text-white"
                 >
                   <ShieldCheck className="h-4 w-4 mr-2" />
@@ -255,7 +401,7 @@ export default function UsuariosPage() {
                 </Button>
                 <Button
                   onClick={() => selectedUser && handleUpdateRole(selectedUser.id, 'professional')}
-                  disabled={submitting || selectedUser?.publicMetadata?.role === 'professional'}
+                  disabled={submitting || selectedUser?.role === 'professional'}
                   className="bg-blue-600 hover:bg-blue-500 text-white"
                 >
                   <Shield className="h-4 w-4 mr-2" />
@@ -263,7 +409,7 @@ export default function UsuariosPage() {
                 </Button>
                 <Button
                   onClick={() => selectedUser && handleUpdateRole(selectedUser.id, 'contractor')}
-                  disabled={submitting || selectedUser?.publicMetadata?.role === 'contractor'}
+                  disabled={submitting || selectedUser?.role === 'contractor'}
                   className="bg-green-600 hover:bg-green-500 text-white"
                 >
                   <Shield className="h-4 w-4 mr-2" />
@@ -271,9 +417,9 @@ export default function UsuariosPage() {
                 </Button>
                 <Button
                   onClick={() => selectedUser && handleUpdateRole(selectedUser.id, null)}
-                  disabled={submitting || !selectedUser?.publicMetadata?.role}
+                  disabled={submitting || !selectedUser?.role}
                   variant="outline"
-                  className="border-white text-white hover:bg-red-600 hover:border-red-600"
+                  className="bg-zinc-950 hover:bg-zinc-800 border-zinc-700 text-white"
                 >
                   <ShieldX className="h-4 w-4 mr-2" />
                   Remover Role
@@ -286,7 +432,7 @@ export default function UsuariosPage() {
                 type="button"
                 variant="outline"
                 onClick={() => setIsDialogOpen(false)}
-                className="flex-1 border-white text-white hover:bg-red-600 hover:border-red-600"
+                className="flex-1 bg-zinc-950 hover:bg-zinc-800 border-zinc-700 text-white"
                 disabled={submitting}
               >
                 Cancelar

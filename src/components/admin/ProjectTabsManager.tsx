@@ -45,34 +45,38 @@ export function ProjectTabsManager({
 
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-      <TabsList className="bg-zinc-900 border-zinc-800 p-1">
+      <TabsList className="bg-zinc-900 border-zinc-800 p-1 w-full grid grid-cols-2 sm:grid-cols-4 gap-1">
         <TabsTrigger
           value="info"
-          className="data-[state=active]:bg-red-600 data-[state=active]:text-white"
+          className="data-[state=active]:bg-red-600 data-[state=active]:text-white flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm"
         >
-          <Building2 className="h-4 w-4 mr-2" />
-          Informações
+          <Building2 className="h-3 w-3 sm:h-4 sm:w-4" />
+          <span className="hidden sm:inline">Informações</span>
+          <span className="sm:hidden">Info</span>
         </TabsTrigger>
         <TabsTrigger
           value="team"
-          className="data-[state=active]:bg-red-600 data-[state=active]:text-white"
+          className="data-[state=active]:bg-red-600 data-[state=active]:text-white flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm"
         >
-          <Users className="h-4 w-4 mr-2" />
-          Equipe ({teamCount})
+          <Users className="h-3 w-3 sm:h-4 sm:w-4" />
+          <span className="hidden sm:inline">Equipe ({teamCount})</span>
+          <span className="sm:hidden">Equipe</span>
         </TabsTrigger>
         <TabsTrigger
           value="equipment"
-          className="data-[state=active]:bg-red-600 data-[state=active]:text-white"
+          className="data-[state=active]:bg-red-600 data-[state=active]:text-white flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm"
         >
-          <Package className="h-4 w-4 mr-2" />
-          Equipamentos ({equipmentCount})
+          <Package className="h-3 w-3 sm:h-4 sm:w-4" />
+          <span className="hidden sm:inline">Equipamentos ({equipmentCount})</span>
+          <span className="sm:hidden">Equip.</span>
         </TabsTrigger>
         <TabsTrigger
           value="quotations"
-          className="data-[state=active]:bg-red-600 data-[state=active]:text-white"
+          className="data-[state=active]:bg-red-600 data-[state=active]:text-white flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm"
         >
-          <DollarSign className="h-4 w-4 mr-2" />
-          Cotações
+          <DollarSign className="h-3 w-3 sm:h-4 sm:w-4" />
+          <span className="hidden sm:inline">Cotações</span>
+          <span className="sm:hidden">Cotações</span>
         </TabsTrigger>
       </TabsList>
 

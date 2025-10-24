@@ -17,6 +17,12 @@ export default function OnboardingPage() {
 
       const userType = user.publicMetadata?.userType as string | undefined;
 
+      console.log('🔍 [Onboarding] Verificando metadata do usuário:', {
+        email: user.primaryEmailAddress?.emailAddress,
+        userType: userType,
+        publicMetadata: user.publicMetadata,
+      });
+
       // Se já tem tipo definido, verificar se tem cadastro completo
       if (userType === 'professional') {
         // Verificar se existe cadastro profissional
@@ -57,11 +63,11 @@ export default function OnboardingPage() {
     );
   }
 
-  async function selectUserType(type: 'professional' | 'contractor') {
+  async function selectUserType(type: 'professional' | 'contractor' | 'supplier') {
     setLoading(true);
 
     try {
-      // Atualiza metadata do usuário via API (server-side)
+      // Todos os tipos precisam de metadata
       const response = await fetch('/api/user/metadata', {
         method: 'PATCH',
         headers: {
@@ -74,14 +80,14 @@ export default function OnboardingPage() {
         throw new Error('Erro ao atualizar tipo de usuário');
       }
 
-      // Aguardar um pouco para garantir que o metadata foi atualizado
       await new Promise((resolve) => setTimeout(resolve, 500));
 
-      // Redireciona conforme o tipo
       if (type === 'professional') {
         router.push('/cadastro-profissional');
       } else {
-        router.push('/solicitar-equipe');
+        // Contratante e Fornecedor vão para o mesmo lugar: /solicitar-evento
+        // Lá eles escolhem entre "Cliente" ou "Fornecedor"
+        router.push('/solicitar-evento');
       }
     } catch (error) {
       console.error('Erro ao selecionar tipo:', error);
@@ -107,7 +113,7 @@ export default function OnboardingPage() {
         </div>
 
         {/* Cards de seleção */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           {/* Card Profissional */}
           <button
             onClick={() => selectUserType('professional')}
@@ -148,40 +154,76 @@ export default function OnboardingPage() {
             </div>
           </button>
 
-          {/* Card Contratante */}
+          {/* Card Contratante/Cliente */}
           <button
             onClick={() => selectUserType('contractor')}
             disabled={loading}
             className="group relative p-8 bg-gradient-to-br from-zinc-900 to-zinc-900/50 border-2 border-zinc-800 hover:border-red-600 rounded-2xl transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:border-zinc-800 overflow-hidden"
           >
-            {/* Background gradient on hover */}
             <div className="absolute inset-0 bg-gradient-to-br from-red-600/0 to-red-600/0 group-hover:from-red-600/5 group-hover:to-red-600/10 transition-all duration-300" />
 
             <div className="relative z-10">
               <div className="text-6xl mb-6 group-hover:scale-110 transition-transform">
-                🏢
+                🎪
               </div>
               <h2 className="text-2xl font-bold text-white mb-3 group-hover:text-red-500 transition">
-                Preciso Contratar
+                Solicitar Evento
               </h2>
               <p className="text-zinc-400 leading-relaxed mb-6">
-                Quero encontrar profissionais qualificados para meus eventos
+                Preciso de profissionais e equipamentos para meu evento
               </p>
 
-              {/* Features */}
               <div className="pt-6 border-t border-zinc-800">
                 <ul className="text-sm text-zinc-500 space-y-3 text-left">
                   <li className="flex items-start gap-2">
                     <span className="text-green-500 mt-0.5">✓</span>
-                    <span>Solicite equipes completas rapidamente</span>
+                    <span>Equipe completa de profissionais</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-green-500 mt-0.5">✓</span>
-                    <span>Profissionais verificados e documentados</span>
+                    <span>Equipamentos para eventos</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-green-500 mt-0.5">✓</span>
-                    <span>Gestão completa dos seus eventos</span>
+                    <span>Orçamento personalizado</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </button>
+
+          {/* Card Fornecedor */}
+          <button
+            onClick={() => selectUserType('contractor')}
+            disabled={loading}
+            className="group relative p-8 bg-gradient-to-br from-zinc-900 to-zinc-900/50 border-2 border-zinc-800 hover:border-red-600 rounded-2xl transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:border-zinc-800 overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-red-600/0 to-red-600/0 group-hover:from-red-600/5 group-hover:to-red-600/10 transition-all duration-300" />
+
+            <div className="relative z-10">
+              <div className="text-6xl mb-6 group-hover:scale-110 transition-transform">
+                🚚
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-3 group-hover:text-red-500 transition">
+                Sou Fornecedor
+              </h2>
+              <p className="text-zinc-400 leading-relaxed mb-6">
+                Quero fornecer equipamentos para eventos
+              </p>
+
+              <div className="pt-6 border-t border-zinc-800">
+                <ul className="text-sm text-zinc-500 space-y-3 text-left">
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-500 mt-0.5">✓</span>
+                    <span>Receba solicitações de orçamentos</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-500 mt-0.5">✓</span>
+                    <span>Cadastro rápido e simples</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-500 mt-0.5">✓</span>
+                    <span>Aumente suas vendas</span>
                   </li>
                 </ul>
               </div>

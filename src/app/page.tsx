@@ -110,13 +110,13 @@ export default async function Home() {
             {!userId ? (
               <>
                 <Link
-                  href="/cadastrar"
+                  href="/onboarding"
                   className="w-full sm:w-auto px-8 py-4 bg-red-600 hover:bg-red-500 text-white font-semibold rounded-lg transition-all hover:scale-105 active:scale-95 text-center"
                 >
-                  SOU PROFISSIONAL
+                  COMEÇAR AGORA
                 </Link>
                 <Link
-                  href="/solicitar-evento"
+                  href="/onboarding"
                   className="w-full sm:w-auto px-8 py-4 bg-transparent border-2 border-zinc-300 hover:border-red-600 text-zinc-300 hover:text-white font-semibold rounded-lg transition-all hover:scale-105 active:scale-95 text-center"
                 >
                   SOLICITAR EVENTO
@@ -180,10 +180,10 @@ export default async function Home() {
 
           <div className="text-center mt-12">
             <Link
-              href="/solicitar-evento"
+              href="/onboarding"
               className="inline-block px-8 py-3 bg-red-600 hover:bg-red-500 text-white font-semibold rounded-lg transition-all hover:scale-105"
             >
-              Solicitar Evento
+              Começar Agora
             </Link>
           </div>
         </div>
@@ -236,7 +236,7 @@ export default async function Home() {
               </div>
               <div className="mt-8 text-center">
                 <Link
-                  href="/cadastrar"
+                  href="/onboarding"
                   className="inline-block px-6 py-3 bg-red-600 hover:bg-red-500 text-white font-semibold rounded-lg transition-all"
                 >
                   Cadastrar-se Agora
@@ -280,7 +280,7 @@ export default async function Home() {
               </div>
               <div className="mt-8 text-center">
                 <Link
-                  href="/solicitar-evento"
+                  href="/onboarding"
                   className="inline-block px-6 py-3 bg-red-600 hover:bg-red-500 text-white font-semibold rounded-lg transition-all"
                 >
                   Solicitar Evento
@@ -364,13 +364,13 @@ export default async function Home() {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link
-              href="/cadastrar"
+              href="/onboarding"
               className="w-full sm:w-auto px-10 py-4 bg-red-600 hover:bg-red-500 text-white font-semibold rounded-lg transition-all hover:scale-105 text-lg"
             >
-              Cadastrar como Profissional
+              Começar Agora
             </Link>
             <Link
-              href="/solicitar-evento"
+              href="/onboarding"
               className="w-full sm:w-auto px-10 py-4 bg-transparent border-2 border-red-600 hover:bg-red-600 text-red-600 hover:text-white font-semibold rounded-lg transition-all hover:scale-105 text-lg"
             >
               Solicitar Evento
@@ -401,12 +401,12 @@ export default async function Home() {
               <h4 className="text-white font-semibold mb-4">Links Rápidos</h4>
               <ul className="space-y-2 text-sm">
                 <li>
-                  <Link href="/cadastrar" className="text-zinc-400 hover:text-red-500 transition-colors">
+                  <Link href="/onboarding" className="text-zinc-400 hover:text-red-500 transition-colors">
                     Cadastrar-se
                   </Link>
                 </li>
                 <li>
-                  <Link href="/solicitar-evento" className="text-zinc-400 hover:text-red-500 transition-colors">
+                  <Link href="/onboarding" className="text-zinc-400 hover:text-red-500 transition-colors">
                     Solicitar Evento
                   </Link>
                 </li>
