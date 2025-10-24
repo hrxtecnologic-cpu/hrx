@@ -767,7 +767,7 @@ export function ProjectTeamSection({
                   setShowAddModal(false);
                   setSelectedProfessional(null);
                 }}
-                className="flex-1 border-zinc-700"
+                className="flex-1 bg-zinc-950 hover:bg-zinc-800 border-zinc-700 text-white"
               >
                 Cancelar
               </Button>

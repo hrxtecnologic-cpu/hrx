@@ -101,8 +101,13 @@ export async function GET(
     );
 
     if (suggestionsError) {
+      console.error('Erro ao buscar sugestões de profissionais:', suggestionsError);
       return NextResponse.json(
-        { success: false, error: 'Erro ao buscar sugestões de profissionais' },
+        {
+          success: false,
+          error: 'Erro ao buscar sugestões de profissionais',
+          details: suggestionsError.message || suggestionsError.toString()
+        },
         { status: 500 }
       );
     }

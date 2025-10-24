@@ -107,6 +107,7 @@ export function ProjectEquipmentSection({
   const [selectedEquipmentIds, setSelectedEquipmentIds] = useState<string[]>([]);
   const [supplierEquipment, setSupplierEquipment] = useState<any[]>([]);
   const [equipmentPrices, setEquipmentPrices] = useState<{ [key: string]: { quantity: number; daily_rate: number; days: number } }>({});
+  const [showAddEquipmentModal, setShowAddEquipmentModal] = useState(false);
 
   // Formatar moeda
   const formatCurrency = (value: number) => {
@@ -176,7 +177,7 @@ export function ProjectEquipmentSection({
     return matchesSearch && matchesType && matchesState && !alreadyInProject && supplier.status === 'active';
   });
 
-  // Selecionar fornecedor - usar equipamentos da demanda do cliente
+  // Selecionar fornecedor - abrir modal
   const handleSelectSupplier = (supplier: Supplier) => {
     setSelectedSupplier(supplier);
     setSelectedEquipmentIds([]);
@@ -205,6 +206,9 @@ export function ProjectEquipmentSection({
     } else {
       setSupplierEquipment(clientEquipment);
     }
+
+    // Abrir modal
+    setShowAddEquipmentModal(true);
   };
 
   // Toggle seleção de equipamento
@@ -286,6 +290,7 @@ export function ProjectEquipmentSection({
       }
 
       toast.success(`${selectedEquipmentIds.length} equipamento(s) adicionado(s) ao projeto!`);
+      setShowAddEquipmentModal(false);
       setSelectedSupplier(null);
       setSelectedEquipmentIds([]);
       setSupplierEquipment([]);
@@ -633,13 +638,6 @@ export function ProjectEquipmentSection({
                           </div>
                         )}
                       </div>
-
-                      {/* Indicador de Seleção */}
-                      {selectedSupplier?.id === supplier.id && (
-                        <div className="mt-3 pt-3 border-t border-red-600/20">
-                          <p className="text-xs text-red-500 font-medium">✓ Selecionado - veja equipamentos abaixo</p>
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>
@@ -650,154 +648,6 @@ export function ProjectEquipmentSection({
                     Nenhuma sugestão disponível no momento
                   </p>
                 </div>
-              )}
-
-              {/* SEÇÃO: Equipamentos do Fornecedor Selecionado (Sugestões) */}
-              {selectedSupplier && (
-                <Card className="bg-zinc-900 border-red-900/30 mt-6">
-                  <CardHeader>
-                    <CardTitle className="text-white flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Package className="h-5 w-5 text-red-600" />
-                        Equipamentos de {selectedSupplier.company_name}
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          setSelectedSupplier(null);
-                          setSelectedEquipmentIds([]);
-                          setSupplierEquipment([]);
-                        }}
-                        className="text-zinc-400 hover:text-white"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {supplierEquipment.length > 0 ? (
-                      <div className="space-y-4">
-                        <p className="text-xs text-zinc-400">
-                          Selecione os equipamentos que deseja adicionar ao projeto:
-                        </p>
-
-                        <div className="space-y-2">
-                          {supplierEquipment.map((equip: any) => {
-                            const isSelected = selectedEquipmentIds.includes(equip.id);
-                            const prices = equipmentPrices[equip.id];
-
-                            return (
-                              <div
-                                key={equip.id}
-                                className={`p-4 bg-zinc-950 rounded-lg border transition-colors ${
-                                  isSelected ? 'border-red-600' : 'border-zinc-800'
-                                }`}
-                              >
-                                <label className="flex items-start gap-3 cursor-pointer">
-                                  <input
-                                    type="checkbox"
-                                    checked={isSelected}
-                                    onChange={() => toggleEquipmentSelection(equip.id)}
-                                    className="mt-1 h-4 w-4 rounded border-zinc-700 bg-zinc-950 text-red-600 focus:ring-red-600 focus:ring-offset-0"
-                                  />
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <p className="text-sm font-medium text-white">{equip.name}</p>
-                                      {equip.category && (
-                                        <span className="text-xs bg-red-600/10 text-red-500 px-2 py-0.5 rounded">
-                                          {equip.category}
-                                        </span>
-                                      )}
-                                    </div>
-                                    {equip.description && (
-                                      <p className="text-xs text-zinc-400 mb-2">{equip.description}</p>
-                                    )}
-                                    <p className="text-xs text-zinc-500">
-                                      Solicitado: {equip.quantity} {equip.quantity > 1 ? 'unidades' : 'unidade'}
-                                    </p>
-                                  </div>
-                                </label>
-
-                                {/* Inputs de Preço/Quantidade - Aparece quando selecionado */}
-                                {isSelected && prices && (
-                                  <div className="mt-3 pt-3 border-t border-red-600/20 grid grid-cols-3 gap-3">
-                                    <div>
-                                      <label className="text-xs text-zinc-400 mb-1 block">Qtd</label>
-                                      <Input
-                                        type="number"
-                                        min="1"
-                                        value={prices.quantity}
-                                        onChange={(e) => updateEquipmentPrice(equip.id, 'quantity', parseInt(e.target.value) || 1)}
-                                        className="h-8 bg-zinc-900 border-zinc-700 text-white text-sm"
-                                      />
-                                    </div>
-                                    <div>
-                                      <label className="text-xs text-zinc-400 mb-1 block">Dias</label>
-                                      <Input
-                                        type="number"
-                                        min="1"
-                                        value={prices.days}
-                                        onChange={(e) => updateEquipmentPrice(equip.id, 'days', parseInt(e.target.value) || 1)}
-                                        className="h-8 bg-zinc-900 border-zinc-700 text-white text-sm"
-                                      />
-                                    </div>
-                                    <div>
-                                      <label className="text-xs text-zinc-400 mb-1 block">Diária (R$)</label>
-                                      <Input
-                                        type="number"
-                                        min="0"
-                                        step="0.01"
-                                        value={prices.daily_rate}
-                                        onChange={(e) => updateEquipmentPrice(equip.id, 'daily_rate', parseFloat(e.target.value) || 0)}
-                                        className="h-8 bg-zinc-900 border-zinc-700 text-white text-sm"
-                                      />
-                                    </div>
-                                    {prices.daily_rate > 0 && (
-                                      <div className="col-span-3">
-                                        <p className="text-xs text-green-500 font-medium">
-                                          Total: {formatCurrency(prices.quantity * prices.days * prices.daily_rate)}
-                                        </p>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-
-                        <Button
-                          onClick={handleAddSelectedEquipment}
-                          disabled={selectedEquipmentIds.length === 0 || !!addingEquipment}
-                          className="w-full bg-red-600 hover:bg-red-700 text-white disabled:opacity-50"
-                        >
-                          {addingEquipment ? (
-                            <>
-                              <Clock className="h-4 w-4 mr-2 animate-spin" />
-                              Adicionando...
-                            </>
-                          ) : (
-                            <>
-                              <Plus className="h-4 w-4 mr-2" />
-                              Adicionar {selectedEquipmentIds.length} Equipamento(s) ao Projeto
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <Package className="h-12 w-12 text-zinc-700 mx-auto mb-3" />
-                        <p className="text-sm text-zinc-500">
-                          Este fornecedor ainda não tem equipamentos cadastrados
-                        </p>
-                        <p className="text-xs text-zinc-600 mt-1">
-                          Cadastre equipamentos na página de Fornecedores
-                        </p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
               )}
             </TabsContent>
 
@@ -892,12 +742,6 @@ export function ProjectEquipmentSection({
                           </div>
                         )}
                       </div>
-
-                      {selectedSupplier?.id === supplier.id && (
-                        <div className="mt-3 pt-3 border-t border-red-600/20">
-                          <p className="text-xs text-red-500 font-medium">✓ Selecionado</p>
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>
@@ -909,158 +753,160 @@ export function ProjectEquipmentSection({
                   </p>
                 </div>
               )}
-
-              {/* SEÇÃO: Equipamentos do Fornecedor Selecionado */}
-              {selectedSupplier && (
-                <Card className="bg-zinc-900 border-red-900/30 mt-6">
-                  <CardHeader>
-                    <CardTitle className="text-white flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Package className="h-5 w-5 text-red-600" />
-                        Equipamentos de {selectedSupplier.company_name}
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          setSelectedSupplier(null);
-                          setSelectedEquipmentIds([]);
-                          setSupplierEquipment([]);
-                        }}
-                        className="text-zinc-400 hover:text-white"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {supplierEquipment.length > 0 ? (
-                      <div className="space-y-4">
-                        <p className="text-xs text-zinc-400">
-                          Selecione os equipamentos que deseja adicionar ao projeto:
-                        </p>
-
-                        <div className="space-y-2">
-                          {supplierEquipment.map((equip: any) => {
-                            const isSelected = selectedEquipmentIds.includes(equip.id);
-                            const prices = equipmentPrices[equip.id];
-
-                            return (
-                              <div
-                                key={equip.id}
-                                className={`p-4 bg-zinc-950 rounded-lg border transition-colors ${
-                                  isSelected ? 'border-red-600' : 'border-zinc-800'
-                                }`}
-                              >
-                                <label className="flex items-start gap-3 cursor-pointer">
-                                  <input
-                                    type="checkbox"
-                                    checked={isSelected}
-                                    onChange={() => toggleEquipmentSelection(equip.id)}
-                                    className="mt-1 h-4 w-4 rounded border-zinc-700 bg-zinc-950 text-red-600 focus:ring-red-600 focus:ring-offset-0"
-                                  />
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <p className="text-sm font-medium text-white">{equip.name}</p>
-                                      {equip.category && (
-                                        <span className="text-xs bg-red-600/10 text-red-500 px-2 py-0.5 rounded">
-                                          {equip.category}
-                                        </span>
-                                      )}
-                                    </div>
-                                    {equip.description && (
-                                      <p className="text-xs text-zinc-400 mb-2">{equip.description}</p>
-                                    )}
-                                    <p className="text-xs text-zinc-500">
-                                      Solicitado: {equip.quantity} {equip.quantity > 1 ? 'unidades' : 'unidade'}
-                                    </p>
-                                  </div>
-                                </label>
-
-                                {/* Inputs de Preço/Quantidade - Aparece quando selecionado */}
-                                {isSelected && prices && (
-                                  <div className="mt-3 pt-3 border-t border-red-600/20 grid grid-cols-3 gap-3">
-                                    <div>
-                                      <label className="text-xs text-zinc-400 mb-1 block">Qtd</label>
-                                      <Input
-                                        type="number"
-                                        min="1"
-                                        value={prices.quantity}
-                                        onChange={(e) => updateEquipmentPrice(equip.id, 'quantity', parseInt(e.target.value) || 1)}
-                                        className="h-8 bg-zinc-900 border-zinc-700 text-white text-sm"
-                                      />
-                                    </div>
-                                    <div>
-                                      <label className="text-xs text-zinc-400 mb-1 block">Dias</label>
-                                      <Input
-                                        type="number"
-                                        min="1"
-                                        value={prices.days}
-                                        onChange={(e) => updateEquipmentPrice(equip.id, 'days', parseInt(e.target.value) || 1)}
-                                        className="h-8 bg-zinc-900 border-zinc-700 text-white text-sm"
-                                      />
-                                    </div>
-                                    <div>
-                                      <label className="text-xs text-zinc-400 mb-1 block">Diária (R$)</label>
-                                      <Input
-                                        type="number"
-                                        min="0"
-                                        step="0.01"
-                                        value={prices.daily_rate}
-                                        onChange={(e) => updateEquipmentPrice(equip.id, 'daily_rate', parseFloat(e.target.value) || 0)}
-                                        className="h-8 bg-zinc-900 border-zinc-700 text-white text-sm"
-                                      />
-                                    </div>
-                                    {prices.daily_rate > 0 && (
-                                      <div className="col-span-3">
-                                        <p className="text-xs text-green-500 font-medium">
-                                          Total: {formatCurrency(prices.quantity * prices.days * prices.daily_rate)}
-                                        </p>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-
-                        <Button
-                          onClick={handleAddSelectedEquipment}
-                          disabled={selectedEquipmentIds.length === 0 || !!addingEquipment}
-                          className="w-full bg-red-600 hover:bg-red-700 text-white disabled:opacity-50"
-                        >
-                          {addingEquipment ? (
-                            <>
-                              <Clock className="h-4 w-4 mr-2 animate-spin" />
-                              Adicionando...
-                            </>
-                          ) : (
-                            <>
-                              <Plus className="h-4 w-4 mr-2" />
-                              Adicionar {selectedEquipmentIds.length} Equipamento(s) ao Projeto
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <Package className="h-12 w-12 text-zinc-700 mx-auto mb-3" />
-                        <p className="text-sm text-zinc-500">
-                          Este fornecedor ainda não tem equipamentos cadastrados
-                        </p>
-                        <p className="text-xs text-zinc-600 mt-1">
-                          Cadastre equipamentos na página de Fornecedores
-                        </p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
             </TabsContent>
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* MODAL: Adicionar Equipamentos */}
+      {showAddEquipmentModal && selectedSupplier && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6">
+            <h3 className="text-lg font-bold text-white mb-4">
+              Adicionar Equipamentos ao Projeto
+            </h3>
+
+            <div className="mb-4">
+              <p className="text-sm text-white font-medium mb-1">
+                {selectedSupplier.company_name}
+              </p>
+              <p className="text-xs text-zinc-400">{selectedSupplier.email}</p>
+            </div>
+
+            {supplierEquipment.length > 0 ? (
+              <div className="space-y-4">
+                <p className="text-xs text-zinc-400">
+                  Selecione os equipamentos que deseja adicionar ao projeto:
+                </p>
+
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {supplierEquipment.map((equip: any) => {
+                    const isSelected = selectedEquipmentIds.includes(equip.id);
+                    const prices = equipmentPrices[equip.id];
+
+                    return (
+                      <div
+                        key={equip.id}
+                        className={`p-4 bg-zinc-950 rounded-lg border transition-colors ${
+                          isSelected ? 'border-red-600' : 'border-zinc-800'
+                        }`}
+                      >
+                        <label className="flex items-start gap-3 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleEquipmentSelection(equip.id)}
+                            className="mt-1 h-4 w-4 rounded border-zinc-700 bg-zinc-950 text-red-600 focus:ring-red-600 focus:ring-offset-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="text-sm font-medium text-white">{equip.name}</p>
+                              {equip.category && (
+                                <span className="text-xs bg-red-600/10 text-red-500 px-2 py-0.5 rounded">
+                                  {equip.category}
+                                </span>
+                              )}
+                            </div>
+                            {equip.description && (
+                              <p className="text-xs text-zinc-400 mb-2">{equip.description}</p>
+                            )}
+                            <p className="text-xs text-zinc-500">
+                              Solicitado: {equip.quantity} {equip.quantity > 1 ? 'unidades' : 'unidade'}
+                            </p>
+                          </div>
+                        </label>
+
+                        {/* Inputs de Preço/Quantidade - Aparece quando selecionado */}
+                        {isSelected && prices && (
+                          <div className="mt-3 pt-3 border-t border-red-600/20 grid grid-cols-3 gap-3">
+                            <div>
+                              <label className="text-xs text-zinc-400 mb-1 block">Qtd</label>
+                              <Input
+                                type="number"
+                                min="1"
+                                value={prices.quantity}
+                                onChange={(e) => updateEquipmentPrice(equip.id, 'quantity', parseInt(e.target.value) || 1)}
+                                className="h-8 bg-zinc-900 border-zinc-700 text-white text-sm"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-xs text-zinc-400 mb-1 block">Dias</label>
+                              <Input
+                                type="number"
+                                min="1"
+                                value={prices.days}
+                                onChange={(e) => updateEquipmentPrice(equip.id, 'days', parseInt(e.target.value) || 1)}
+                                className="h-8 bg-zinc-900 border-zinc-700 text-white text-sm"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-xs text-zinc-400 mb-1 block">Diária (R$)</label>
+                              <Input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={prices.daily_rate}
+                                onChange={(e) => updateEquipmentPrice(equip.id, 'daily_rate', parseFloat(e.target.value) || 0)}
+                                className="h-8 bg-zinc-900 border-zinc-700 text-white text-sm"
+                              />
+                            </div>
+                            {prices.daily_rate > 0 && (
+                              <div className="col-span-3">
+                                <p className="text-xs text-green-500 font-medium">
+                                  Total: {formatCurrency(prices.quantity * prices.days * prices.daily_rate)}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="flex gap-3 mt-6 pt-4 border-t border-zinc-800">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowAddEquipmentModal(false);
+                      setSelectedSupplier(null);
+                      setSelectedEquipmentIds([]);
+                      setSupplierEquipment([]);
+                    }}
+                    className="flex-1 bg-zinc-950 hover:bg-zinc-800 border-zinc-700 text-white"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    onClick={handleAddSelectedEquipment}
+                    disabled={selectedEquipmentIds.length === 0 || !!addingEquipment}
+                    className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    {addingEquipment ? 'Adicionando...' : `Adicionar ${selectedEquipmentIds.length || 0} Equipamento(s)`}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Package className="h-12 w-12 text-zinc-700 mx-auto mb-3" />
+                <p className="text-sm text-zinc-500">
+                  Este fornecedor ainda não tem equipamentos cadastrados
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowAddEquipmentModal(false);
+                    setSelectedSupplier(null);
+                  }}
+                  className="mt-4 bg-zinc-950 hover:bg-zinc-800 border-zinc-700 text-white"
+                >
+                  Fechar
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

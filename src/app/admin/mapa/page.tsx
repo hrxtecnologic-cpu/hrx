@@ -155,9 +155,28 @@ export default function MapPage() {
           </div>
         </div>
       ) : (
-        <div className="bg-zinc-950 border border-zinc-800 rounded-xl shadow-2xl p-3 sm:p-6">
-          <MapView markers={markers} />
-        </div>
+        <>
+          {/* Botão para geocodificar registros faltantes */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 flex items-center justify-between">
+            <div>
+              <p className="text-white font-medium">Geocodificação</p>
+              <p className="text-sm text-zinc-400">
+                Adicionar coordenadas para profissionais, fornecedores e eventos sem localização
+              </p>
+            </div>
+            <button
+              onClick={handleGeocodeAll}
+              disabled={loading}
+              className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white font-semibold px-6 py-2.5 rounded-lg transition-colors text-sm whitespace-nowrap"
+            >
+              {loading ? 'Processando...' : 'Geocodificar Pendentes'}
+            </button>
+          </div>
+
+          <div className="bg-zinc-950 border border-zinc-800 rounded-xl shadow-2xl p-3 sm:p-6">
+            <MapView markers={markers} />
+          </div>
+        </>
       )}
     </div>
   );

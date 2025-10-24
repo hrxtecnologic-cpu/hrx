@@ -91,7 +91,7 @@ export async function GET(
 
     // Chamar função SQL de sugestões inteligentes
     const { data: suggestions, error: suggestionsError } = await supabase.rpc(
-      'get_suggested_suppliers_v2',
+      'get_suggested_suppliers',
       {
         p_event_lat: project.latitude,
         p_event_lon: project.longitude,

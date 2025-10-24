@@ -19,17 +19,22 @@ const supabase = createClient(
 // =============================================
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  let userId: string | null = null;
+  let projectId: string | null = null;
+
   try {
     // Verificar autenticação
-    const { userId } = await auth();
+    const authResult = await auth();
+    userId = authResult.userId;
+
     if (!userId) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     }
 
     // Rate limiting
-    const rateLimitResult = await rateLimit(userId, RateLimitPresets.API);
+    const rateLimitResult = await rateLimit(userId, RateLimitPresets.API_WRITE);
     if (!rateLimitResult.success) {
       return NextResponse.json(
         createRateLimitError(rateLimitResult),
@@ -37,20 +42,21 @@ export async function POST(
       );
     }
 
-    const projectId = params.id;
-    const body: AddEquipmentData = await req.json();
+    const resolvedParams = await params;
+    projectId = resolvedParams.id;
+    const body: any = await req.json();
+
+    logger.info('📦 Request recebido para adicionar equipamento', {
+      projectId,
+      userId,
+      body,
+    });
 
     // Validações
     if (!body.name || !body.category) {
+      logger.error('Validação falhou: nome ou categoria ausente', { body });
       return NextResponse.json(
         { error: 'Nome e categoria são obrigatórios' },
-        { status: 400 }
-      );
-    }
-
-    if (!body.equipment_type) {
-      return NextResponse.json(
-        { error: 'Tipo de equipamento é obrigatório' },
         { status: 400 }
       );
     }
@@ -81,23 +87,25 @@ export async function POST(
     }
 
     // Adicionar equipamento
+    const insertData = {
+      project_id: projectId,
+      selected_supplier_id: body.supplier_id || null, // ✅ Nome correto da coluna
+      equipment_type: body.category, // equipment_type é obrigatório, usar category
+      name: body.name,
+      category: body.category,
+      description: body.description || null,
+      quantity: body.quantity || 1,
+      duration_days: body.duration_days || 1,
+      daily_rate: body.daily_rate || null,
+      total_cost: body.daily_rate ? (body.quantity || 1) * (body.duration_days || 1) * body.daily_rate : null,
+      status: 'requested', // ✅ Status padrão conforme tabela
+    };
+
+    logger.info('📝 Tentando inserir equipamento', { insertData });
+
     const { data: equipment, error: insertError } = await supabase
       .from('project_equipment')
-      .insert([
-        {
-          project_id: projectId,
-          equipment_type: body.equipment_type,
-          category: body.category,
-          subcategory: body.subcategory,
-          name: body.name,
-          description: body.description,
-          quantity: body.quantity || 1,
-          duration_days: body.duration_days || 1,
-          specifications: body.specifications || {},
-          notes: body.notes,
-          status: 'requested',
-        },
-      ])
+      .insert([insertData])
       .select()
       .single();
 
@@ -134,8 +142,6 @@ export async function POST(
       errorType: typeof error,
       errorString: String(error),
       stack: error.stack,
-      projectId: params.id,
-      userId,
     });
     return NextResponse.json(
       {
@@ -153,17 +159,22 @@ export async function POST(
 // =============================================
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  let userId: string | null = null;
+  let projectId: string | null = null;
+
   try {
     // Verificar autenticação
-    const { userId } = await auth();
+    const authResult = await auth();
+    userId = authResult.userId;
+
     if (!userId) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     }
 
     // Rate limiting
-    const rateLimitResult = await rateLimit(userId, RateLimitPresets.API);
+    const rateLimitResult = await rateLimit(userId, RateLimitPresets.API_WRITE);
     if (!rateLimitResult.success) {
       return NextResponse.json(
         createRateLimitError(rateLimitResult),
@@ -171,6 +182,8 @@ export async function PATCH(
       );
     }
 
+    const resolvedParams = await params;
+    projectId = resolvedParams.id;
     const { searchParams } = new URL(req.url);
     const equipmentId = searchParams.get('equipment_id');
 
@@ -213,7 +226,7 @@ export async function PATCH(
       .from('project_equipment')
       .update(updateData)
       .eq('id', equipmentId)
-      .eq('project_id', params.id)
+      .eq('project_id', projectId)
       .select()
       .single();
 
@@ -228,7 +241,7 @@ export async function PATCH(
 
     logger.info('Equipamento atualizado', {
       userId,
-      projectId: params.id,
+      projectId,
       equipmentId,
       updatedFields: Object.keys(updateData),
     });
@@ -248,17 +261,22 @@ export async function PATCH(
 // =============================================
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  let userId: string | null = null;
+  let projectId: string | null = null;
+
   try {
     // Verificar autenticação
-    const { userId } = await auth();
+    const authResult = await auth();
+    userId = authResult.userId;
+
     if (!userId) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     }
 
     // Rate limiting
-    const rateLimitResult = await rateLimit(userId, RateLimitPresets.API);
+    const rateLimitResult = await rateLimit(userId, RateLimitPresets.API_WRITE);
     if (!rateLimitResult.success) {
       return NextResponse.json(
         createRateLimitError(rateLimitResult),
@@ -266,6 +284,8 @@ export async function DELETE(
       );
     }
 
+    const resolvedParams = await params;
+    projectId = resolvedParams.id;
     const { searchParams } = new URL(req.url);
     const equipmentId = searchParams.get('equipment_id');
 
@@ -304,7 +324,7 @@ export async function DELETE(
       .from('project_equipment')
       .delete()
       .eq('id', equipmentId)
-      .eq('project_id', params.id);
+      .eq('project_id', projectId);
 
     if (error) {
       logger.error('Erro ao remover equipamento', {
@@ -317,7 +337,7 @@ export async function DELETE(
 
     logger.info('Equipamento removido', {
       userId,
-      projectId: params.id,
+      projectId,
       equipmentId,
     });
 

@@ -66,7 +66,7 @@ export async function POST(req: Request) {
     const body = await req.json();
 
     // Extrair documentos, portfolio, validades e novos campos separadamente
-    const { documents, portfolio, cnh_number, cnh_validity, cnv_validity, nr10_validity, nr35_validity, drt_validity, subcategories, certifications, ...formData } = body;
+    const { documents, portfolio, cnh_number, cnh_validity, cnv_validity, nr10_validity, nr35_validity, drt_validity, subcategories, certifications, latitude, longitude, ...formData } = body;
 
     logger.debug('Documentos recebidos', {
       userId,
@@ -224,6 +224,10 @@ export async function POST(req: Request) {
         neighborhood: validatedData.neighborhood,
         city: validatedData.city,
         state: validatedData.state,
+
+        // Geolocalização
+        latitude: latitude || null,
+        longitude: longitude || null,
 
         // Experiência
         categories: validatedData.categories,
