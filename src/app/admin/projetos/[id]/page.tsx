@@ -62,10 +62,23 @@ export default async function ProjetoDetailPage({
     .eq('project_id', id)
     .order('created_at', { ascending: true });
 
-  // Buscar equipamentos
+  // Buscar equipamentos (com fornecedor)
   const { data: equipment } = await supabase
     .from('project_equipment')
-    .select('*')
+    .select(`
+      *,
+      supplier:equipment_suppliers(
+        id,
+        company_name,
+        contact_name,
+        email,
+        phone,
+        address_city,
+        address_state,
+        equipment_types,
+        status
+      )
+    `)
     .eq('project_id', id)
     .order('created_at', { ascending: true });
 
@@ -348,6 +361,7 @@ export default async function ProjetoDetailPage({
               projectId={id}
               equipment={equipment || []}
               suppliers={suppliers || []}
+              equipmentNeeded={project.equipment_needed || []}
             />
           ),
           quotations: (
