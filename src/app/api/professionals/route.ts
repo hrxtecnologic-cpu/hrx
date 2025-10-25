@@ -54,12 +54,14 @@ export async function POST(req: Request) {
       return notFoundResponse('Usuário não encontrado');
     }
 
-    // Verificar se o userType é 'professional'
+    // Verificar se o userType é 'professional' ou 'admin'
     const userType = user.publicMetadata?.userType;
-    logger.debug('userType do metadata', { userType, userId });
+    const isAdmin = user.publicMetadata?.isAdmin === true;
+    logger.debug('userType do metadata', { userType, isAdmin, userId });
 
-    if (userType !== 'professional') {
-      return forbiddenResponse('Apenas profissionais podem acessar esta rota');
+    // Permitir acesso para profissionais e admins
+    if (userType !== 'professional' && !isAdmin) {
+      return forbiddenResponse('Apenas profissionais e administradores podem acessar esta rota');
     }
 
     // Obter dados do body
@@ -86,7 +88,12 @@ export async function POST(req: Request) {
 
     // Se não existe, criar automaticamente (webhook pode ter falhado)
     if (!userData) {
-      logger.info('Usuário não encontrado, criando automaticamente...', { userId });
+      logger.info('Usuário não encontrado, criando automaticamente...', { userId, isAdmin });
+
+      // Determinar o user_type correto
+      // Se for admin cadastrando, criar como professional (já que está na rota de professional)
+      // Se for professional, criar como professional
+      const userTypeToCreate = isAdmin ? 'professional' : 'professional';
 
       const { data: newUser, error: createError } = await supabase
         .from('users')
@@ -96,7 +103,7 @@ export async function POST(req: Request) {
           full_name: user.firstName && user.lastName
             ? `${user.firstName} ${user.lastName}`
             : user.username || 'Sem nome',
-          user_type: 'professional',
+          user_type: userTypeToCreate,
           status: 'active',
         })
         .select('id')
@@ -108,7 +115,7 @@ export async function POST(req: Request) {
       }
 
       userData = newUser;
-      logger.info('Usuário criado automaticamente com sucesso', { userId, supabaseUserId: newUser.id });
+      logger.info('Usuário criado automaticamente com sucesso', { userId, supabaseUserId: newUser.id, userType: userTypeToCreate });
     }
 
     // Verificar se já existe cadastro para este usuário

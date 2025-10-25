@@ -16,10 +16,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 
+export interface ParsedAddress {
+  street?: string;
+  number?: string;
+  neighborhood?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  fullAddress: string;
+}
+
 interface LocationPickerProps {
   latitude?: number;
   longitude?: number;
-  onLocationSelect: (lat: number, lng: number, address?: string) => void;
+  onLocationSelect: (lat: number, lng: number, address?: string, parsedAddress?: ParsedAddress) => void;
   disabled?: boolean;
 }
 
@@ -56,19 +66,69 @@ export function LocationPicker({
     }
   }, [latitude, longitude]);
 
+  // Parsear endereço do Mapbox
+  const parseMapboxAddress = (feature: any): ParsedAddress => {
+    const fullAddress = feature.place_name || '';
+    const parsed: ParsedAddress = { fullAddress };
+
+    // O Mapbox retorna o endereço em "context" com tipos específicos
+    const context = feature.context || [];
+
+    // Extrair informações do contexto
+    context.forEach((item: any) => {
+      const id = item.id || '';
+
+      if (id.startsWith('postcode')) {
+        parsed.postalCode = item.text;
+      } else if (id.startsWith('place')) {
+        parsed.city = item.text;
+      } else if (id.startsWith('region')) {
+        // Estado pode vir como "São Paulo" ou sigla "SP"
+        parsed.state = item.short_code?.replace('BR-', '') || item.text;
+      } else if (id.startsWith('neighborhood') || id.startsWith('locality')) {
+        parsed.neighborhood = item.text;
+      }
+    });
+
+    // Extrair rua e número do próprio feature
+    if (feature.properties?.address || feature.address) {
+      const addr = feature.properties?.address || feature.address;
+      parsed.street = addr;
+    }
+
+    // Tentar extrair rua do place_name se não tiver no address
+    if (!parsed.street && feature.text) {
+      parsed.street = feature.text;
+    }
+
+    // Tentar extrair número do place_name (ex: "123 Rua ABC" ou "Rua ABC, 123")
+    if (fullAddress) {
+      const numberMatch = fullAddress.match(/\b(\d+)\b/);
+      if (numberMatch) {
+        parsed.number = numberMatch[1];
+      }
+    }
+
+    return parsed;
+  };
+
   // Geocoding reverso - buscar endereço a partir de coordenadas
   const reverseGeocode = useCallback(async (lat: number, lng: number) => {
     setLoadingAddress(true);
     try {
       const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${mapboxToken}`
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?types=address,poi&access_token=${mapboxToken}`
       );
       const data = await response.json();
 
       if (data.features && data.features.length > 0) {
-        const placeName = data.features[0].place_name;
+        const feature = data.features[0];
+        const placeName = feature.place_name;
+        const parsedAddress = parseMapboxAddress(feature);
+
         setAddress(placeName);
-        return placeName;
+
+        return { placeName, parsedAddress };
       }
     } catch (error) {
       console.error('Erro ao buscar endereço:', error);
@@ -92,8 +152,12 @@ export function LocationPicker({
       // Buscar endereço
       const addressResult = await reverseGeocode(lat, lng);
 
-      // Notificar parent
-      onLocationSelect(lat, lng, addressResult);
+      // Notificar parent com endereço parseado
+      if (addressResult) {
+        onLocationSelect(lat, lng, addressResult.placeName, addressResult.parsedAddress);
+      } else {
+        onLocationSelect(lat, lng);
+      }
     },
     [disabled, onLocationSelect, reverseGeocode]
   );
@@ -120,8 +184,12 @@ export function LocationPicker({
         // Buscar endereço
         const addressResult = await reverseGeocode(lat, lng);
 
-        // Notificar parent
-        onLocationSelect(lat, lng, addressResult);
+        // Notificar parent com endereço parseado
+        if (addressResult) {
+          onLocationSelect(lat, lng, addressResult.placeName, addressResult.parsedAddress);
+        } else {
+          onLocationSelect(lat, lng);
+        }
       },
       (error) => {
         console.error('Erro ao obter localização:', error);
@@ -195,8 +263,12 @@ export function LocationPicker({
                 const lat = e.coords.latitude;
                 const lng = e.coords.longitude;
                 setMarkerPosition({ lat, lng });
-                reverseGeocode(lat, lng).then((addr) => {
-                  onLocationSelect(lat, lng, addr);
+                reverseGeocode(lat, lng).then((result) => {
+                  if (result) {
+                    onLocationSelect(lat, lng, result.placeName, result.parsedAddress);
+                  } else {
+                    onLocationSelect(lat, lng);
+                  }
                 });
               }}
             />

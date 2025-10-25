@@ -24,7 +24,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { PortfolioUpload } from '@/components/PortfolioUpload';
 import { CategorySubcategorySelector } from '@/components/CategorySubcategorySelector';
 import { BasicDocumentsUpload } from '@/components/BasicDocumentsUpload';
-import { LocationPicker } from '@/components/LocationPicker';
+import { LocationPicker, ParsedAddress } from '@/components/LocationPicker';
 import { AlertCircle, XCircle } from 'lucide-react';
 import { Professional, DocumentValidations, DocumentValidation } from '@/types';
 import type { Subcategories, Certifications, Certification } from '@/types/certification';
@@ -280,73 +280,28 @@ export default function CadastroProfissionalPage() {
   };
 
   // Handler para seleção de localização no mapa
-  const handleLocationSelect = async (lat: number, lng: number, address?: string) => {
+  const handleLocationSelect = async (
+    lat: number,
+    lng: number,
+    address?: string,
+    parsedAddress?: ParsedAddress
+  ) => {
     setMapLatitude(lat);
     setMapLongitude(lng);
     console.log(`📍 [LOCALIZAÇÃO] Lat: ${lat}, Lng: ${lng}`);
 
-    // Fazer geocoding reverso para preencher campos de endereço
-    if (address) {
-      console.log(`📍 [ENDEREÇO COMPLETO] ${address}`);
+    // Preencher campos automaticamente se o endereço foi parseado
+    if (parsedAddress) {
+      console.log('📍 [ENDEREÇO PARSEADO]', parsedAddress);
 
-      try {
-        const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-        if (mapboxToken) {
-          const response = await fetch(
-            `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${mapboxToken}&types=address,poi`
-          );
-          const data = await response.json();
+      if (parsedAddress.postalCode) setValue('cep', parsedAddress.postalCode);
+      if (parsedAddress.street) setValue('street', parsedAddress.street);
+      if (parsedAddress.number) setValue('number', parsedAddress.number);
+      if (parsedAddress.neighborhood) setValue('neighborhood', parsedAddress.neighborhood);
+      if (parsedAddress.city) setValue('city', parsedAddress.city);
+      if (parsedAddress.state) setValue('state', parsedAddress.state.toUpperCase());
 
-          if (data.features && data.features.length > 0) {
-            const feature = data.features[0];
-            const context = feature.context || [];
-
-            // Extrair informações do contexto
-            let street = '';
-            let neighborhood = '';
-            let city = '';
-            let state = '';
-            let postalCode = '';
-
-            // Nome da rua (do próprio feature)
-            if (feature.address && feature.text) {
-              street = `${feature.text}, ${feature.address}`;
-            } else if (feature.text) {
-              street = feature.text;
-            }
-
-            // Buscar no contexto
-            context.forEach((ctx: any) => {
-              if (ctx.id.startsWith('postcode')) {
-                postalCode = ctx.text;
-              } else if (ctx.id.startsWith('neighborhood')) {
-                neighborhood = ctx.text;
-              } else if (ctx.id.startsWith('place')) {
-                city = ctx.text;
-              } else if (ctx.id.startsWith('region')) {
-                state = ctx.short_code?.replace('BR-', '') || ctx.text;
-              }
-            });
-
-            // Preencher os campos do formulário
-            if (street) setValue('street', street);
-            if (neighborhood) setValue('neighborhood', neighborhood);
-            if (city) setValue('city', city);
-            if (state) setValue('state', state);
-            if (postalCode) setValue('cep', postalCode);
-
-            console.log(`📍 [MAPA→FORMULÁRIO] Campos preenchidos:`, {
-              street,
-              neighborhood,
-              city,
-              state,
-              cep: postalCode
-            });
-          }
-        }
-      } catch (error) {
-        console.error('Erro ao preencher campos do endereço:', error);
-      }
+      console.log(`✅ [MAPA→FORMULÁRIO] Campos preenchidos automaticamente`);
     }
   };
 
