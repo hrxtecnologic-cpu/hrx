@@ -21,13 +21,13 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
 
     // Verificar se é admin
-    const { data: user } = await supabase
+    const { data: user} = await supabase
       .from('users')
-      .select('role')
+      .select('user_type')
       .eq('clerk_id', userId)
       .single();
 
-    if (!user || user.role !== 'admin') {
+    if (!user || user.user_type !== 'admin') {
       return NextResponse.json({ success: false, error: 'Sem permissão' }, { status: 403 });
     }
 

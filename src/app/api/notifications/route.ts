@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     // Buscar user do Supabase
     const { data: user } = await supabase
       .from('users')
-      .select('id, role')
+      .select('id, user_type')
       .eq('clerk_id', userId)
       .single();
 
@@ -59,22 +59,41 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Buscar estatísticas
-    const { data: stats } = await supabase
-      .from('notification_stats')
-      .select('*')
+    // Calcular estatísticas manualmente
+    const { count: totalCount } = await supabase
+      .from('notifications')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id);
+
+    const { count: unreadCount } = await supabase
+      .from('notifications')
+      .select('*', { count: 'exact', head: true })
       .eq('user_id', user.id)
-      .single();
+      .eq('is_read', false);
+
+    const { count: urgentCount } = await supabase
+      .from('notifications')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('is_read', false)
+      .eq('priority', 'urgent');
+
+    const { count: highCount } = await supabase
+      .from('notifications')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('is_read', false)
+      .eq('priority', 'high');
 
     return NextResponse.json({
       success: true,
       data: {
         notifications: notifications || [],
-        stats: stats || {
-          total_notifications: 0,
-          unread_count: 0,
-          urgent_count: 0,
-          high_count: 0,
+        stats: {
+          total_notifications: totalCount || 0,
+          unread_count: unreadCount || 0,
+          urgent_count: urgentCount || 0,
+          high_count: highCount || 0,
         },
       },
     });
@@ -99,11 +118,11 @@ export async function POST(request: NextRequest) {
     // Verificar se é admin
     const { data: user } = await supabase
       .from('users')
-      .select('id, role')
+      .select('id, user_type')
       .eq('clerk_id', userId)
       .single();
 
-    if (!user || user.role !== 'admin') {
+    if (!user || user.user_type !== 'admin') {
       return NextResponse.json({ success: false, error: 'Sem permissão' }, { status: 403 });
     }
 

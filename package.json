@@ -25,6 +25,7 @@
     "seed": "tsx scripts/seed-test-data.ts"
   },
   "dependencies": {
+    "@clerk/clerk-sdk-node": "^4.13.23",
     "@clerk/localizations": "^3.26.2",
     "@clerk/nextjs": "^6.33.7",
     "@hookform/resolvers": "^5.2.2",

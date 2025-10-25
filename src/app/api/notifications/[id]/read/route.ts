@@ -33,10 +33,15 @@ export async function POST(
       return NextResponse.json({ success: false, error: 'Usuário não encontrado' }, { status: 404 });
     }
 
-    // Marcar como lida
-    const { data, error } = await supabase.rpc('mark_notification_as_read', {
-      p_notification_id: notificationId,
-    });
+    // Marcar como lida (UPDATE direto)
+    const { error } = await supabase
+      .from('notifications')
+      .update({
+        is_read: true,
+        read_at: new Date().toISOString(),
+      })
+      .eq('id', notificationId)
+      .eq('user_id', user.id); // Garantir que é do usuário
 
     if (error) {
       return NextResponse.json(
@@ -47,7 +52,7 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      data: { marked: data },
+      data: { message: 'Notificação marcada como lida' },
     });
   } catch (error) {
     return NextResponse.json(

@@ -33,7 +33,12 @@ interface DetailedUser {
   supplierCompanyName: string | null;
   hasDocuments: boolean;
   documentsCount: number;
-  userState: 'clerk_only' | 'profile_incomplete' | 'pending_review' | 'approved' | 'rejected';
+  hasOrphanDocuments: boolean;
+  orphanDocumentsCount: number;
+  orphanDocumentsFiles: string[];
+  lastEmailSent: string | null;
+  lastEmailSubject: string | null;
+  userState: 'clerk_only' | 'profile_incomplete' | 'pending_review' | 'approved' | 'rejected' | 'documents_orphan';
 }
 
 export default function UsuariosPage() {
@@ -251,6 +256,13 @@ export default function UsuariosPage() {
             Sem Documentos
           </span>
         );
+      case 'documents_orphan':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-amber-600/20 text-amber-500 border border-amber-600/30">
+            <FileCheck className="h-3 w-3" />
+            Docs Pendentes
+          </span>
+        );
       case 'clerk_only':
         return (
           <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-zinc-700/50 text-zinc-400 border border-zinc-700">
@@ -311,6 +323,15 @@ export default function UsuariosPage() {
             >
               <Users className="h-3 w-3 mr-1" />
               Apenas Clerk ({users.filter(u => u.userState === 'clerk_only').length})
+            </Button>
+            <Button
+              size="sm"
+              variant={filterState === 'documents_orphan' ? 'default' : 'outline'}
+              onClick={() => setFilterState('documents_orphan')}
+              className={filterState === 'documents_orphan' ? 'bg-red-600 hover:bg-red-700' : 'border-zinc-700 text-zinc-400 hover:text-white'}
+            >
+              <FileCheck className="h-3 w-3 mr-1" />
+              Docs Pendentes ({users.filter(u => u.userState === 'documents_orphan').length})
             </Button>
             <Button
               size="sm"
@@ -387,7 +408,6 @@ export default function UsuariosPage() {
                           {user.fullName || user.email || 'Sem nome'}
                         </h4>
                         {getUserTypeBadge(user.userType)}
-                        {getRoleBadge(user.role)}
                         {getStateBadge(user.userState)}
                       </div>
 
@@ -413,6 +433,30 @@ export default function UsuariosPage() {
                         </div>
                       )}
 
+                      {/* Documentos Órfãos (no storage mas sem cadastro) */}
+                      {user.hasOrphanDocuments && (
+                        <div className="p-2 bg-amber-600/10 border border-amber-600/30 rounded mb-2">
+                          <div className="flex items-center gap-2 text-xs text-amber-500 mb-1">
+                            <AlertCircle className="h-3 w-3" />
+                            <span className="font-medium">Documentos no storage ({user.orphanDocumentsCount})</span>
+                          </div>
+                          <p className="text-xs text-amber-400/70">
+                            Usuário enviou documentos mas não completou o cadastro
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Último email enviado */}
+                      {user.lastEmailSent && (
+                        <div className="flex items-center gap-2 text-xs text-zinc-500 mb-2">
+                          <Mail className="h-3 w-3" />
+                          <span>Último email: {new Date(user.lastEmailSent).toLocaleString('pt-BR')}</span>
+                          {user.lastEmailSubject && (
+                            <span className="text-zinc-600">• {user.lastEmailSubject}</span>
+                          )}
+                        </div>
+                      )}
+
                       {/* Motivo de rejeição */}
                       {user.professionalRejectionReason && (
                         <p className="text-xs text-red-400 mb-2">
@@ -426,21 +470,23 @@ export default function UsuariosPage() {
                     </div>
 
                     <div className="flex items-center gap-2 sm:ml-4">
-                      {/* Botão de Lembrete - apenas para cadastros incompletos */}
-                      {(user.userState === 'profile_incomplete' || user.userState === 'clerk_only') && user.email && (
+                      {/* Botão de Lembrete - para cadastros incompletos e documentos órfãos */}
+                      {(user.userState === 'profile_incomplete' || user.userState === 'clerk_only' || user.userState === 'documents_orphan') && user.email && (
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => handleSendReminder(user.id, user.email!)}
                           disabled={sendingEmail === user.id}
-                          className="border-orange-600 text-orange-500 hover:bg-orange-600 hover:text-white hover:border-orange-600"
+                          className={user.userState === 'documents_orphan' ?
+                            "border-amber-600 text-amber-500 hover:bg-amber-600 hover:text-white hover:border-amber-600" :
+                            "border-orange-600 text-orange-500 hover:bg-orange-600 hover:text-white hover:border-orange-600"}
                         >
                           {sendingEmail === user.id ? (
                             <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                           ) : (
                             <Mail className="h-3 w-3 mr-1" />
                           )}
-                          {sendingEmail === user.id ? 'Enviando...' : 'Enviar Lembrete'}
+                          {sendingEmail === user.id ? 'Enviando...' : (user.userState === 'documents_orphan' ? 'Completar Cadastro' : 'Enviar Lembrete')}
                         </Button>
                       )}
 
@@ -473,12 +519,12 @@ export default function UsuariosPage() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <p className="text-sm text-zinc-300 mb-3">Role Atual: {getRoleBadge(selectedUser?.role)}</p>
+              <p className="text-sm text-zinc-300 mb-3">Tipo de Usuário: {getUserTypeBadge(selectedUser?.userType)}</p>
 
               <div className="grid grid-cols-2 gap-3">
                 <Button
                   onClick={() => selectedUser && handleUpdateRole(selectedUser.id, 'admin')}
-                  disabled={submitting || selectedUser?.role === 'admin'}
+                  disabled={submitting || selectedUser?.userType === 'admin'}
                   className="bg-red-600 hover:bg-red-500 text-white"
                 >
                   <ShieldCheck className="h-4 w-4 mr-2" />
@@ -486,7 +532,7 @@ export default function UsuariosPage() {
                 </Button>
                 <Button
                   onClick={() => selectedUser && handleUpdateRole(selectedUser.id, 'professional')}
-                  disabled={submitting || selectedUser?.role === 'professional'}
+                  disabled={submitting || selectedUser?.userType === 'professional'}
                   className="bg-blue-600 hover:bg-blue-500 text-white"
                 >
                   <Shield className="h-4 w-4 mr-2" />
@@ -494,7 +540,7 @@ export default function UsuariosPage() {
                 </Button>
                 <Button
                   onClick={() => selectedUser && handleUpdateRole(selectedUser.id, 'contractor')}
-                  disabled={submitting || selectedUser?.role === 'contractor'}
+                  disabled={submitting || selectedUser?.userType === 'contractor'}
                   className="bg-green-600 hover:bg-green-500 text-white"
                 >
                   <Shield className="h-4 w-4 mr-2" />
@@ -502,7 +548,7 @@ export default function UsuariosPage() {
                 </Button>
                 <Button
                   onClick={() => selectedUser && handleUpdateRole(selectedUser.id, null)}
-                  disabled={submitting || !selectedUser?.role}
+                  disabled={submitting || !selectedUser?.userType}
                   variant="outline"
                   className="bg-zinc-950 hover:bg-zinc-800 border-zinc-700 text-white"
                 >

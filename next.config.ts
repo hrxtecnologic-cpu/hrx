@@ -53,7 +53,7 @@ const nextConfig: NextConfig = {
             value: isDevelopment
               ? [
                   "default-src 'self'",
-                  "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://clerk.hrxeventos.com.br https://*.clerk.accounts.dev https://challenges.cloudflare.com",
+                  "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://clerk.hrxeventos.com.br https://*.clerk.accounts.dev https://challenges.cloudflare.com https://va.vercel-scripts.com",
                   "style-src 'self' 'unsafe-inline'",
                   "img-src 'self' data: blob: https: http:",
                   "font-src 'self' data:",
@@ -67,7 +67,7 @@ const nextConfig: NextConfig = {
                 ].join('; ')
               : [
                   "default-src 'self'",
-                  "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://clerk.hrxeventos.com.br https://challenges.cloudflare.com",
+                  "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://clerk.hrxeventos.com.br https://challenges.cloudflare.com https://va.vercel-scripts.com",
                   "style-src 'self' 'unsafe-inline'",
                   "img-src 'self' data: blob: https: *.supabase.co https://img.clerk.com",
                   "font-src 'self' data:",

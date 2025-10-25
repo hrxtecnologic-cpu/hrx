@@ -9,6 +9,7 @@
 import { auth, clerkClient } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { checkMultipleUsersDocuments } from '@/lib/supabase/storage-helper';
 
 // Supabase admin client
 const supabase = createClient(
@@ -66,6 +67,11 @@ export async function GET(req: Request) {
 
     console.log(`🔍 Total de usuários no Clerk: ${allUsers.length}`);
 
+    // Verificar documentos no storage para TODOS os usuários (detectar órfãos)
+    const allClerkIds = allUsers.map(u => u.id);
+    const storageDocuments = await checkMultipleUsersDocuments(allClerkIds);
+    console.log(`📁 Verificados documentos no storage para ${allClerkIds.length} usuários`);
+
     // Buscar todos os profissionais do Supabase
     const { data: professionals, error: profError } = await supabase
       .from('professionals')
@@ -92,6 +98,24 @@ export async function GET(req: Request) {
     if (supplierError) {
       console.error('Erro ao buscar fornecedores:', supplierError);
     }
+
+    // Buscar último email enviado para cada usuário
+    const { data: emailLogs } = await supabase
+      .from('email_logs')
+      .select('recipient_email, sent_at, subject')
+      .in('recipient_email', allUsers.map(u => u.emailAddresses[0]?.emailAddress).filter(Boolean))
+      .order('sent_at', { ascending: false });
+
+    // Criar mapa de último email por email do usuário
+    const lastEmailByUserEmail = new Map();
+    emailLogs?.forEach(log => {
+      if (!lastEmailByUserEmail.has(log.recipient_email)) {
+        lastEmailByUserEmail.set(log.recipient_email, {
+          sent_at: log.sent_at,
+          subject: log.subject
+        });
+      }
+    });
 
     // Criar mapa de profissionais por clerk_id e user_id
     const professionalsByClerkId = new Map();
@@ -145,6 +169,9 @@ export async function GET(req: Request) {
       // Contar documentos
       let documentsCount = 0;
       let hasDocuments = false;
+      let hasOrphanDocuments = false;
+      let orphanDocumentsCount = 0;
+      let orphanDocumentsFiles: string[] = [];
 
       if (professional && professional.type === 'professional') {
         // Contar documentos no campo documents (JSONB)
@@ -163,6 +190,18 @@ export async function GET(req: Request) {
         documentsCount += oldDocs.length;
         hasDocuments = documentsCount > 0;
       }
+
+      // Verificar documentos órfãos (no storage mas sem cadastro)
+      const storageCheck = storageDocuments.get(clerkId);
+      if (!professional && storageCheck && storageCheck.hasDocuments) {
+        hasOrphanDocuments = true;
+        orphanDocumentsCount = storageCheck.documentsCount;
+        orphanDocumentsFiles = storageCheck.files;
+      }
+
+      // Buscar último email enviado
+      const userEmail = user.emailAddresses[0]?.emailAddress;
+      const lastEmail = userEmail ? lastEmailByUserEmail.get(userEmail) : null;
 
       return {
         // Dados do Clerk
@@ -200,8 +239,17 @@ export async function GET(req: Request) {
         hasDocuments,
         documentsCount,
 
+        // Documentos órfãos (no storage mas sem cadastro)
+        hasOrphanDocuments,
+        orphanDocumentsCount,
+        orphanDocumentsFiles,
+
+        // Último email enviado
+        lastEmailSent: lastEmail?.sent_at || null,
+        lastEmailSubject: lastEmail?.subject || null,
+
         // Estado geral
-        userState: getUserState(user, profile, hasDocuments),
+        userState: getUserState(user, profile, hasDocuments, hasOrphanDocuments),
       };
     });
 
@@ -223,9 +271,13 @@ export async function GET(req: Request) {
 /**
  * Determina o estado do usuário baseado nos dados disponíveis
  */
-function getUserState(clerkUser: any, professional: any, hasDocuments: boolean): string {
+function getUserState(clerkUser: any, professional: any, hasDocuments: boolean, hasOrphanDocuments: boolean): string {
   // Se não tem perfil profissional
   if (!professional) {
+    // Mas tem documentos no storage (órfãos)
+    if (hasOrphanDocuments) {
+      return 'documents_orphan'; // Documentos enviados mas cadastro não completado
+    }
     return 'clerk_only'; // Apenas cadastrado no Clerk
   }
 
