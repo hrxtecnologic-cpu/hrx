@@ -35,6 +35,7 @@ import {
   X,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { EQUIPMENT_CATEGORIES } from '@/lib/equipment-types';
 
 interface Supplier {
   id: string;
@@ -72,10 +73,14 @@ interface ProjectEquipment {
 }
 
 interface EquipmentNeeded {
-  category: string;
+  category?: string;
+  type?: string; // Compatibilidade com payload do wizard
+  equipment_type?: string; // Compatibilidade com payload do wizard
+  equipment_group?: string;
   subcategory?: string;
   quantity: number;
   notes?: string;
+  estimated_daily_rate?: number;
 }
 
 interface ProjectEquipmentSectionProps {
@@ -91,6 +96,34 @@ export function ProjectEquipmentSection({
   suppliers,
   equipmentNeeded,
 }: ProjectEquipmentSectionProps) {
+  // Helper: Mapear equipment_types do fornecedor para categorias principais
+  const getCategoriesFromEquipmentTypes = (equipmentTypes: string[]) => {
+    const categories = new Set<string>();
+
+    equipmentTypes.forEach(equipmentType => {
+      // Buscar em qual categoria principal este equipment_type está
+      const category = EQUIPMENT_CATEGORIES.find(cat =>
+        cat.subtypes.some(sub => sub.label === equipmentType)
+      );
+
+      if (category) {
+        categories.add(category.label);
+      }
+    });
+
+    return Array.from(categories).sort();
+  };
+
+  // Helper: Filtrar equipment_types por categoria principal
+  const getEquipmentTypesByCategory = (equipmentTypes: string[], categoryLabel: string) => {
+    const category = EQUIPMENT_CATEGORIES.find(cat => cat.label === categoryLabel);
+    if (!category) return [];
+
+    return equipmentTypes.filter(equipmentType =>
+      category.subtypes.some(sub => sub.label === equipmentType)
+    );
+  };
+
   // State
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState<string>('all');
@@ -106,8 +139,10 @@ export function ProjectEquipmentSection({
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
   const [selectedEquipmentIds, setSelectedEquipmentIds] = useState<string[]>([]);
   const [supplierEquipment, setSupplierEquipment] = useState<any[]>([]);
-  const [equipmentPrices, setEquipmentPrices] = useState<{ [key: string]: { quantity: number; daily_rate: number; days: number } }>({});
+  const [equipmentPrices, setEquipmentPrices] = useState<{ [key: string]: { quantity: number; daily_rate: number; days: number; details?: string } }>({});
   const [showAddEquipmentModal, setShowAddEquipmentModal] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [loadingEquipment, setLoadingEquipment] = useState(false);
 
   // Formatar moeda
   const formatCurrency = (value: number) => {
@@ -135,7 +170,9 @@ export function ProjectEquipmentSection({
     try {
       setLoadingSuggestions(true);
 
-      const requiredTypes = equipmentNeeded?.map(need => need.category).filter(Boolean) || [];
+      const requiredTypes = equipmentNeeded?.map(need =>
+        need.category || need.type || need.equipment_type
+      ).filter(Boolean) || [];
 
       const params = new URLSearchParams();
       if (requiredTypes.length > 0) {
@@ -181,33 +218,20 @@ export function ProjectEquipmentSection({
   const handleSelectSupplier = (supplier: Supplier) => {
     setSelectedSupplier(supplier);
     setSelectedEquipmentIds([]);
+    setSelectedCategory('all');
 
-    // Usar equipamentos da demanda do cliente (equipment_needed)
+    // Usar equipment_types do fornecedor como equipamentos disponíveis
     // Transformar para o formato esperado
-    const clientEquipment = (equipmentNeeded || []).map((need, index) => ({
-      id: `need-${index}`,
-      name: need.category,
-      category: need.category,
-      description: need.notes || need.subcategory,
-      quantity: need.quantity || 1,
-      daily_rate: need.estimated_daily_rate || 0, // Usar valor do cliente se tiver
+    const supplierEquipmentList = (supplier.equipment_types || []).map((type, index) => ({
+      id: `equip-${index}`,
+      name: type,
+      category: type,
+      description: '',
+      quantity: 1,
+      daily_rate: 0,
     }));
 
-    // Se não tiver nenhum equipamento na demanda, criar um padrão para o admin adicionar
-    if (clientEquipment.length === 0) {
-      setSupplierEquipment([{
-        id: 'manual-1',
-        name: 'Equipamento (defina o nome)',
-        category: supplier.equipment_types?.[0] || 'Geral',
-        description: '',
-        quantity: 1,
-        daily_rate: 0,
-      }]);
-    } else {
-      setSupplierEquipment(clientEquipment);
-    }
-
-    // Abrir modal
+    setSupplierEquipment(supplierEquipmentList);
     setShowAddEquipmentModal(true);
   };
 
@@ -231,6 +255,7 @@ export function ProjectEquipmentSection({
             quantity: equipment?.quantity || 1,
             daily_rate: equipment?.daily_rate || 0,
             days: 1,
+            details: '',
           },
         });
         return [...prev, equipmentId];
@@ -238,8 +263,8 @@ export function ProjectEquipmentSection({
     });
   };
 
-  // Atualizar preço/quantidade de equipamento
-  const updateEquipmentPrice = (equipmentId: string, field: 'quantity' | 'daily_rate' | 'days', value: number) => {
+  // Atualizar preço/quantidade/detalhes de equipamento
+  const updateEquipmentPrice = (equipmentId: string, field: 'quantity' | 'daily_rate' | 'days' | 'details', value: number | string) => {
     setEquipmentPrices({
       ...equipmentPrices,
       [equipmentId]: {
@@ -391,26 +416,39 @@ export function ProjectEquipmentSection({
         <CardContent>
           {equipmentNeeded && equipmentNeeded.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {equipmentNeeded.map((need, index) => (
-                <div
-                  key={index}
-                  className="p-4 bg-zinc-950 border border-zinc-800 rounded-lg"
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <Package className="h-4 w-4 text-red-600" />
-                    <p className="text-sm font-semibold text-white">{need.category}</p>
+              {equipmentNeeded.map((need, index) => {
+                // Compatibilidade: aceita category, type ou equipment_type
+                const equipmentName = need.category || need.type || need.equipment_type || 'Equipamento não especificado';
+                const equipmentGroup = need.equipment_group || need.subcategory;
+
+                return (
+                  <div
+                    key={index}
+                    className="p-4 bg-zinc-950 border border-zinc-800 rounded-lg"
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="flex-shrink-0 w-6 h-6 bg-blue-600/20 rounded-full flex items-center justify-center border border-blue-600/30">
+                        <span className="text-xs font-bold text-blue-500">{index + 1}</span>
+                      </div>
+                      <p className="text-sm font-semibold text-white">{equipmentName}</p>
+                    </div>
+                    {equipmentGroup && (
+                      <p className="text-xs text-zinc-400 ml-8 mb-1">Grupo: {equipmentGroup}</p>
+                    )}
+                    <p className="text-xs text-zinc-500 ml-8">
+                      Quantidade: {need.quantity}
+                    </p>
+                    {need.estimated_daily_rate && need.estimated_daily_rate > 0 && (
+                      <p className="text-xs text-zinc-500 ml-8 mt-1">
+                        Diária estimada: R$ {need.estimated_daily_rate.toFixed(2)}
+                      </p>
+                    )}
+                    {need.notes && (
+                      <p className="text-xs text-zinc-600 ml-8 mt-1 italic">"{need.notes}"</p>
+                    )}
                   </div>
-                  {need.subcategory && (
-                    <p className="text-xs text-zinc-400 ml-6 mb-1">{need.subcategory}</p>
-                  )}
-                  <p className="text-xs text-zinc-500 ml-6">
-                    Quantidade: {need.quantity}
-                  </p>
-                  {need.notes && (
-                    <p className="text-xs text-zinc-600 ml-6 mt-1">{need.notes}</p>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-8">
@@ -766,21 +804,72 @@ export function ProjectEquipmentSection({
               Adicionar Equipamentos ao Projeto
             </h3>
 
-            <div className="mb-4">
+            {/* Informações do Fornecedor */}
+            <div className="mb-6 p-4 bg-zinc-950 border border-zinc-800 rounded-lg">
               <p className="text-sm text-white font-medium mb-1">
                 {selectedSupplier.company_name}
               </p>
-              <p className="text-xs text-zinc-400">{selectedSupplier.email}</p>
+              <p className="text-xs text-zinc-400 mb-3">{selectedSupplier.email}</p>
+
+              {/* Categorias Principais - BADGES CLICÁVEIS */}
+              {selectedSupplier.equipment_types && selectedSupplier.equipment_types.length > 0 && (
+                <div>
+                  <p className="text-xs text-zinc-500 mb-2">Categorias disponíveis (clique para filtrar):</p>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => setSelectedCategory('all')}
+                      className={`text-xs px-2 py-1 rounded border transition-colors ${
+                        selectedCategory === 'all'
+                          ? 'bg-red-600 text-white border-red-600'
+                          : 'bg-red-600/10 text-red-500 border-red-600/20 hover:bg-red-600/20'
+                      }`}
+                    >
+                      Todas
+                    </button>
+                    {getCategoriesFromEquipmentTypes(selectedSupplier.equipment_types).map((category, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setSelectedCategory(category)}
+                        className={`text-xs px-2 py-1 rounded border transition-colors ${
+                          selectedCategory === category
+                            ? 'bg-red-600 text-white border-red-600'
+                            : 'bg-red-600/10 text-red-500 border-red-600/20 hover:bg-red-600/20'
+                        }`}
+                      >
+                        {category}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
-            {supplierEquipment.length > 0 ? (
+            {loadingEquipment ? (
+              <div className="text-center py-8">
+                <div className="animate-spin h-8 w-8 border-4 border-red-600 border-t-transparent rounded-full mx-auto mb-3"></div>
+                <p className="text-sm text-zinc-400">Carregando equipamentos...</p>
+              </div>
+            ) : supplierEquipment.length > 0 ? (
               <div className="space-y-4">
                 <p className="text-xs text-zinc-400">
-                  Selecione os equipamentos que deseja adicionar ao projeto:
+                  {selectedCategory === 'all'
+                    ? 'Todos os equipamentos disponíveis:'
+                    : `Equipamentos da categoria "${selectedCategory}":`
+                  }
                 </p>
 
                 <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {supplierEquipment.map((equip: any) => {
+                  {supplierEquipment
+                    .filter((equip: any) => {
+                      if (selectedCategory === 'all') return true;
+
+                      // equip.name é um equipment_type (subcategoria)
+                      // Verificar se pertence à categoria principal selecionada
+                      const equipmentTypes = selectedSupplier?.equipment_types || [];
+                      const filteredTypes = getEquipmentTypesByCategory(equipmentTypes, selectedCategory);
+                      return filteredTypes.includes(equip.name);
+                    })
+                    .map((equip: any) => {
                     const isSelected = selectedEquipmentIds.includes(equip.id);
                     const prices = equipmentPrices[equip.id];
 
@@ -816,42 +905,59 @@ export function ProjectEquipmentSection({
                           </div>
                         </label>
 
-                        {/* Inputs de Preço/Quantidade - Aparece quando selecionado */}
+                        {/* Inputs de Preço/Quantidade/Detalhes - Aparece quando selecionado */}
                         {isSelected && prices && (
-                          <div className="mt-3 pt-3 border-t border-red-600/20 grid grid-cols-3 gap-3">
+                          <div className="mt-3 pt-3 border-t border-red-600/20 space-y-3">
+                            <div className="grid grid-cols-3 gap-3">
+                              <div>
+                                <label className="text-xs text-zinc-400 mb-1 block">Qtd</label>
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  value={prices.quantity}
+                                  onChange={(e) => updateEquipmentPrice(equip.id, 'quantity', parseInt(e.target.value) || 1)}
+                                  className="h-8 bg-zinc-900 border-zinc-700 text-white text-sm"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-xs text-zinc-400 mb-1 block">Dias</label>
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  value={prices.days}
+                                  onChange={(e) => updateEquipmentPrice(equip.id, 'days', parseInt(e.target.value) || 1)}
+                                  className="h-8 bg-zinc-900 border-zinc-700 text-white text-sm"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-xs text-zinc-400 mb-1 block">Diária (R$)</label>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  value={prices.daily_rate}
+                                  onChange={(e) => updateEquipmentPrice(equip.id, 'daily_rate', parseFloat(e.target.value) || 0)}
+                                  className="h-8 bg-zinc-900 border-zinc-700 text-white text-sm"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Campo de Detalhes/Observações */}
                             <div>
-                              <label className="text-xs text-zinc-400 mb-1 block">Qtd</label>
-                              <Input
-                                type="number"
-                                min="1"
-                                value={prices.quantity}
-                                onChange={(e) => updateEquipmentPrice(equip.id, 'quantity', parseInt(e.target.value) || 1)}
-                                className="h-8 bg-zinc-900 border-zinc-700 text-white text-sm"
+                              <label className="text-xs text-zinc-400 mb-1 block">
+                                Detalhes / Especificações
+                              </label>
+                              <textarea
+                                value={prices.details || ''}
+                                onChange={(e) => updateEquipmentPrice(equip.id, 'details', e.target.value)}
+                                placeholder="Ex: Cor preta, tamanho G, com controle remoto..."
+                                rows={2}
+                                className="w-full px-3 py-2 bg-zinc-900 border border-zinc-700 rounded-md text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-transparent resize-none"
                               />
                             </div>
-                            <div>
-                              <label className="text-xs text-zinc-400 mb-1 block">Dias</label>
-                              <Input
-                                type="number"
-                                min="1"
-                                value={prices.days}
-                                onChange={(e) => updateEquipmentPrice(equip.id, 'days', parseInt(e.target.value) || 1)}
-                                className="h-8 bg-zinc-900 border-zinc-700 text-white text-sm"
-                              />
-                            </div>
-                            <div>
-                              <label className="text-xs text-zinc-400 mb-1 block">Diária (R$)</label>
-                              <Input
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                value={prices.daily_rate}
-                                onChange={(e) => updateEquipmentPrice(equip.id, 'daily_rate', parseFloat(e.target.value) || 0)}
-                                className="h-8 bg-zinc-900 border-zinc-700 text-white text-sm"
-                              />
-                            </div>
+
                             {prices.daily_rate > 0 && (
-                              <div className="col-span-3">
+                              <div>
                                 <p className="text-xs text-green-500 font-medium">
                                   Total: {formatCurrency(prices.quantity * prices.days * prices.daily_rate)}
                                 </p>
@@ -872,6 +978,7 @@ export function ProjectEquipmentSection({
                       setSelectedSupplier(null);
                       setSelectedEquipmentIds([]);
                       setSupplierEquipment([]);
+                      setSelectedCategory('all');
                     }}
                     className="flex-1 bg-zinc-950 hover:bg-zinc-800 border-zinc-700 text-white"
                   >
@@ -897,6 +1004,7 @@ export function ProjectEquipmentSection({
                   onClick={() => {
                     setShowAddEquipmentModal(false);
                     setSelectedSupplier(null);
+                    setSelectedCategory('all');
                   }}
                   className="mt-4 bg-zinc-950 hover:bg-zinc-800 border-zinc-700 text-white"
                 >

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { createClient } from '@supabase/supabase-js';
 import { professionalSchema } from '@/lib/validations/professional';
-import { validateDocumentsForCategories, formatDocumentValidationErrors } from '@/lib/validations/documents';
+import { validateDocumentsForCategories, validateDocumentsForSubcategories, formatDocumentValidationErrors } from '@/lib/validations/documents';
 import { sendProfessionalRegistrationEmails } from '@/lib/resend/emails';
 import { rateLimit, RateLimitPresets, createRateLimitError } from '@/lib/rate-limit';
 import {
@@ -54,10 +54,12 @@ export async function POST(req: Request) {
       return notFoundResponse('Usuário não encontrado');
     }
 
-    // Verificar se o userType é 'professional' ou 'admin'
-    const userType = user.publicMetadata?.userType;
-    const isAdmin = user.publicMetadata?.isAdmin === true;
-    logger.debug('userType do metadata', { userType, isAdmin, userId });
+    // Verificar se o userType é 'professional' ou se é admin
+    const metadata = user.publicMetadata as { userType?: string; isAdmin?: boolean; role?: string };
+    const userType = metadata?.userType;
+    const isAdmin = metadata?.isAdmin === true || metadata?.role === 'admin';
+
+    logger.debug('userType do metadata', { userType, isAdmin, role: metadata?.role, userId });
 
     // Permitir acesso para profissionais e admins
     if (userType !== 'professional' && !isAdmin) {
@@ -159,17 +161,29 @@ export async function POST(req: Request) {
       drt_validity,
     };
 
-    const documentValidation = validateDocumentsForCategories(
-      validatedData.categories,
-      documents || {},
-      validityFields
-    );
+    // ✨ NOVO: Usar subcategorias ao invés de categorias para validação de documentos
+    const categoriesToValidate = subcategories && subcategories.length > 0
+      ? subcategories
+      : validatedData.categories;
+
+    logger.debug('Validando documentos', {
+      userId,
+      usandoSubcategorias: !!subcategories,
+      subcategories,
+      categories: validatedData.categories,
+      categoriesToValidate
+    });
+
+    const documentValidation = subcategories && subcategories.length > 0
+      ? validateDocumentsForSubcategories(subcategories, documents || {}, validityFields)
+      : validateDocumentsForCategories(validatedData.categories, documents || {}, validityFields);
 
     if (!documentValidation.valid) {
       const errorMessage = formatDocumentValidationErrors(documentValidation);
 
       logger.warn('Validação de documentos falhou', {
         userId,
+        subcategories,
         categories: validatedData.categories,
         missingRequired: documentValidation.missingRequired,
         missingValidity: documentValidation.missingValidity,

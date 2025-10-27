@@ -4,7 +4,8 @@
  */
 
 import { auth, clerkClient } from '@clerk/nextjs/server';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { rateLimit, RateLimitPresets, createRateLimitError } from '@/lib/rate-limit';
 import { createClient } from '@supabase/supabase-js';
 import { sendIncompleteRegistrationReminder } from '@/lib/resend/emails';
 
@@ -21,10 +22,26 @@ const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '')
   .filter(e => e.length > 0);
 
 export async function POST(
-  req: Request,
+  req: NextRequest,
   context: { params: Promise<{ userId: string }> }
 ) {
   try {
+    // ========== Rate Limiting ==========
+    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+    const rateLimitResult = await rateLimit(ip, RateLimitPresets.API_WRITE);
+    if (!rateLimitResult.success) {
+      return NextResponse.json(createRateLimitError(rateLimitResult), {
+        status: 429,
+        headers: {
+          'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+          'X-RateLimit-Remaining': '0',
+          'X-RateLimit-Reset': new Date(rateLimitResult.reset).toISOString(),
+          'Retry-After': Math.ceil((rateLimitResult.reset - Date.now()) / 1000).toString(),
+        }
+      });
+    }
+
+    // ========== Autenticação ==========
     const { userId: targetUserId } = await context.params;
     const { userId, sessionClaims } = await auth();
 

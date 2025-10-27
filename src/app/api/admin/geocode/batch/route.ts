@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
 import { geocodeAddress } from '@/lib/mapbox-geocoding';
 import { logger } from '@/lib/logger';
+import { rateLimit, RateLimitPresets, createRateLimitError } from '@/lib/rate-limit';
 
 interface GeocodeResult {
   id: string;
@@ -21,6 +22,21 @@ interface GeocodeResult {
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate Limiting
+    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+    const rateLimitResult = await rateLimit(ip, RateLimitPresets.API_WRITE);
+    if (!rateLimitResult.success) {
+      return NextResponse.json(createRateLimitError(rateLimitResult), {
+        status: 429,
+        headers: {
+          'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+          'X-RateLimit-Remaining': '0',
+          'X-RateLimit-Reset': new Date(rateLimitResult.reset).toISOString(),
+          'Retry-After': Math.ceil((rateLimitResult.reset - Date.now()) / 1000).toString(),
+        }
+      });
+    }
+
     const body = await request.json();
     const { type, ids } = body; // type: 'professionals' | 'suppliers' | 'events'
 
@@ -213,6 +229,21 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
+    // Rate Limiting
+    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+    const rateLimitResult = await rateLimit(ip, RateLimitPresets.API_READ);
+    if (!rateLimitResult.success) {
+      return NextResponse.json(createRateLimitError(rateLimitResult), {
+        status: 429,
+        headers: {
+          'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+          'X-RateLimit-Remaining': '0',
+          'X-RateLimit-Reset': new Date(rateLimitResult.reset).toISOString(),
+          'Retry-After': Math.ceil((rateLimitResult.reset - Date.now()) / 1000).toString(),
+        }
+      });
+    }
+
     const searchParams = request.nextUrl.searchParams;
     const type = searchParams.get('type'); // 'professionals' | 'suppliers' | 'events'
 

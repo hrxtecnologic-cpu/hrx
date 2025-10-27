@@ -777,3 +777,47 @@ export function getAllCategoryNames(): string[] {
 export function getTotalSubcategories(): number {
   return CATEGORIES_WITH_SUBCATEGORIES.reduce((total, cat) => total + cat.subcategories.length, 0);
 }
+
+/**
+ * Obter categoria pai de uma subcategoria
+ */
+export function getCategoryForSubcategory(subcategoryName: string): string | null {
+  for (const category of CATEGORIES_WITH_SUBCATEGORIES) {
+    const hasSubcategory = category.subcategories.some(sub => sub.name === subcategoryName);
+    if (hasSubcategory) {
+      return category.name;
+    }
+  }
+  return null;
+}
+
+/**
+ * Obter informações completas de uma subcategoria
+ */
+export function getSubcategoryInfo(subcategoryName: string): SubcategoryConfig | null {
+  for (const category of CATEGORIES_WITH_SUBCATEGORIES) {
+    const subcategory = category.subcategories.find(sub => sub.name === subcategoryName);
+    if (subcategory) {
+      return subcategory;
+    }
+  }
+  return null;
+}
+
+/**
+ * Obter todos os documentos obrigatórios para uma lista de subcategorias
+ * (união de documentos básicos + documentos específicos de cada subcategoria)
+ */
+export function getRequiredDocumentsForSubcategories(subcategoryNames: string[]): string[] {
+  const basicDocs = ['rg_front', 'rg_back', 'cpf', 'proof_of_address'];
+  const specificDocs = new Set<string>();
+
+  subcategoryNames.forEach(subcategoryName => {
+    const subcategory = getSubcategoryInfo(subcategoryName);
+    if (subcategory && subcategory.requiredDocuments) {
+      subcategory.requiredDocuments.forEach(doc => specificDocs.add(doc));
+    }
+  });
+
+  return [...basicDocs, ...Array.from(specificDocs)];
+}

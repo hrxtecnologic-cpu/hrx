@@ -25,9 +25,10 @@
     "seed": "tsx scripts/seed-test-data.ts"
   },
   "dependencies": {
-    "@clerk/clerk-sdk-node": "^4.13.23",
+    "@clerk/clerk-sdk-node": "^5.1.6",
     "@clerk/localizations": "^3.26.2",
     "@clerk/nextjs": "^6.33.7",
+    "@clerk/themes": "^2.4.29",
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-checkbox": "^1.3.3",
     "@radix-ui/react-dialog": "^1.1.15",

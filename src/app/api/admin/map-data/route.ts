@@ -1,15 +1,31 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
+import { rateLimit, RateLimitPresets, createRateLimitError } from '@/lib/rate-limit';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    // Rate Limiting
+    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+    const rateLimitResult = await rateLimit(ip, RateLimitPresets.API_READ);
+    if (!rateLimitResult.success) {
+      return NextResponse.json(createRateLimitError(rateLimitResult), {
+        status: 429,
+        headers: {
+          'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+          'X-RateLimit-Remaining': '0',
+          'X-RateLimit-Reset': new Date(rateLimitResult.reset).toISOString(),
+          'Retry-After': Math.ceil((rateLimitResult.reset - Date.now()) / 1000).toString(),
+        }
+      });
+    }
+
     const supabase = await createAdminClient();
     const markers: any[] = [];
 
     // Buscar profissionais com coordenadas
     const { data: professionals } = await supabase
       .from('professionals')
-      .select('id, full_name, latitude, longitude, city, state, status, categories')
+      .select('id, full_name, latitude, longitude, city, state, status, categories, subcategories')
       .not('latitude', 'is', null)
       .not('longitude', 'is', null);
 
@@ -25,6 +41,7 @@ export async function GET() {
           state: prof.state,
           status: prof.status,
           categories: prof.categories,
+          subcategories: prof.subcategories,
         });
       });
     }

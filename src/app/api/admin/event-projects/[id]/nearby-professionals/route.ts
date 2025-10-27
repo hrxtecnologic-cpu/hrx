@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { rateLimit, RateLimitPresets, createRateLimitError } from '@/lib/rate-limit';
 import { auth } from '@clerk/nextjs/server';
 import { createClient } from '@supabase/supabase-js';
 
@@ -19,10 +20,25 @@ const supabase = createClient(
  *   - maxDistance: Distância máxima em km (padrão: 100)
  */
 export async function GET(
-  req: Request,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // ========== Rate Limiting ==========
+    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+    const rateLimitResult = await rateLimit(ip, RateLimitPresets.API_READ);
+    if (!rateLimitResult.success) {
+      return NextResponse.json(createRateLimitError(rateLimitResult), {
+        status: 429,
+        headers: {
+          'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+          'X-RateLimit-Remaining': '0',
+          'X-RateLimit-Reset': new Date(rateLimitResult.reset).toISOString(),
+          'Retry-After': Math.ceil((rateLimitResult.reset - Date.now()) / 1000).toString(),
+        }
+      });
+    }
+
     // Verificar autenticação
     const { userId } = await auth();
     if (!userId) {

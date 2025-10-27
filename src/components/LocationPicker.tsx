@@ -90,22 +90,34 @@ export function LocationPicker({
       }
     });
 
-    // Extrair rua e número do próprio feature
-    if (feature.properties?.address || feature.address) {
-      const addr = feature.properties?.address || feature.address;
-      parsed.street = addr;
-    }
-
-    // Tentar extrair rua do place_name se não tiver no address
-    if (!parsed.street && feature.text) {
+    // Extrair rua do feature.text (nome principal do lugar)
+    // feature.text geralmente contém o nome da rua sem o número
+    if (feature.text) {
       parsed.street = feature.text;
     }
 
-    // Tentar extrair número do place_name (ex: "123 Rua ABC" ou "Rua ABC, 123")
-    if (fullAddress) {
-      const numberMatch = fullAddress.match(/\b(\d+)\b/);
-      if (numberMatch) {
-        parsed.number = numberMatch[1];
+    // Tentar extrair número do address_number se disponível
+    if (feature.properties?.address || feature.address) {
+      const addr = feature.properties?.address || feature.address;
+      // Se addr for apenas número, é o número da rua
+      if (/^\d+$/.test(addr)) {
+        parsed.number = addr;
+      }
+    }
+
+    // Se ainda não tem número, tentar extrair do place_name
+    // Procura padrão: "número rua" ou "rua, número"
+    if (!parsed.number && fullAddress) {
+      // Procura por padrão: vírgula seguida de número
+      const numberAfterComma = fullAddress.match(/,\s*(\d+)(?:\s|,|$)/);
+      if (numberAfterComma) {
+        parsed.number = numberAfterComma[1];
+      } else {
+        // Procura por número no início do endereço (antes do nome da rua)
+        const numberBeforeStreet = fullAddress.match(/^(\d+)\s+/);
+        if (numberBeforeStreet && parsed.street && !parsed.street.startsWith(numberBeforeStreet[1])) {
+          parsed.number = numberBeforeStreet[1];
+        }
       }
     }
 

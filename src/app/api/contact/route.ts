@@ -2,10 +2,30 @@ import { NextResponse } from 'next/server';
 import { contactFormSchema } from '@/lib/validations/contact';
 import { sendContactEmails } from '@/lib/resend/emails';
 import { z } from 'zod';
+import { rateLimit, RateLimitPresets, createRateLimitError } from '@/lib/rate-limit';
 
 export async function POST(request: Request) {
   try {
-    // 1. Parse e valida o body
+    // 1. Rate Limiting - Proteção contra abuse (20 req/min)
+    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+    const rateLimitResult = await rateLimit(ip, RateLimitPresets.PUBLIC_API);
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        createRateLimitError(rateLimitResult),
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': new Date(rateLimitResult.reset).toISOString(),
+            'Retry-After': Math.ceil((rateLimitResult.reset - Date.now()) / 1000).toString(),
+          }
+        }
+      );
+    }
+
+    // 2. Parse e valida o body
     const body = await request.json();
 
     let validatedData;
@@ -22,7 +42,7 @@ export async function POST(request: Request) {
     }
 
 
-    // 2. Enviar emails (confirmação + notificação admin)
+    // 3. Enviar emails (confirmação + notificação admin)
     try {
       const emailResult = await sendContactEmails({
         name: validatedData.name,
@@ -41,7 +61,7 @@ export async function POST(request: Request) {
       // Log o erro mas não falha a requisição
     }
 
-    // 3. Retorna sucesso
+    // 4. Retorna sucesso
     return NextResponse.json({
       success: true,
       message: 'Mensagem enviada com sucesso! Responderemos em breve.',

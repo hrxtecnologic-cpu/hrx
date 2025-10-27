@@ -10,6 +10,8 @@ import {
   getProfitMargin,
 } from '@/types/event-project';
 import { sendUrgentProjectAdminEmail } from '@/lib/resend/emails';
+import { createEventProjectSchema } from '@/lib/validations/event-project';
+import { z } from 'zod';
 
 // Force dynamic route
 export const dynamic = 'force-dynamic';
@@ -54,7 +56,7 @@ export async function GET(req: Request) {
     const offset = parseInt(searchParams.get('offset') || '0');
 
 
-    // Query direta na tabela event_projects
+    // Query simples - contadores serão calculados a partir dos arrays JSONB
     let query = supabase
       .from('event_projects')
       .select('*')
@@ -96,16 +98,44 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    // Calcular contadores a partir da DEMANDA DO CLIENTE (professionals_needed e equipment_needed)
+    const projectsWithCounts = (data || []).map((project: any) => {
+      // professionals_needed é array de objetos com 'quantity'
+      const professionalsNeeded = Array.isArray(project.professionals_needed)
+        ? project.professionals_needed
+        : [];
+
+      // Somar quantity de cada profissional solicitado
+      const team_count = professionalsNeeded.reduce((sum: number, prof: any) => {
+        return sum + (prof.quantity || 0);
+      }, 0);
+
+      // equipment_needed é array de objetos com 'quantity'
+      const equipmentNeeded = Array.isArray(project.equipment_needed)
+        ? project.equipment_needed
+        : [];
+
+      // Somar quantity de cada equipamento solicitado
+      const equipment_count = equipmentNeeded.reduce((sum: number, equip: any) => {
+        return sum + (equip.quantity || 0);
+      }, 0);
+
+      return {
+        ...project,
+        team_count,
+        equipment_count,
+      };
+    });
 
     logger.info('Projetos listados com sucesso', {
       userId,
-      count: data?.length || 0,
+      count: projectsWithCounts.length,
       filters: { status, isUrgent, clientName, eventType },
     });
 
     return NextResponse.json({
-      projects: data || [],
-      total: data?.length || 0,
+      projects: projectsWithCounts,
+      total: projectsWithCounts.length,
       limit,
       offset,
     });
@@ -140,26 +170,16 @@ export async function POST(req: Request) {
 
     const body: CreateEventProjectData = await req.json();
 
-    // Validações básicas
-    if (!body.client_name) {
-      return NextResponse.json(
-        { error: 'Nome do cliente é obrigatório' },
-        { status: 400 }
-      );
-    }
-
-    if (!body.event_name) {
-      return NextResponse.json(
-        { error: 'Nome do evento é obrigatório' },
-        { status: 400 }
-      );
-    }
-
-    if (!body.venue_address || !body.venue_city || !body.venue_state) {
-      return NextResponse.json(
-        { error: 'Endereço completo do evento é obrigatório' },
-        { status: 400 }
-      );
+    // Validar dados com Zod
+    try {
+      const validatedData = createEventProjectSchema.parse(body);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return NextResponse.json(
+          { error: 'Dados inválidos', details: error.issues },
+          { status: 400 }
+        );
+      }
     }
 
     // Calcular margem de lucro baseado na urgência
@@ -197,6 +217,7 @@ export async function POST(req: Request) {
           is_urgent: body.is_urgent,
           profit_margin: profitMargin,
           budget_range: body.budget_range,
+          client_budget: body.client_budget,
 
           // Observações
           additional_notes: body.additional_notes,

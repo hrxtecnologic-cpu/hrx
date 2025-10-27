@@ -1,15 +1,5 @@
-import {
-  Html,
-  Head,
-  Body,
-  Container,
-  Section,
-  Text,
-  Heading,
-  Hr,
-  Link,
-} from '@react-email/components';
-import { HRX_CONTACT_INFO } from './EmailFooter';
+import * as React from 'react';
+import { EmailFooterDark, HRX_CONTACT_INFO, EMAIL_DARK_STYLES } from './EmailFooterDark';
 
 interface ContactConfirmationEmailProps {
   name: string;
@@ -26,248 +16,84 @@ export default function ContactConfirmationEmail({
   const firstName = name.split(' ')[0];
 
   return (
-    <Html>
-      <Head />
-      <Body style={main}>
-        <Container style={container}>
+    <html>
+      <head>
+        <style>{EMAIL_DARK_STYLES}</style>
+      </head>
+      <body>
+        <div className="container">
           {/* Header */}
-          <Section style={header}>
-            <Heading style={h1}>HRX Profissionais</Heading>
-            <Text style={tagline}>Conectando eventos a profissionais qualificados</Text>
-          </Section>
+          <div className="header">
+            <div className="logo">HRX EVENTOS</div>
+            <span className="badge">✅ Mensagem Recebida</span>
+          </div>
 
-          {/* Main Content */}
-          <Section style={content}>
-            <Heading style={h2}>Olá, {firstName}! 👋</Heading>
+          {/* Greeting */}
+          <h1>Olá, {firstName}! 👋</h1>
 
-            <Text style={text}>
+          {/* Content */}
+          <div className="content">
+            <p>
               Recebemos sua mensagem com sucesso e agradecemos por entrar em contato conosco.
-            </Text>
+            </p>
+          </div>
 
-            <Section style={infoBox}>
-              <Text style={infoText}>
-                <strong>Assunto:</strong> {subject}
-              </Text>
-            </Section>
+          {/* Subject Info */}
+          <div className="highlight-box">
+            <p style={{ margin: 0 }}>
+              <strong>Assunto:</strong> {subject}
+            </p>
+          </div>
 
-            <Text style={text}>
+          <div className="content">
+            <p>
               Nossa equipe irá analisar sua solicitação e responderemos em breve. Nosso prazo de
               resposta é de até <strong>2 horas durante horário comercial</strong> (Segunda a
               Sexta, 9h às 18h).
-            </Text>
+            </p>
+          </div>
 
-            <Text style={text}>
-              Se a sua solicitação for urgente, você também pode entrar em contato pelos seguintes
-              canais:
-            </Text>
+          <div className="divider"></div>
 
-            <Section style={contactBox}>
-              <Text style={contactItem}>
-                🌐 <strong>Site:</strong>{' '}
-                <Link href={HRX_CONTACT_INFO.siteUrl} style={link}>
-                  {HRX_CONTACT_INFO.site}
-                </Link>
-              </Text>
-              <Text style={contactItem}>
-                📱 <strong>WhatsApp:</strong>{' '}
-                <Link href={`https://wa.me/${HRX_CONTACT_INFO.telefoneWhatsApp}`} style={link}>
-                  {HRX_CONTACT_INFO.telefone}
-                </Link>
-              </Text>
-              <Text style={contactItem}>
-                📧 <strong>Email:</strong>{' '}
-                <Link href={`mailto:${HRX_CONTACT_INFO.email}`} style={link}>
-                  {HRX_CONTACT_INFO.email}
-                </Link>
-              </Text>
-            </Section>
-
-            <Hr style={hr} />
-
-            <Text style={text}>
-              <strong>Precisa de uma equipe para seu evento?</strong>
-              <br />
+          {/* CTAs */}
+          <div className="info-box">
+            <h2>Precisa de uma equipe para seu evento?</h2>
+            <p style={{ marginBottom: '20px' }}>
               Preencha nosso formulário de solicitação e receba uma proposta personalizada:
-            </Text>
-
-            <Section style={ctaSection}>
-              <Link href={`${HRX_CONTACT_INFO.siteUrl}/solicitar-equipe`} style={button}>
+            </p>
+            <div style={{ textAlign: 'center' }}>
+              <a href={`${HRX_CONTACT_INFO.siteUrl}/solicitar-equipe`} className="button">
                 Solicitar Equipe Agora
-              </Link>
-            </Section>
+              </a>
+            </div>
+          </div>
 
-            <Text style={text}>
-              <strong>É um profissional buscando oportunidades?</strong>
-              <br />
+          <div className="info-box">
+            <h2>É um profissional buscando oportunidades?</h2>
+            <p style={{ marginBottom: '20px' }}>
               Cadastre-se em nossa plataforma e tenha acesso a vagas em eventos:
-            </Text>
-
-            <Section style={ctaSection}>
-              <Link href={`${HRX_CONTACT_INFO.siteUrl}/cadastrar-profissional`} style={buttonSecondary}>
+            </p>
+            <div style={{ textAlign: 'center' }}>
+              <a
+                href={`${HRX_CONTACT_INFO.siteUrl}/cadastrar-profissional`}
+                className="button"
+                style={{
+                  background: 'transparent',
+                  border: '2px solid #ef4444',
+                  color: '#ef4444'
+                }}
+              >
                 Cadastrar como Profissional
-              </Link>
-            </Section>
-          </Section>
+              </a>
+            </div>
+          </div>
+
+          <div className="divider"></div>
 
           {/* Footer */}
-          <Hr style={hr} />
-          <Section style={footer}>
-            <Text style={footerText}>
-              <strong>{HRX_CONTACT_INFO.nomeEmpresa}</strong>
-              <br />
-              Conectando eventos a profissionais qualificados
-              <br />
-              <br />
-              📧 {HRX_CONTACT_INFO.email}
-              <br />
-              📱 {HRX_CONTACT_INFO.telefone}
-              <br />
-              <br />
-              <Link href={HRX_CONTACT_INFO.siteUrl} style={link}>
-                {HRX_CONTACT_INFO.site}
-              </Link>
-              <br />
-              <br />
-              © {HRX_CONTACT_INFO.ano} {HRX_CONTACT_INFO.nomeEmpresa} - Plataforma de Profissionais para Eventos
-            </Text>
-          </Section>
-        </Container>
-      </Body>
-    </Html>
+          <EmailFooterDark showContact={true} />
+        </div>
+      </body>
+    </html>
   );
 }
-
-// Styles
-const main = {
-  backgroundColor: '#f6f9fc',
-  fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
-};
-
-const container = {
-  backgroundColor: '#ffffff',
-  margin: '0 auto',
-  padding: '20px 0',
-  marginBottom: '64px',
-  maxWidth: '600px',
-  borderRadius: '8px',
-  boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-};
-
-const header = {
-  padding: '32px 20px',
-  backgroundColor: '#dc2626',
-  borderRadius: '8px 8px 0 0',
-  textAlign: 'center' as const,
-};
-
-const h1 = {
-  color: '#ffffff',
-  fontSize: '32px',
-  fontWeight: 'bold',
-  margin: '0 0 8px 0',
-};
-
-const tagline = {
-  color: '#fecaca',
-  fontSize: '14px',
-  margin: '0',
-};
-
-const content = {
-  padding: '32px 20px',
-};
-
-const h2 = {
-  color: '#1f2937',
-  fontSize: '24px',
-  fontWeight: 'bold',
-  margin: '0 0 20px 0',
-};
-
-const text = {
-  color: '#374151',
-  fontSize: '16px',
-  lineHeight: '24px',
-  margin: '16px 0',
-};
-
-const infoBox = {
-  backgroundColor: '#dbeafe',
-  border: '1px solid #93c5fd',
-  borderRadius: '8px',
-  padding: '16px',
-  margin: '20px 0',
-};
-
-const infoText = {
-  color: '#1e40af',
-  fontSize: '15px',
-  margin: '0',
-};
-
-const contactBox = {
-  backgroundColor: '#f9fafb',
-  border: '1px solid #e5e7eb',
-  borderRadius: '8px',
-  padding: '16px',
-  margin: '16px 0',
-};
-
-const contactItem = {
-  color: '#374151',
-  fontSize: '15px',
-  margin: '8px 0',
-};
-
-const link = {
-  color: '#dc2626',
-  textDecoration: 'underline',
-};
-
-const hr = {
-  borderColor: '#e5e7eb',
-  margin: '24px 0',
-};
-
-const ctaSection = {
-  textAlign: 'center' as const,
-  margin: '24px 0',
-};
-
-const button = {
-  backgroundColor: '#dc2626',
-  borderRadius: '6px',
-  color: '#ffffff',
-  fontSize: '16px',
-  fontWeight: 'bold',
-  textDecoration: 'none',
-  textAlign: 'center' as const,
-  display: 'inline-block',
-  padding: '12px 32px',
-  margin: '8px 0',
-};
-
-const buttonSecondary = {
-  backgroundColor: '#ffffff',
-  border: '2px solid #dc2626',
-  borderRadius: '6px',
-  color: '#dc2626',
-  fontSize: '16px',
-  fontWeight: 'bold',
-  textDecoration: 'none',
-  textAlign: 'center' as const,
-  display: 'inline-block',
-  padding: '12px 32px',
-  margin: '8px 0',
-};
-
-const footer = {
-  padding: '20px',
-  textAlign: 'center' as const,
-};
-
-const footerText = {
-  color: '#6b7280',
-  fontSize: '13px',
-  lineHeight: '20px',
-};

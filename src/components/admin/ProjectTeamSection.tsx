@@ -43,6 +43,7 @@ interface Professional {
   email: string;
   phone?: string;
   categories: string[];
+  subcategories?: Record<string, string[]>;
   city?: string;
   state?: string;
 }
@@ -538,16 +539,30 @@ export function ProjectTeamSection({
                         <span className="text-red-500">• {prof.distance_km.toFixed(1)}km</span>
                       </div>
 
-                      {/* Categorias */}
+                      {/* Subcategorias/Especialidades */}
                       <div className="flex flex-wrap gap-1 mb-3">
-                        {prof.categories.slice(0, 3).map((cat) => (
-                          <span
-                            key={cat}
-                            className="text-xs bg-red-600/10 text-red-500 border border-red-600/20 px-2 py-0.5 rounded"
-                          >
-                            {cat}
-                          </span>
-                        ))}
+                        {prof.subcategories && Object.keys(prof.subcategories).length > 0 ? (
+                          Object.entries(prof.subcategories).slice(0, 2).map(([category, subs]) => (
+                            subs.slice(0, 2).map((sub: string) => (
+                              <span
+                                key={sub}
+                                className="text-xs bg-red-600/10 text-red-500 border border-red-600/20 px-2 py-0.5 rounded"
+                                title={`${category}: ${sub}`}
+                              >
+                                {sub}
+                              </span>
+                            ))
+                          ))
+                        ) : (
+                          prof.categories.slice(0, 3).map((cat) => (
+                            <span
+                              key={cat}
+                              className="text-xs bg-red-600/10 text-red-500 border border-red-600/20 px-2 py-0.5 rounded"
+                            >
+                              {cat}
+                            </span>
+                          ))
+                        )}
                       </div>
 
                       {/* Contato */}
@@ -650,14 +665,28 @@ export function ProjectTeamSection({
                       </div>
 
                       <div className="flex flex-wrap gap-1 mb-3">
-                        {prof.categories.slice(0, 3).map((cat) => (
-                          <span
-                            key={cat}
-                            className="text-xs bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded"
-                          >
-                            {cat}
-                          </span>
-                        ))}
+                        {prof.subcategories && Object.keys(prof.subcategories).length > 0 ? (
+                          Object.entries(prof.subcategories).slice(0, 2).map(([category, subs]) => (
+                            subs.slice(0, 2).map((sub: string) => (
+                              <span
+                                key={sub}
+                                className="text-xs bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded"
+                                title={`${category}: ${sub}`}
+                              >
+                                {sub}
+                              </span>
+                            ))
+                          ))
+                        ) : (
+                          prof.categories.slice(0, 3).map((cat) => (
+                            <span
+                              key={cat}
+                              className="text-xs bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded"
+                            >
+                              {cat}
+                            </span>
+                          ))
+                        )}
                       </div>
 
                       <div className="space-y-1 mb-3 text-xs text-zinc-500">

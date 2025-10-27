@@ -4,6 +4,8 @@ import { createClient } from '@supabase/supabase-js';
 import { rateLimit, RateLimitPresets, createRateLimitError } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 import { AddTeamMemberData } from '@/types/event-project';
+import { addTeamMemberSchema } from '@/lib/validations/event-project';
+import { z } from 'zod';
 
 // Force dynamic route
 export const dynamic = 'force-dynamic';
@@ -46,14 +48,19 @@ export async function POST(
     projectId = resolvedParams.id;
     const body: AddTeamMemberData = await req.json();
 
-    // Validações
-    if (!body.role || !body.category) {
-      return NextResponse.json(
-        { error: 'Função e categoria são obrigatórias' },
-        { status: 400 }
-      );
+    // Validar dados com Zod
+    try {
+      const validatedData = addTeamMemberSchema.parse(body);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return NextResponse.json(
+          { error: 'Dados inválidos', details: error.issues },
+          { status: 400 }
+        );
+      }
     }
 
+    // Validação adicional: professional_id OU external_name
     if (!body.professional_id && !body.external_name) {
       return NextResponse.json(
         { error: 'Informe o profissional (da base ou externo)' },

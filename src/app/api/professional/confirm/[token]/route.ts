@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { rateLimit, RateLimitPresets, createRateLimitError } from '@/lib/rate-limit';
 
 /**
  * ====================================
@@ -20,6 +21,9 @@ export async function POST(
   { params }: { params: Promise<{ token: string }> }
 ) {
   try {
+    const ip = req.headers.get('x-forwarded-for') || 'unknown';
+    const rateLimitResult = await rateLimit(ip, RateLimitPresets.PUBLIC_API);
+    if (!rateLimitResult.success) return NextResponse.json(createRateLimitError(rateLimitResult), { status: 429 });
     const { token } = await params;
     const { searchParams } = new URL(req.url);
     const action = searchParams.get('action'); // 'confirm' ou 'reject'
@@ -292,6 +296,9 @@ export async function GET(
   { params }: { params: Promise<{ token: string }> }
 ) {
   try {
+    const ip = req.headers.get('x-forwarded-for') || 'unknown';
+    const rateLimitResult = await rateLimit(ip, RateLimitPresets.PUBLIC_API);
+    if (!rateLimitResult.success) return NextResponse.json(createRateLimitError(rateLimitResult), { status: 429 });
     const { token } = await params;
     const supabase = await createClient();
 

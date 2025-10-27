@@ -1,5 +1,6 @@
 import { Webhook } from 'svix';
 import { headers } from 'next/headers';
+import { rateLimit, RateLimitPresets, createRateLimitError } from '@/lib/rate-limit';
 import { WebhookEvent } from '@clerk/nextjs/server';
 import { createClient } from '@supabase/supabase-js';
 
@@ -144,7 +145,7 @@ export async function POST(req: Request) {
     console.log('🔵 [WEBHOOK] user.deleted:', { clerk_id: id });
 
     try {
-      // Soft delete
+    // Soft delete
       const { error } = await supabase
         .from('users')
         .update({

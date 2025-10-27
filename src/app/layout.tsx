@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
+import { dark } from "@clerk/themes";
 import { ptBR } from "@clerk/localizations";
 import { Toaster } from "@/components/ui/toaster";
 import { PWAInstaller } from "@/components/PWAInstaller";
@@ -50,7 +51,31 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider localization={ptBR}>
+    <ClerkProvider
+      localization={ptBR}
+      appearance={{
+        baseTheme: dark,
+        variables: {
+          colorPrimary: '#ef4444',
+          colorDanger: '#dc2626',
+          colorSuccess: '#16a34a',
+          colorWarning: '#f59e0b',
+          colorTextOnPrimaryBackground: '#ffffff',
+          colorBackground: '#09090b',
+          colorInputBackground: '#18181b',
+          colorInputText: '#ffffff',
+          colorText: '#ffffff',
+          colorTextSecondary: '#ffffff',
+          borderRadius: '0.5rem',
+          fontFamily: 'var(--font-inter)',
+        },
+        elements: {
+          formButtonPrimary:
+            'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700',
+          avatarBox: 'border-2 border-red-500',
+        },
+      }}
+    >
       <html lang="pt-BR" className="dark">
         <body className={`${inter.variable} antialiased bg-background text-foreground`}>
           {children}

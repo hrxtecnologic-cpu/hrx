@@ -14,21 +14,19 @@ const isPublicRoute = createRouteMatcher([
   '/contato',
   '/termos',
   '/privacidade',
-  '/solicitar-equipe(.*)', // Sistema antigo (será deprecado)
-  '/solicitar-evento(.*)', // Sistema novo (recomendado)
   '/orcamento(.*)', // Fornecedor responde orçamento (público)
-  '/cadastrar-profissional(.*)',
-  '/cadastrar-contratante(.*)',
+  '/cadastro-profissional-wizard(.*)', // Wizard de cadastro profissional
+  '/solicitar-evento-wizard(.*)', // Wizard de solicitação de evento/fornecedor
   '/api/webhooks(.*)',
   '/api/send(.*)',
   '/api/send-test(.*)',
   '/api/contact(.*)',
   '/api/requests(.*)',
   '/api/public(.*)', // APIs públicas (event-requests, quotations, etc)
+  '/api/user/(.*)', // APIs de usuário fazem auth interna
   // '/api/contractors(.*)' <- REMOVIDO: agora precisa autenticação (auditoria 2025-10-24)
   // '/api/professionals(.*)' <- REMOVIDO: precisa autenticação
   // '/api/upload(.*)' <- REMOVIDO: precisa autenticação
-  // '/api/user/check-registration' <- Precisa autenticação mas não é pública
 ]);
 
 // Rotas de dashboard (requerem autenticação mas não admin)
@@ -61,30 +59,34 @@ export default clerkMiddleware(async (auth, req) => {
       return NextResponse.redirect(new URL('/entrar', req.url));
     }
 
-    // Buscar usuário completo do Clerk para ter acesso ao email
-    const client = await clerkClient();
-    const user = await client.users.getUser(userId);
-    const userEmail = user.emailAddresses[0]?.emailAddress?.toLowerCase() || '';
+    // Usar sessionClaims.metadata ao invés de buscar user completo (mais rápido!)
+    const metadata = sessionClaims?.metadata;
+    const isAdmin = metadata?.isAdmin === true || metadata?.role === 'admin';
 
-    const publicMetadata = sessionClaims?.publicMetadata as { role?: string } | undefined;
-
-    console.log('[Middleware] 🔍 Verificando admin:', {
-      userId: userId.substring(0, 10),
-      email: userEmail,
-      role: publicMetadata?.role,
-      adminEmails: ADMIN_EMAILS,
-    });
-
-    const isAdmin =
-      ADMIN_EMAILS.includes(userEmail) ||
-      publicMetadata?.role === 'admin';
-
+    // Se não tem metadata.isAdmin definido, buscar email como fallback
     if (!isAdmin) {
-      console.log('[Middleware] ❌ Acesso negado - não é admin:', userEmail);
-      return NextResponse.redirect(new URL('/403', req.url));
-    }
+      const client = await clerkClient();
+      const user = await client.users.getUser(userId);
+      const userEmail = user.emailAddresses[0]?.emailAddress?.toLowerCase() || '';
 
-    console.log('[Middleware] ✅ Acesso admin permitido:', userEmail);
+      console.log('[Middleware] 🔍 Verificando admin (fallback email):', {
+        userId: userId.substring(0, 10),
+        email: userEmail,
+        metadata: metadata,
+        adminEmails: ADMIN_EMAILS,
+      });
+
+      const isAdminByEmail = ADMIN_EMAILS.includes(userEmail);
+
+      if (!isAdminByEmail) {
+        console.log('[Middleware] ❌ Acesso negado - não é admin:', userEmail);
+        return NextResponse.redirect(new URL('/403', req.url));
+      }
+
+      console.log('[Middleware] ✅ Acesso admin permitido (via email):', userEmail);
+    } else {
+      console.log('[Middleware] ✅ Acesso admin permitido (via metadata)');
+    }
   }
 
   // Protege rotas de dashboard (requer autenticação)
@@ -101,7 +103,10 @@ export default clerkMiddleware(async (auth, req) => {
 
   // Protege todas as outras rotas não-públicas
   if (!isPublicRoute(req)) {
+    console.log('[Middleware] 🔒 Protegendo rota:', req.url);
     await auth.protect();
+  } else {
+    console.log('[Middleware] 🌍 Rota pública:', req.url);
   }
 });
 

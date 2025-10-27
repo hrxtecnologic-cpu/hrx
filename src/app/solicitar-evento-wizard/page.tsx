@@ -84,6 +84,7 @@ const clientRequestSchema = z.object({
   equipment: z.array(equipmentSchema).optional(),
   is_urgent: z.boolean().default(false),
   budget_range: z.string().optional(),
+  client_budget: z.number().positive('Orçamento deve ser positivo').optional(),
   additional_notes: z.string().optional(),
 });
 
@@ -142,14 +143,17 @@ function SolicitarEventoWizardContent() {
 
   const wizard = useWizard(requestType === 'client' ? CLIENT_WIZARD_STEPS.length : SUPPLIER_WIZARD_STEPS.length);
 
-  // Detectar tipo da URL
+  // Detectar tipo da URL - OBRIGATÓRIO vir como parâmetro
   useEffect(() => {
     const typeFromUrl = searchParams.get('type');
     if (typeFromUrl === 'client' || typeFromUrl === 'supplier') {
       setRequestType(typeFromUrl);
       setValue('request_type', typeFromUrl);
+    } else {
+      // Se não vier type na URL, redireciona para onboarding
+      router.push('/onboarding');
     }
-  }, [searchParams]);
+  }, [searchParams, router]);
 
   const {
     register,
@@ -313,130 +317,77 @@ function SolicitarEventoWizardContent() {
   };
 
   const onSubmit = async (data: any) => {
+    console.log('🚀 [Wizard] onSubmit chamado!', { requestType, data });
     setIsSubmitting(true);
 
     try {
+      // Preparar payload completo e mapear campos
+      const payload = {
+        request_type: requestType,
+        ...data,
+        // Mapear equipment_type → type para compatibilidade com schema backend
+        equipment: data.equipment?.map((equip: any) => ({
+          type: equip.equipment_type || equip.type,
+          quantity: equip.quantity,
+        })) || [],
+      };
+
+      console.log('📤 [Wizard] Enviando requisição para /api/public/event-requests...');
+      console.log('📦 [Wizard] Payload completo:', JSON.stringify(payload, null, 2));
+
       const response = await fetch('/api/public/event-requests', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       });
 
+      console.log('📥 [Wizard] Resposta recebida:', { status: response.status, ok: response.ok });
+
       const result = await response.json();
+      console.log('📄 [Wizard] Dados da resposta:', result);
 
       if (!response.ok) {
+        console.error('❌ [Wizard] Erro na resposta:', result);
+        console.error('📋 [Wizard] Detalhes dos erros de validação:', result.details);
+
+        // Mostrar erros detalhados
+        if (result.details && Array.isArray(result.details)) {
+          result.details.forEach((detail: any) => {
+            console.error('  ⚠️', detail.path?.join('.') || 'campo', ':', detail.message);
+          });
+        }
+
         throw new Error(result.error || 'Erro ao enviar solicitação');
       }
 
+      console.log('✅ [Wizard] Solicitação enviada com sucesso!');
       toast.success(requestType === 'supplier' ? 'Cadastro enviado com sucesso!' : 'Solicitação enviada com sucesso!');
 
       if (requestType === 'supplier') {
+        console.log('🔀 [Wizard] Redirecionando para /solicitar-evento/sucesso-fornecedor');
         router.push('/solicitar-evento/sucesso-fornecedor');
       } else {
+        console.log('🔀 [Wizard] Redirecionando para /solicitar-evento/sucesso');
         router.push('/solicitar-evento/sucesso');
       }
     } catch (error: any) {
-      console.error('Erro ao enviar:', error);
+      console.error('❌ [Wizard] Erro ao enviar:', error);
       toast.error(error.message || 'Erro ao enviar solicitação');
     } finally {
       setIsSubmitting(false);
+      console.log('🏁 [Wizard] onSubmit finalizado');
     }
   };
 
-  // Tela de seleção de tipo
+  // Se não tem tipo definido, mostra loading (o useEffect vai redirecionar)
   if (!requestType) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-950 flex items-center justify-center p-4">
-        <div className="max-w-4xl w-full">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-              O que você precisa?
-            </h1>
-            <p className="text-lg text-zinc-300">
-              Escolha a opção que melhor descreve sua necessidade
-            </p>
-            <div className="flex items-center justify-center gap-2 mt-6">
-              <div className="h-1 w-20 bg-gradient-to-r from-red-600 to-red-500 rounded-full" />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <button
-              onClick={() => {
-                setRequestType('client');
-                setValue('request_type', 'client');
-              }}
-              className="group relative p-8 bg-gradient-to-br from-zinc-900 to-zinc-900/50 border-2 border-zinc-800 hover:border-red-600 rounded-2xl transition-all hover:scale-105 overflow-hidden text-left"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-red-600/0 to-red-600/0 group-hover:from-red-600/5 group-hover:to-red-600/10 transition-all duration-300" />
-              <div className="relative z-10">
-                <div className="text-6xl mb-6 group-hover:scale-110 transition-transform">
-                  🎪
-                </div>
-                <h2 className="text-2xl font-bold text-white mb-3 group-hover:text-red-500 transition">
-                  Solicitar Evento
-                </h2>
-                <p className="text-zinc-400 leading-relaxed mb-6">
-                  Preciso de profissionais e/ou equipamentos para meu evento
-                </p>
-                <div className="pt-6 border-t border-zinc-800">
-                  <ul className="text-sm text-zinc-500 space-y-3">
-                    <li className="flex items-start gap-2">
-                      <span className="text-green-500 mt-0.5">✓</span>
-                      <span>Equipe completa de profissionais</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-green-500 mt-0.5">✓</span>
-                      <span>Equipamentos para eventos</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-green-500 mt-0.5">✓</span>
-                      <span>Orçamento personalizado</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </button>
-
-            <button
-              onClick={() => {
-                setRequestType('supplier');
-                setValue('request_type', 'supplier');
-              }}
-              className="group relative p-8 bg-gradient-to-br from-zinc-900 to-zinc-900/50 border-2 border-zinc-800 hover:border-red-600 rounded-2xl transition-all hover:scale-105 overflow-hidden text-left"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-red-600/0 to-red-600/0 group-hover:from-red-600/5 group-hover:to-red-600/10 transition-all duration-300" />
-              <div className="relative z-10">
-                <div className="text-6xl mb-6 group-hover:scale-110 transition-transform">
-                  🚚
-                </div>
-                <h2 className="text-2xl font-bold text-white mb-3 group-hover:text-red-500 transition">
-                  Sou Fornecedor
-                </h2>
-                <p className="text-zinc-400 leading-relaxed mb-6">
-                  Quero cadastrar minha empresa para fornecer equipamentos
-                </p>
-                <div className="pt-6 border-t border-zinc-800">
-                  <ul className="text-sm text-zinc-500 space-y-3">
-                    <li className="flex items-start gap-2">
-                      <span className="text-green-500 mt-0.5">✓</span>
-                      <span>Receba solicitações de orçamentos</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-green-500 mt-0.5">✓</span>
-                      <span>Cadastro rápido e simples</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-green-500 mt-0.5">✓</span>
-                      <span>Aumente suas vendas</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </button>
-          </div>
+      <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-950 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 text-red-600 animate-spin mx-auto mb-4" />
+          <p className="text-zinc-400">Carregando...</p>
         </div>
       </div>
     );
@@ -457,15 +408,6 @@ function SolicitarEventoWizardContent() {
             <div className="flex items-center justify-center gap-2 mt-6">
               <div className="h-1 w-20 bg-gradient-to-r from-red-600 to-red-500 rounded-full" />
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setRequestType(null)}
-              className="mt-4 border-zinc-700 text-zinc-400 hover:bg-zinc-800"
-            >
-              ← Voltar para seleção
-            </Button>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)}>
@@ -475,6 +417,7 @@ function SolicitarEventoWizardContent() {
               onNext={handleNext}
               onPrevious={wizard.previousStep}
               onSubmit={handleSubmit(onSubmit)}
+              onBackToSelection={() => router.push('/onboarding')}
               isSubmitting={isSubmitting}
               canGoNext={true}
               canGoPrevious={true}
@@ -1028,7 +971,7 @@ function SolicitarEventoWizardContent() {
 
                         <div>
                           <Label htmlFor="budget_range" className="text-sm font-medium text-zinc-200">
-                            Faixa de Orçamento
+                            Faixa de Orçamento (Aproximada)
                           </Label>
                           <Select onValueChange={(value) => setValue('budget_range', value)}>
                             <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white mt-2 [&>span]:text-white">
@@ -1043,6 +986,23 @@ function SolicitarEventoWizardContent() {
                               <SelectItem value="Não sei informar">Não sei informar</SelectItem>
                             </SelectContent>
                           </Select>
+                        </div>
+
+                        <div>
+                          <Label htmlFor="client_budget" className="text-sm font-medium text-zinc-200">
+                            Orçamento Exato (Opcional)
+                          </Label>
+                          <Input
+                            id="client_budget"
+                            type="number"
+                            step="0.01"
+                            {...register('client_budget', { valueAsNumber: true })}
+                            className="bg-zinc-800 border-zinc-700 text-white mt-2"
+                            placeholder="Ex: 15000.00"
+                          />
+                          <p className="text-xs text-zinc-500 mt-1">
+                            💡 Se souber o valor exato que pode investir, informe aqui
+                          </p>
                         </div>
 
                         <div className="flex items-center space-x-2">
@@ -1122,11 +1082,61 @@ function SolicitarEventoWizardContent() {
                     </div>
 
                     <div className="p-4 bg-zinc-800/50 border border-zinc-700 rounded-lg">
-                      <h3 className="text-sm font-semibold text-red-500 mb-2">Profissionais</h3>
-                      <p className="text-sm text-zinc-300">
-                        {fields.length} profissional(is) solicitado(s)
-                      </p>
+                      <h3 className="text-sm font-semibold text-red-500 mb-3">Profissionais Solicitados</h3>
+                      {fields.length === 0 ? (
+                        <p className="text-sm text-zinc-500">Nenhum profissional adicionado</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {fields.map((field, index) => (
+                            <div key={field.id} className="flex items-start gap-3 p-3 bg-zinc-900/50 rounded-md border border-zinc-700/50">
+                              <div className="flex-shrink-0 w-8 h-8 bg-red-600/20 rounded-full flex items-center justify-center border border-red-600/30">
+                                <span className="text-xs font-bold text-red-500">{index + 1}</span>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-white">
+                                  {watch(`professionals.${index}.category`) || 'Categoria não informada'}
+                                </p>
+                                <p className="text-xs text-zinc-400 mt-1">
+                                  Quantidade: {watch(`professionals.${index}.quantity`) || 0}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
+
+                    {watch('equipment') && watch('equipment').length > 0 && (
+                      <div className="p-4 bg-zinc-800/50 border border-zinc-700 rounded-lg">
+                        <h3 className="text-sm font-semibold text-red-500 mb-3">Equipamentos Solicitados</h3>
+                        <div className="space-y-2">
+                          {watch('equipment').map((equip: any, index: number) => (
+                            <div key={index} className="flex items-start gap-3 p-3 bg-zinc-900/50 rounded-md border border-zinc-700/50">
+                              <div className="flex-shrink-0 w-8 h-8 bg-blue-600/20 rounded-full flex items-center justify-center border border-blue-600/30">
+                                <span className="text-xs font-bold text-blue-500">{index + 1}</span>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-white">
+                                  {equip.type || 'Tipo não informado'}
+                                </p>
+                                <p className="text-xs text-zinc-400 mt-1">
+                                  Quantidade: {equip.quantity || 0}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {watch('client_budget') && (
+                      <div className="p-4 bg-zinc-800/50 border border-zinc-700 rounded-lg">
+                        <h3 className="text-sm font-semibold text-red-500 mb-2">Orçamento</h3>
+                        <p className="text-sm text-zinc-300">
+                          <strong>Orçamento do Cliente:</strong> R$ {Number(watch('client_budget')).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </p>
+                      </div>
+                    )}
 
                     <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
                       <p className="text-sm text-green-400">
@@ -1158,15 +1168,6 @@ function SolicitarEventoWizardContent() {
             <div className="flex items-center justify-center gap-2 mt-6">
               <div className="h-1 w-20 bg-gradient-to-r from-red-600 to-red-500 rounded-full" />
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setRequestType(null)}
-              className="mt-4 border-zinc-700 text-zinc-400 hover:bg-zinc-800"
-            >
-              ← Voltar para seleção
-            </Button>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)}>
@@ -1176,6 +1177,7 @@ function SolicitarEventoWizardContent() {
               onNext={handleNext}
               onPrevious={wizard.previousStep}
               onSubmit={handleSubmit(onSubmit)}
+              onBackToSelection={() => router.push('/onboarding')}
               isSubmitting={isSubmitting}
               canGoNext={true}
               canGoPrevious={true}

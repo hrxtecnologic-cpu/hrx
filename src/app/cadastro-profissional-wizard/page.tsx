@@ -302,6 +302,7 @@ export default function CadastroProfissionalWizardPage() {
             onNext={handleNext}
             onPrevious={wizard.previousStep}
             onSubmit={handleSubmit(onSubmit)}
+            onBackToSelection={() => router.push('/onboarding')}
             isSubmitting={isSubmitting}
             canGoNext={true}
           >

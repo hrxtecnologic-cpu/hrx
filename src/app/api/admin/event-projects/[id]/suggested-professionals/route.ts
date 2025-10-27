@@ -8,6 +8,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { rateLimit, RateLimitPresets, createRateLimitError } from '@/lib/rate-limit';
 
 interface SuggestedProfessional {
   id: string;
@@ -46,6 +47,21 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Rate Limiting
+    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+    const rateLimitResult = await rateLimit(ip, RateLimitPresets.API_READ);
+    if (!rateLimitResult.success) {
+      return NextResponse.json(createRateLimitError(rateLimitResult), {
+        status: 429,
+        headers: {
+          'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+          'X-RateLimit-Remaining': '0',
+          'X-RateLimit-Reset': new Date(rateLimitResult.reset).toISOString(),
+          'Retry-After': Math.ceil((rateLimitResult.reset - Date.now()) / 1000).toString(),
+        }
+      });
+    }
+
     const supabase = await createClient();
     const { id: projectId } = await context.params;
 

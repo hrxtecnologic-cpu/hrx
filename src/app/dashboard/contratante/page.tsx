@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { DashboardHeader } from '@/components/DashboardHeader';
 import {
   Calendar,
   MapPin,
@@ -33,6 +35,8 @@ interface Project {
   status: string;
   is_urgent: boolean;
   expected_attendance: number | null;
+  client_budget: number | null;
+  total_cost: number | null;
   total_client_price: number | null;
   created_at: string;
   updated_at: string;
@@ -55,12 +59,23 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }>
 
 export default function DashboardContratantePage() {
   const router = useRouter();
+  const { user, isLoaded, isSignedIn } = useUser();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Proteção: redireciona se não estiver logado
   useEffect(() => {
-    loadProjects();
-  }, []);
+    if (isLoaded && !isSignedIn) {
+      console.log('❌ [Dashboard Contratante] Usuário não autenticado - redirecionando');
+      router.push('/entrar');
+    }
+  }, [isLoaded, isSignedIn, router]);
+
+  useEffect(() => {
+    if (isSignedIn) {
+      loadProjects();
+    }
+  }, [isSignedIn]);
 
   async function loadProjects() {
     try {
@@ -92,6 +107,19 @@ export default function DashboardContratantePage() {
     completed: projects.filter(p => p.status === 'completed').length,
   };
 
+  // Mostra loading enquanto verifica autenticação
+  if (!isLoaded || !isSignedIn) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 text-red-600 animate-spin mx-auto mb-4" />
+          <p className="text-zinc-400">Verificando autenticação...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Mostra loading enquanto carrega projetos
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -105,25 +133,22 @@ export default function DashboardContratantePage() {
 
   return (
     <div className="min-h-screen bg-black">
-      {/* Header */}
-      <header className="bg-zinc-900 border-b border-zinc-800">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-white mb-2">Meus Projetos</h1>
-              <p className="text-zinc-400">Acompanhe o status dos seus eventos</p>
-            </div>
-            <Link href="/solicitar-evento">
-              <Button className="bg-red-600 hover:bg-red-500 text-white">
-                <Plus className="h-4 w-4 mr-2" />
-                Novo Projeto
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </header>
+      {/* Header com UserButton */}
+      <DashboardHeader
+        title="Meus Projetos"
+        subtitle="Acompanhe o status dos seus eventos"
+      />
 
       <main className="max-w-7xl mx-auto px-4 py-8">
+        {/* Botão Novo Projeto */}
+        <div className="flex justify-end mb-6">
+          <Link href="/solicitar-evento">
+            <Button className="bg-red-600 hover:bg-red-500 text-white">
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Projeto
+            </Button>
+          </Link>
+        </div>
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <Card className="bg-zinc-900 border-zinc-800">
@@ -266,10 +291,39 @@ export default function DashboardContratantePage() {
                             </div>
 
                             {/* Orçamento (se disponível) */}
-                            {project.total_client_price && project.total_client_price > 0 && (
+                            {project.client_budget && project.client_budget > 0 ? (
+                              <div className="bg-blue-800/20 rounded-lg p-3 mb-4 border border-blue-700/30">
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="text-xs text-zinc-400">💰 Seu Orçamento:</span>
+                                  <span className="text-sm font-bold text-blue-400">
+                                    R$ {project.client_budget.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                  </span>
+                                </div>
+                                {project.total_cost && project.total_cost > 0 && (
+                                  <>
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="text-xs text-zinc-500">Custo HRX:</span>
+                                      <span className="text-sm text-white">
+                                        R$ {project.total_cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center justify-between pt-2 border-t border-zinc-700">
+                                      <span className="text-xs text-zinc-500">Margem:</span>
+                                      <span className={`text-sm font-bold ${
+                                        (project.client_budget - project.total_cost) >= 0
+                                          ? 'text-green-400'
+                                          : 'text-red-400'
+                                      }`}>
+                                        R$ {(project.client_budget - project.total_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                      </span>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            ) : project.total_client_price && project.total_client_price > 0 && (
                               <div className="bg-zinc-800/50 rounded-lg p-3 mb-4">
                                 <div className="flex items-center justify-between">
-                                  <span className="text-sm text-zinc-400">Valor do Orçamento:</span>
+                                  <span className="text-sm text-zinc-400">Valor Estimado:</span>
                                   <span className="text-lg font-bold text-green-500">
                                     R$ {project.total_client_price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                   </span>

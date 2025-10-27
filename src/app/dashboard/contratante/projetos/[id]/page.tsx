@@ -42,6 +42,7 @@ interface ProjectDetails {
   venue_zip: string | null;
   is_urgent: boolean;
   status: string;
+  client_budget: number | null;
   total_team_cost: number | null;
   total_equipment_cost: number | null;
   total_cost: number | null;
@@ -394,13 +395,110 @@ export default function ProjetoDetalhesPage({
 
           {/* Coluna lateral */}
           <div className="space-y-6">
-            {/* Orçamento */}
-            {project.total_client_price && project.total_client_price > 0 && (
+            {/* Orçamento do Cliente (FIXO) */}
+            {project.client_budget && project.client_budget > 0 ? (
+              <>
+                <Card className="bg-zinc-900 border-zinc-800">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <p className="text-sm font-semibold text-zinc-400">💰 Seu Orçamento</p>
+                      <span className="text-xs px-2 py-1 bg-blue-600/20 text-blue-400 rounded-md border border-blue-600/30">
+                        FIXO
+                      </span>
+                    </div>
+
+                    <p className="text-3xl font-bold text-blue-400 mb-4">
+                      R$ {project.client_budget.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </p>
+
+                    {/* Progress bar showing budget usage */}
+                    {project.total_cost && project.total_cost > 0 && (() => {
+                      const totalCost = project.total_cost || 0;
+                      const budget = project.client_budget || 0;
+                      const remaining = budget - totalCost;
+                      const percentUsed = totalCost > 0 ? (totalCost / budget) * 100 : 0;
+
+                      return (
+                        <>
+                          <div className="space-y-2 mb-3">
+                            <div className="flex justify-between text-xs">
+                              <span className="text-zinc-500">Utilizado</span>
+                              <span className={percentUsed > 100 ? 'text-red-400' : 'text-zinc-400'}>
+                                {percentUsed.toFixed(1)}%
+                              </span>
+                            </div>
+                            <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full transition-all ${
+                                  percentUsed > 100 ? 'bg-red-600' :
+                                  percentUsed > 90 ? 'bg-yellow-600' :
+                                  'bg-blue-600'
+                                }`}
+                                style={{ width: `${Math.min(percentUsed, 100)}%` }}
+                              />
+                            </div>
+                          </div>
+
+                          <div className={`text-sm font-medium ${
+                            remaining < 0 ? 'text-red-400' :
+                            remaining < budget * 0.1 ? 'text-yellow-400' :
+                            'text-green-400'
+                          }`}>
+                            {remaining >= 0 ? (
+                              <>Disponível: R$ {remaining.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</>
+                            ) : (
+                              <>⚠️ Excede em: R$ {Math.abs(remaining).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</>
+                            )}
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </CardContent>
+                </Card>
+
+                {/* Custos HRX */}
+                <Card className="bg-zinc-900 border-zinc-800">
+                  <CardContent className="p-6">
+                    <p className="text-sm font-semibold text-zinc-400 mb-4">📊 Breakdown de Custos</p>
+
+                    <div className="space-y-3">
+                      {/* Breakdown of costs */}
+                      {project.total_team_cost && project.total_team_cost > 0 && (
+                        <div className="flex justify-between items-center pb-2 border-b border-zinc-800">
+                          <span className="text-xs text-zinc-500">Equipe</span>
+                          <span className="text-sm font-medium text-white">
+                            R$ {project.total_team_cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                      )}
+
+                      {project.total_equipment_cost && project.total_equipment_cost > 0 && (
+                        <div className="flex justify-between items-center pb-2 border-b border-zinc-800">
+                          <span className="text-xs text-zinc-500">Equipamentos</span>
+                          <span className="text-sm font-medium text-white">
+                            R$ {project.total_equipment_cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                      )}
+
+                      {project.total_cost && project.total_cost > 0 && (
+                        <div className="flex justify-between items-center pt-2">
+                          <span className="text-sm font-semibold text-zinc-400">Custo Total</span>
+                          <span className="text-xl font-bold text-white">
+                            R$ {project.total_cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            ) : project.total_client_price && project.total_client_price > 0 && (
               <Card className="bg-gradient-to-br from-green-900/20 to-green-800/10 border-green-800/50">
                 <CardHeader>
                   <CardTitle className="text-white flex items-center gap-2">
                     <DollarSign className="h-5 w-5" />
-                    Orçamento
+                    Orçamento Estimado
                   </CardTitle>
                 </CardHeader>
                 <CardContent>

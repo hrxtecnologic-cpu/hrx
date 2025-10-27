@@ -18,6 +18,7 @@ interface WizardContainerProps {
   onNext?: () => void;
   onPrevious?: () => void;
   onSubmit?: () => void;
+  onBackToSelection?: () => void; // Novo: volta para página de seleção
   isSubmitting?: boolean;
   canGoNext?: boolean;
   canGoPrevious?: boolean;
@@ -25,6 +26,7 @@ interface WizardContainerProps {
   nextLabel?: string;
   previousLabel?: string;
   submitLabel?: string;
+  backToSelectionLabel?: string; // Novo: label do botão de voltar
   className?: string;
 }
 
@@ -35,6 +37,7 @@ export function WizardContainer({
   onNext,
   onPrevious,
   onSubmit,
+  onBackToSelection,
   isSubmitting = false,
   canGoNext = true,
   canGoPrevious = true,
@@ -42,6 +45,7 @@ export function WizardContainer({
   nextLabel = 'Próximo',
   previousLabel = 'Voltar',
   submitLabel = 'Finalizar',
+  backToSelectionLabel = '← Voltar para seleção',
   className,
 }: WizardContainerProps) {
   const isFirstStep = currentStep === 0;
@@ -161,23 +165,36 @@ export function WizardContainer({
       {/* Navigation */}
       {!hideNavigation && (
         <div className="flex items-center justify-between gap-4 pt-6 border-t border-zinc-800">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onPrevious}
-            disabled={!canGoPrevious || isFirstStep || isSubmitting}
-            className={cn(
-              'bg-zinc-900 border-zinc-700 text-zinc-200 hover:bg-zinc-800 hover:text-white',
-              (isFirstStep || !canGoPrevious) && 'invisible'
-            )}
-          >
-            <ChevronLeft className="w-4 h-4 mr-2" />
-            {previousLabel}
-          </Button>
+          {/* Botão Voltar - mostra "voltar para seleção" no primeiro step OU botão normal nos outros */}
+          {isFirstStep && onBackToSelection ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onBackToSelection}
+              disabled={isSubmitting}
+              className="bg-zinc-900 border-zinc-700 text-zinc-200 hover:bg-zinc-800 hover:text-white"
+            >
+              {backToSelectionLabel}
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onPrevious}
+              disabled={!canGoPrevious || isFirstStep || isSubmitting}
+              className={cn(
+                'bg-zinc-900 border-zinc-700 text-zinc-200 hover:bg-zinc-800 hover:text-white',
+                (isFirstStep || !canGoPrevious) && 'invisible'
+              )}
+            >
+              <ChevronLeft className="w-4 h-4 mr-2" />
+              {previousLabel}
+            </Button>
+          )}
 
           {isLastStep ? (
             <Button
-              type="button"
+              type="submit"
               onClick={onSubmit}
               disabled={isSubmitting}
               className="bg-red-600 hover:bg-red-700 text-white px-8"

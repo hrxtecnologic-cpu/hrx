@@ -5,6 +5,7 @@ import { useUser } from '@clerk/nextjs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { DashboardHeader } from '@/components/DashboardHeader';
 import {
   Calendar,
   MapPin,
@@ -62,6 +63,7 @@ interface ProfessionalData {
   phone?: string;
   status: 'pending' | 'approved' | 'rejected';
   categories: string[];
+  subcategories?: Record<string, string[]>;
   documents?: any;
   city?: string;
   state?: string;
@@ -311,31 +313,38 @@ export default function ProfessionalDashboardPage() {
   const StatusIcon = statusConfig?.icon;
 
   return (
-    <div className="min-h-screen bg-zinc-950 p-4 py-8">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Meu Dashboard</h1>
-            <p className="text-zinc-400">
-              Olá, {professional?.name || user.firstName || user.emailAddresses[0].emailAddress}!
-            </p>
+    <div className="min-h-screen bg-zinc-950">
+      {/* Header com UserButton */}
+      <DashboardHeader
+        userName={professional?.name}
+        userRole="Profissional"
+      />
+
+      <div className="p-4 py-8">
+        <div className="max-w-7xl mx-auto space-y-6">
+          {/* Botões de ação */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-white mb-2">Meu Dashboard</h1>
+              <p className="text-zinc-400">
+                Acompanhe seus eventos e convites
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <Link href="/cadastro-profissional">
+                <Button className="bg-red-600 hover:bg-red-700 text-white border-0">
+                  <User className="h-4 w-4 mr-2" />
+                  Editar Perfil
+                </Button>
+              </Link>
+              <Link href="/">
+                <Button variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">
+                  <Home className="h-4 w-4 mr-2" />
+                  Home
+                </Button>
+              </Link>
+            </div>
           </div>
-          <div className="flex gap-3">
-            <Link href="/cadastro-profissional">
-              <Button className="bg-red-600 hover:bg-red-700 text-white border-0">
-                <User className="h-4 w-4 mr-2" />
-                Editar Perfil
-              </Button>
-            </Link>
-            <Link href="/">
-              <Button className="bg-red-600 hover:bg-red-700 text-white border-0">
-                <Home className="h-4 w-4 mr-2" />
-                Home
-              </Button>
-            </Link>
-          </div>
-        </div>
 
         {/* Status do Cadastro */}
         {professional && statusConfig && StatusIcon && (
@@ -548,8 +557,35 @@ export default function ProfessionalDashboardPage() {
               </CardContent>
             </Card>
 
-            {/* Categorias */}
-            {professional.categories && professional.categories.length > 0 && (
+            {/* Subcategorias / Especialidades */}
+            {professional.subcategories && Object.keys(professional.subcategories).length > 0 ? (
+              <Card className="bg-zinc-900 border-zinc-800">
+                <CardHeader>
+                  <CardTitle className="text-white text-base flex items-center gap-2">
+                    <Briefcase className="h-5 w-5 text-red-600" />
+                    Minhas Especialidades
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {Object.entries(professional.subcategories).map(([category, subs]) => (
+                    <div key={category}>
+                      <p className="text-sm font-semibold text-zinc-400 mb-2">{category}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {subs.map((sub: string) => (
+                          <span
+                            key={sub}
+                            className="text-xs bg-red-500/10 text-red-500 px-3 py-1.5 rounded-full border border-red-500/20"
+                          >
+                            {sub}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            ) : professional.categories && professional.categories.length > 0 && (
+              // Fallback para sistema antigo (categorias)
               <Card className="bg-zinc-900 border-zinc-800">
                 <CardHeader>
                   <CardTitle className="text-white text-base flex items-center gap-2">
@@ -632,6 +668,7 @@ export default function ProfessionalDashboardPage() {
             </CardContent>
           </Card>
         )}
+        </div>
       </div>
     </div>
   );

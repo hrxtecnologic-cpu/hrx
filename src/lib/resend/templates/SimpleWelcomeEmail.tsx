@@ -1,16 +1,5 @@
-import {
-  Html,
-  Head,
-  Body,
-  Container,
-  Heading,
-  Text,
-  Section,
-  Hr,
-  Link,
-} from '@react-email/components';
 import * as React from 'react';
-import { HRX_CONTACT_INFO } from './EmailFooter';
+import { EmailFooterDark, HRX_CONTACT_INFO, EMAIL_DARK_STYLES } from './EmailFooterDark';
 
 interface SimpleWelcomeEmailProps {
   professionalName: string;
@@ -21,194 +10,61 @@ export const SimpleWelcomeEmail: React.FC<SimpleWelcomeEmailProps> = ({
   professionalName,
   professionalEmail,
 }) => (
-  <Html>
-    <Head />
-    <Body style={styles.body}>
-      <Container style={styles.container}>
-        {/* Logo */}
-        <Heading style={styles.logo}>HRX</Heading>
+  <html>
+    <head>
+      <style>{EMAIL_DARK_STYLES}</style>
+    </head>
+    <body>
+      <div className="container">
+        {/* Header */}
+        <div className="header">
+          <div className="logo">HRX EVENTOS</div>
+          <span className="badge">✓ Cadastro Recebido</span>
+        </div>
 
-        {/* Badge */}
-        <Section style={styles.badgeContainer}>
-          <Text style={styles.badge}>✓ Cadastro Recebido</Text>
-        </Section>
-
-        {/* Title */}
-        <Heading style={styles.title}>
-          Bem-vindo à HRX, {professionalName}! 🎉
-        </Heading>
+        {/* Greeting */}
+        <h1>Bem-vindo à HRX, {professionalName}! 🎉</h1>
 
         {/* Content */}
-        <Text style={styles.text}>
-          Ficamos muito felizes em tê-lo(a) conosco! Seu cadastro foi recebido com
-          sucesso e agora está em análise pela nossa equipe.
-        </Text>
+        <div className="content">
+          <p>
+            Ficamos muito felizes em tê-lo(a) conosco! Seu cadastro foi recebido com sucesso e
+            agora está em análise pela nossa equipe.
+          </p>
+        </div>
 
         {/* Timeline */}
-        <Section style={styles.timeline}>
-          <Heading style={styles.timelineTitle}>📋 O que acontece agora?</Heading>
-
-          <Text style={styles.timelineItem}>
-            <strong>1. Análise de Documentos (24-48h)</strong>
-            <br />
-            <span style={styles.timelineDescription}>
-              Nossa equipe irá verificar seus documentos e certificações.
-            </span>
-          </Text>
-
-          <Text style={styles.timelineItem}>
-            <strong>2. Aprovação do Cadastro</strong>
-            <br />
-            <span style={styles.timelineDescription}>
-              Você receberá um email confirmando a aprovação.
-            </span>
-          </Text>
-
-          <Text style={styles.timelineItem}>
-            <strong>3. Comece a Trabalhar!</strong>
-            <br />
-            <span style={styles.timelineDescription}>
-              Assim que aprovado, você começará a receber ofertas de trabalho.
-            </span>
-          </Text>
-        </Section>
+        <div className="highlight-box">
+          <h3>📋 O que acontece agora?</h3>
+          <p><strong>1. Análise de Documentos (24-48h)</strong></p>
+          <p style={{ marginLeft: '20px', fontSize: '14px', color: '#a1a1aa' }}>
+            Nossa equipe irá verificar seus documentos e certificações.
+          </p>
+          <p style={{ marginTop: '15px' }}><strong>2. Aprovação do Cadastro</strong></p>
+          <p style={{ marginLeft: '20px', fontSize: '14px', color: '#a1a1aa' }}>
+            Você receberá um email confirmando a aprovação.
+          </p>
+          <p style={{ marginTop: '15px' }}><strong>3. Comece a Trabalhar!</strong></p>
+          <p style={{ marginLeft: '20px', fontSize: '14px', color: '#a1a1aa' }}>
+            Assim que aprovado, você começará a receber ofertas de trabalho.
+          </p>
+        </div>
 
         {/* Next Steps */}
-        <Section style={styles.nextSteps}>
-          <Heading style={styles.nextStepsTitle}>✅ Próximos Passos</Heading>
-          <Text style={styles.text}>
-            • Aguarde nosso email de confirmação
-            <br />
-            • Mantenha seu WhatsApp ativo para receber notificações
-            <br />
-            • Prepare-se para receber suas primeiras oportunidades
-          </Text>
-        </Section>
+        <div className="info-box">
+          <h2>✅ Próximos Passos</h2>
+          <ul>
+            <li>Aguarde nosso email de confirmação</li>
+            <li>Mantenha seu WhatsApp ativo para receber notificações</li>
+            <li>Prepare-se para receber suas primeiras oportunidades</li>
+          </ul>
+        </div>
 
-        {/* Contact */}
-        <Section style={styles.contact}>
-          <Text style={styles.contactTitle}>Precisa de ajuda?</Text>
-          <Text style={styles.text}>
-            🌐 Site: <Link href={HRX_CONTACT_INFO.siteUrl} style={styles.link}>{HRX_CONTACT_INFO.site}</Link>
-            <br />
-            📧 Email: <Link href={`mailto:${HRX_CONTACT_INFO.email}`} style={styles.link}>{HRX_CONTACT_INFO.email}</Link>
-            <br />
-            📱 WhatsApp: <Link href={`https://wa.me/${HRX_CONTACT_INFO.telefoneWhatsApp}`} style={styles.link}>{HRX_CONTACT_INFO.telefone}</Link>
-          </Text>
-        </Section>
+        <div className="divider"></div>
 
-        <Hr style={styles.hr} />
-
-        {/* Footer */}
-        <Text style={styles.footer}>
-          Este email foi enviado para <strong>{professionalEmail}</strong>
-        </Text>
-        <Text style={styles.footer}>
-          © {HRX_CONTACT_INFO.ano} {HRX_CONTACT_INFO.nomeEmpresa} - Plataforma de Profissionais para Eventos
-        </Text>
-        <Text style={styles.footer}>
-          {HRX_CONTACT_INFO.site}
-        </Text>
-      </Container>
-    </Body>
-  </Html>
+        {/* Contact & Footer */}
+        <EmailFooterDark recipientEmail={professionalEmail} showContact={true} />
+      </div>
+    </body>
+  </html>
 );
-
-const styles = {
-  body: {
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-    backgroundColor: '#f9fafb',
-    margin: 0,
-    padding: '20px',
-  },
-  container: {
-    backgroundColor: '#ffffff',
-    borderRadius: '8px',
-    padding: '40px',
-    maxWidth: '600px',
-    margin: '0 auto',
-  },
-  logo: {
-    fontSize: '32px',
-    fontWeight: 'bold',
-    color: '#DC2626',
-    textAlign: 'center' as const,
-    marginBottom: '10px',
-  },
-  badgeContainer: {
-    textAlign: 'center' as const,
-    marginBottom: '20px',
-  },
-  badge: {
-    display: 'inline-block',
-    backgroundColor: '#fee2e2',
-    color: '#DC2626',
-    padding: '8px 16px',
-    borderRadius: '20px',
-    fontSize: '14px',
-    fontWeight: '600',
-  },
-  title: {
-    color: '#1a1a1a',
-    fontSize: '24px',
-    marginBottom: '20px',
-  },
-  text: {
-    color: '#4a5568',
-    fontSize: '16px',
-    lineHeight: '1.6',
-    marginBottom: '15px',
-  },
-  timeline: {
-    backgroundColor: '#fef2f2',
-    padding: '20px',
-    borderRadius: '8px',
-    margin: '20px 0',
-  },
-  timelineTitle: {
-    color: '#DC2626',
-    fontSize: '18px',
-    marginTop: 0,
-  },
-  timelineItem: {
-    color: '#1a1a1a',
-    fontSize: '16px',
-    marginBottom: '15px',
-  },
-  timelineDescription: {
-    color: '#4a5568',
-    fontSize: '14px',
-    marginLeft: '20px',
-  },
-  nextSteps: {
-    backgroundColor: '#f9fafb',
-    borderLeft: '4px solid #DC2626',
-    padding: '20px',
-    margin: '20px 0',
-  },
-  nextStepsTitle: {
-    color: '#1a1a1a',
-    fontSize: '18px',
-    marginTop: 0,
-  },
-  contact: {
-    backgroundColor: '#f9fafb',
-    padding: '15px',
-    borderRadius: '6px',
-    margin: '20px 0',
-  },
-  contactTitle: {
-    fontWeight: 'bold',
-    marginBottom: '5px',
-  },
-  hr: {
-    borderColor: '#e5e7eb',
-    margin: '40px 0 20px',
-  },
-  footer: {
-    textAlign: 'center' as const,
-    color: '#6b7280',
-    fontSize: '14px',
-    marginTop: '10px',
-  },
-};

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { HRX_CONTACT_INFO } from './EmailFooter';
+import { EmailFooterDark, HRX_CONTACT_INFO, EMAIL_DARK_STYLES } from './EmailFooterDark';
 
 interface Professional {
   category: string;
@@ -50,224 +50,83 @@ export const ContractorConfirmationEmail: React.FC<ContractorConfirmationEmailPr
   return (
     <html>
       <head>
-        <style>{`
-          body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 20px;
-          }
-          .container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: #ffffff;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-          }
-          .header {
-            background: #DC2626;
-            color: #ffffff;
-            padding: 30px 20px;
-            text-align: center;
-          }
-          .logo {
-            font-size: 32px;
-            font-weight: bold;
-            letter-spacing: 2px;
-            margin-bottom: 10px;
-          }
-          .header-subtitle {
-            font-size: 16px;
-            opacity: 0.9;
-          }
-          .content {
-            padding: 30px;
-          }
-          .request-number {
-            background: #fee2e2;
-            color: #DC2626;
-            padding: 15px;
-            border-radius: 6px;
-            text-align: center;
-            margin-bottom: 20px;
-            font-weight: bold;
-            font-size: 18px;
-          }
-          .greeting {
-            font-size: 18px;
-            color: #1a1a1a;
-            margin-bottom: 20px;
-          }
-          .section {
-            margin: 25px 0;
-            padding: 20px;
-            background: #f9fafb;
-            border-radius: 6px;
-            border-left: 4px solid #DC2626;
-          }
-          .section-title {
-            color: #DC2626;
-            font-size: 16px;
-            font-weight: 600;
-            margin-top: 0;
-            margin-bottom: 15px;
-          }
-          .info-row {
-            display: flex;
-            padding: 8px 0;
-            border-bottom: 1px solid #e5e7eb;
-          }
-          .info-row:last-child {
-            border-bottom: none;
-          }
-          .info-label {
-            font-weight: 600;
-            color: #4a5568;
-            min-width: 120px;
-          }
-          .info-value {
-            color: #1a1a1a;
-          }
-          .professionals-list {
-            margin: 10px 0;
-          }
-          .professional-item {
-            background: #ffffff;
-            padding: 12px;
-            margin: 8px 0;
-            border-radius: 4px;
-            border-left: 3px solid #DC2626;
-          }
-          .professional-item strong {
-            color: #DC2626;
-          }
-          .next-steps {
-            background: #dbeafe;
-            border-left: 4px solid #3b82f6;
-            padding: 20px;
-            margin: 25px 0;
-            border-radius: 6px;
-          }
-          .next-steps h3 {
-            color: #1e40af;
-            margin-top: 0;
-          }
-          .next-steps ul {
-            margin: 15px 0;
-            padding-left: 25px;
-          }
-          .next-steps li {
-            margin: 10px 0;
-            color: #1e3a8a;
-          }
-          .contact-box {
-            background: #f3f4f6;
-            padding: 20px;
-            border-radius: 6px;
-            text-align: center;
-            margin: 25px 0;
-          }
-          .contact-box h3 {
-            color: #1a1a1a;
-            margin-top: 0;
-          }
-          .contact-info {
-            margin: 10px 0;
-            font-size: 16px;
-          }
-          .contact-info a {
-            color: #DC2626;
-            text-decoration: none;
-            font-weight: 600;
-          }
-          .contact-info a:hover {
-            text-decoration: underline;
-          }
-          .footer {
-            background: #1a1a1a;
-            color: #ffffff;
-            padding: 20px;
-            text-align: center;
-            font-size: 14px;
-          }
-          .footer-link {
-            color: #DC2626;
-            text-decoration: none;
-          }
-        `}</style>
+        <style>{EMAIL_DARK_STYLES}</style>
       </head>
       <body>
         <div className="container">
           {/* Header */}
           <div className="header">
-            <div className="logo">HRX</div>
-            <div className="header-subtitle">✅ Solicitação Recebida</div>
+            <div className="logo">HRX EVENTOS</div>
+            <span className="badge">✅ Solicitação Recebida</span>
           </div>
 
           {/* Content */}
           <div className="content">
             {/* Request Number */}
-            <div className="request-number">
-              Nº da Solicitação: {requestNumber}
+            <div className="highlight-box" style={{ textAlign: 'center', marginBottom: '30px' }}>
+              <h3 style={{ margin: 0, fontSize: '20px' }}>Nº da Solicitação: {requestNumber}</h3>
             </div>
 
             {/* Greeting */}
-            <p className="greeting">
+            <h1 style={{ fontSize: '22px', marginBottom: '20px' }}>
               Olá, <strong>{responsibleName}</strong>!
-            </p>
+            </h1>
 
-            <p>
+            <p style={{ color: '#d4d4d8', marginBottom: '30px' }}>
               Recebemos sua solicitação de equipe para o evento e estamos muito felizes em poder
               ajudá-lo! Nossa equipe está analisando todos os detalhes.
             </p>
 
             {/* Event Info */}
-            <div className="section">
-              <h3 className="section-title">🎯 Dados do Evento</h3>
-              <div className="info-row">
-                <div className="info-label">Evento:</div>
-                <div className="info-value"><strong>{eventName}</strong></div>
+            <div className="info-box">
+              <h2>🎯 Dados do Evento</h2>
+              <div style={{ display: 'flex', padding: '8px 0', borderBottom: '1px solid #27272a' }}>
+                <div style={{ fontWeight: 600, color: '#a1a1aa', minWidth: '120px' }}>Evento:</div>
+                <div style={{ color: '#fafafa' }}><strong>{eventName}</strong></div>
               </div>
-              <div className="info-row">
-                <div className="info-label">Data:</div>
-                <div className="info-value">
+              <div style={{ display: 'flex', padding: '8px 0', borderBottom: '1px solid #27272a' }}>
+                <div style={{ fontWeight: 600, color: '#a1a1aa', minWidth: '120px' }}>Data:</div>
+                <div style={{ color: '#fafafa' }}>
                   {new Date(startDate).toLocaleDateString('pt-BR')} até{' '}
                   {new Date(endDate).toLocaleDateString('pt-BR')}
                 </div>
               </div>
-              <div className="info-row">
-                <div className="info-label">Local:</div>
-                <div className="info-value">{venueAddress}, {venueCity} - {venueState}</div>
+              <div style={{ display: 'flex', padding: '8px 0', borderBottom: '1px solid #27272a' }}>
+                <div style={{ fontWeight: 600, color: '#a1a1aa', minWidth: '120px' }}>Local:</div>
+                <div style={{ color: '#fafafa' }}>{venueAddress}, {venueCity} - {venueState}</div>
               </div>
-              <div className="info-row">
-                <div className="info-label">Urgência:</div>
-                <div className="info-value">{urgencyLabel}</div>
+              <div style={{ display: 'flex', padding: '8px 0', borderBottom: '1px solid #27272a' }}>
+                <div style={{ fontWeight: 600, color: '#a1a1aa', minWidth: '120px' }}>Urgência:</div>
+                <div style={{ color: '#fafafa' }}>{urgencyLabel}</div>
               </div>
               {budgetRange && (
-                <div className="info-row">
-                  <div className="info-label">Orçamento:</div>
-                  <div className="info-value">{budgetRange}</div>
+                <div style={{ display: 'flex', padding: '8px 0' }}>
+                  <div style={{ fontWeight: 600, color: '#a1a1aa', minWidth: '120px' }}>Orçamento:</div>
+                  <div style={{ color: '#fafafa' }}>{budgetRange}</div>
                 </div>
               )}
             </div>
 
             {/* Professionals */}
-            <div className="section">
-              <h3 className="section-title">👷 Profissionais Solicitados</h3>
+            <div className="info-box">
+              <h2>👷 Profissionais Solicitados</h2>
               <p style={{ marginTop: 0 }}>
                 <strong>Total: {totalProfessionals} profissionais</strong>
               </p>
-              <div className="professionals-list">
+              <div style={{ margin: '10px 0' }}>
                 {professionalsNeeded.map((prof, index) => (
-                  <div key={index} className="professional-item">
+                  <div key={index} style={{
+                    background: '#18181b',
+                    padding: '12px',
+                    margin: '8px 0',
+                    borderRadius: '4px',
+                    borderLeft: '3px solid #ef4444'
+                  }}>
                     <div>
-                      <strong>{prof.category}</strong>: {prof.quantity} pessoas - {prof.shift}
+                      <strong style={{ color: '#ef4444' }}>{prof.category}</strong>: {prof.quantity} pessoas - {prof.shift}
                     </div>
                     {prof.requirements && (
-                      <div style={{ fontSize: '14px', color: '#6b7280', marginTop: '5px' }}>
+                      <div style={{ fontSize: '14px', color: '#71717a', marginTop: '5px' }}>
                         Requisitos: {prof.requirements}
                       </div>
                     )}
@@ -278,8 +137,8 @@ export const ContractorConfirmationEmail: React.FC<ContractorConfirmationEmailPr
 
             {/* Equipment */}
             {needsEquipment && equipmentList && equipmentList.length > 0 && (
-              <div className="section">
-                <h3 className="section-title">🛠️ Equipamentos Solicitados</h3>
+              <div className="info-box">
+                <h2>🛠️ Equipamentos Solicitados</h2>
                 <ul style={{ margin: 0, paddingLeft: '20px' }}>
                   {equipmentList.map((equipment, index) => (
                     <li key={index}>{equipment}</li>
@@ -289,7 +148,7 @@ export const ContractorConfirmationEmail: React.FC<ContractorConfirmationEmailPr
             )}
 
             {/* Next Steps */}
-            <div className="next-steps">
+            <div className="highlight-box">
               <h3>✅ Próximos Passos</h3>
               <p>
                 Nossa equipe está analisando sua solicitação e entrará em contato em até{' '}
@@ -303,37 +162,12 @@ export const ContractorConfirmationEmail: React.FC<ContractorConfirmationEmailPr
                 <li>Cronograma de execução</li>
               </ul>
             </div>
-
-            {/* Contact */}
-            <div className="contact-box">
-              <h3>📞 Contato Direto</h3>
-              <div className="contact-info">
-                <strong>Site:</strong>{' '}
-                <a href={HRX_CONTACT_INFO.siteUrl}>{HRX_CONTACT_INFO.site}</a>
-              </div>
-              <div className="contact-info">
-                <strong>WhatsApp:</strong>{' '}
-                <a href={`https://wa.me/${HRX_CONTACT_INFO.telefoneWhatsApp}`}>{HRX_CONTACT_INFO.telefone}</a>
-              </div>
-              <div className="contact-info">
-                <strong>Email:</strong>{' '}
-                <a href={`mailto:${HRX_CONTACT_INFO.email}`}>{HRX_CONTACT_INFO.email}</a>
-              </div>
-            </div>
           </div>
+
+          <div className="divider"></div>
 
           {/* Footer */}
-          <div className="footer">
-            <p style={{ margin: '0 0 10px 0' }}>
-              Atenciosamente,<br />
-              <strong>Equipe {HRX_CONTACT_INFO.nomeEmpresa}</strong><br />
-              Soluções Completas para Eventos
-            </p>
-            <p style={{ margin: '10px 0 0 0', fontSize: '12px', opacity: 0.8 }}>
-              © {HRX_CONTACT_INFO.ano} {HRX_CONTACT_INFO.nomeEmpresa} - Plataforma de Profissionais para Eventos<br />
-              {HRX_CONTACT_INFO.site}
-            </p>
-          </div>
+          <EmailFooterDark showContact={true} />
         </div>
       </body>
     </html>

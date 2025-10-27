@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { EmailFooter, HRX_CONTACT_INFO, EMAIL_FOOTER_STYLES } from './EmailFooter';
+import { EmailFooterDark, HRX_CONTACT_INFO, EMAIL_DARK_STYLES } from './EmailFooterDark';
 
 interface ProfessionalWelcomeEmailProps {
   professionalName: string;
@@ -12,125 +12,14 @@ export const ProfessionalWelcomeEmail: React.FC<ProfessionalWelcomeEmailProps> =
 }) => (
   <html>
     <head>
-      <style>{`
-        body {
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-          line-height: 1.6;
-          color: #333;
-          max-width: 600px;
-          margin: 0 auto;
-          padding: 20px;
-        }
-        .container {
-          background: #ffffff;
-          border-radius: 8px;
-          padding: 40px;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        .header {
-          text-align: center;
-          margin-bottom: 30px;
-        }
-        .logo {
-          font-size: 32px;
-          font-weight: bold;
-          color: #DC2626;
-          margin-bottom: 10px;
-        }
-        h1 {
-          color: #1a1a1a;
-          font-size: 24px;
-          margin-bottom: 20px;
-        }
-        .badge {
-          display: inline-block;
-          background: #fee2e2;
-          color: #DC2626;
-          padding: 8px 16px;
-          border-radius: 20px;
-          font-size: 14px;
-          font-weight: 600;
-          margin-bottom: 20px;
-        }
-        .content {
-          color: #4a5568;
-          font-size: 16px;
-          margin-bottom: 30px;
-        }
-        .next-steps {
-          background: #f9fafb;
-          border-left: 4px solid #DC2626;
-          padding: 20px;
-          margin: 30px 0;
-        }
-        .next-steps h2 {
-          color: #1a1a1a;
-          font-size: 18px;
-          margin-top: 0;
-        }
-        .next-steps ul {
-          margin: 10px 0;
-          padding-left: 20px;
-        }
-        .next-steps li {
-          margin: 8px 0;
-          color: #4a5568;
-        }
-        .timeline {
-          background: #fef2f2;
-          padding: 20px;
-          border-radius: 8px;
-          margin: 20px 0;
-        }
-        .timeline h3 {
-          color: #DC2626;
-          font-size: 16px;
-          margin-top: 0;
-        }
-        .timeline p {
-          color: #4a5568;
-          margin: 5px 0;
-        }
-        .button {
-          display: inline-block;
-          background: #DC2626;
-          color: #ffffff;
-          padding: 14px 28px;
-          text-decoration: none;
-          border-radius: 6px;
-          font-weight: 600;
-          margin: 20px 0;
-        }
-        .footer {
-          text-align: center;
-          margin-top: 40px;
-          padding-top: 20px;
-          border-top: 1px solid #e5e7eb;
-          color: #6b7280;
-          font-size: 14px;
-        }
-        .contact {
-          background: #f9fafb;
-          padding: 15px;
-          border-radius: 6px;
-          margin: 20px 0;
-        }
-        .contact p {
-          margin: 5px 0;
-          color: #4a5568;
-        }
-        .highlight {
-          color: #DC2626;
-          font-weight: 600;
-        }
-        ${EMAIL_FOOTER_STYLES}
-      `}</style>
+      <style>{EMAIL_DARK_STYLES}</style>
     </head>
     <body>
       <div className="container">
         {/* Header */}
         <div className="header">
-          <div className="logo">HRX</div>
+          <img src={HRX_CONTACT_INFO.logoUrl} alt="HRX Eventos" className="logo-image" />
+          <div className="logo">HRX EVENTOS</div>
           <span className="badge">✓ Cadastro Recebido</span>
         </div>
 
@@ -146,24 +35,24 @@ export const ProfessionalWelcomeEmail: React.FC<ProfessionalWelcomeEmailProps> =
         </div>
 
         {/* Timeline */}
-        <div className="timeline">
+        <div className="highlight-box">
           <h3>📋 O que acontece agora?</h3>
           <p><strong>1. Análise de Documentos (24-48h)</strong></p>
-          <p style={{ marginLeft: '20px', fontSize: '14px' }}>
+          <p style={{ marginLeft: '20px', fontSize: '14px', color: '#a1a1aa' }}>
             Nossa equipe irá verificar seus documentos e certificações.
           </p>
           <p style={{ marginTop: '15px' }}><strong>2. Aprovação do Cadastro</strong></p>
-          <p style={{ marginLeft: '20px', fontSize: '14px' }}>
+          <p style={{ marginLeft: '20px', fontSize: '14px', color: '#a1a1aa' }}>
             Você receberá um email confirmando a aprovação.
           </p>
           <p style={{ marginTop: '15px' }}><strong>3. Comece a Trabalhar!</strong></p>
-          <p style={{ marginLeft: '20px', fontSize: '14px' }}>
+          <p style={{ marginLeft: '20px', fontSize: '14px', color: '#a1a1aa' }}>
             Assim que aprovado, você começará a receber ofertas de trabalho.
           </p>
         </div>
 
         {/* Next Steps */}
-        <div className="next-steps">
+        <div className="info-box">
           <h2>✅ Próximos Passos</h2>
           <ul>
             <li>Aguarde nosso email de confirmação</li>
@@ -172,8 +61,17 @@ export const ProfessionalWelcomeEmail: React.FC<ProfessionalWelcomeEmailProps> =
           </ul>
         </div>
 
+        {/* CTA Button */}
+        <div style={{ textAlign: 'center', margin: '30px 0' }}>
+          <a href={`${HRX_CONTACT_INFO.siteUrl}/professional/dashboard`} className="button">
+            Acessar Meu Dashboard
+          </a>
+        </div>
+
+        <div className="divider"></div>
+
         {/* Contact & Footer */}
-        <EmailFooter recipientEmail={professionalEmail} showContact={true} />
+        <EmailFooterDark recipientEmail={professionalEmail} showContact={true} />
       </div>
     </body>
   </html>

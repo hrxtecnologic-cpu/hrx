@@ -38,7 +38,7 @@ export async function GET(req: Request) {
 
     const { data: profByClerkId, error: err1 } = await supabase
       .from('professionals')
-      .select('id, full_name, email, phone, status, categories, documents, city, state, rejection_reason')
+      .select('id, full_name, email, phone, status, categories, subcategories, documents, city, state, rejection_reason')
       .eq('clerk_id', userId)
       .single();
 
@@ -55,7 +55,7 @@ export async function GET(req: Request) {
       if (userData) {
         const { data: profByUserId, error: err2 } = await supabase
           .from('professionals')
-          .select('id, full_name, email, phone, status, categories, documents, city, state, rejection_reason')
+          .select('id, full_name, email, phone, status, categories, subcategories, documents, city, state, rejection_reason')
           .eq('user_id', userData.id)
           .single();
 
@@ -205,6 +205,7 @@ export async function GET(req: Request) {
         phone: professional.phone,
         status: professional.status,
         categories: professional.categories,
+        subcategories: professional.subcategories,
         documents: professional.documents,
         city: professional.city,
         state: professional.state,

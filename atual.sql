@@ -27,6 +27,59 @@ CREATE TABLE public.contractors (
   CONSTRAINT contractors_pkey PRIMARY KEY (id),
   CONSTRAINT contractors_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
 );
+CREATE TABLE public.delivery_location_history (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  delivery_tracking_id uuid NOT NULL,
+  latitude numeric NOT NULL,
+  longitude numeric NOT NULL,
+  speed_kmh numeric,
+  recorded_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT delivery_location_history_pkey PRIMARY KEY (id),
+  CONSTRAINT delivery_location_history_delivery_tracking_id_fkey FOREIGN KEY (delivery_tracking_id) REFERENCES public.delivery_trackings(id)
+);
+CREATE TABLE public.delivery_status_updates (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  delivery_tracking_id uuid NOT NULL,
+  old_status character varying,
+  new_status character varying NOT NULL,
+  updated_by_user_id uuid,
+  notes text,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT delivery_status_updates_pkey PRIMARY KEY (id),
+  CONSTRAINT delivery_status_updates_delivery_tracking_id_fkey FOREIGN KEY (delivery_tracking_id) REFERENCES public.delivery_trackings(id),
+  CONSTRAINT delivery_status_updates_updated_by_user_id_fkey FOREIGN KEY (updated_by_user_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.delivery_trackings (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  event_project_id uuid NOT NULL,
+  supplier_id uuid NOT NULL,
+  supplier_user_id uuid,
+  status character varying NOT NULL DEFAULT 'pending'::character varying,
+  equipment_items jsonb NOT NULL DEFAULT '[]'::jsonb,
+  current_latitude numeric,
+  current_longitude numeric,
+  last_location_update timestamp with time zone,
+  origin_address text,
+  origin_latitude numeric,
+  origin_longitude numeric,
+  destination_address text NOT NULL,
+  destination_latitude numeric NOT NULL,
+  destination_longitude numeric NOT NULL,
+  scheduled_pickup_time timestamp with time zone,
+  scheduled_delivery_time timestamp with time zone NOT NULL,
+  actual_pickup_time timestamp with time zone,
+  actual_delivery_time timestamp with time zone,
+  estimated_distance_km numeric,
+  estimated_duration_minutes integer,
+  notes text,
+  delivery_notes text,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT delivery_trackings_pkey PRIMARY KEY (id),
+  CONSTRAINT delivery_trackings_event_project_id_fkey FOREIGN KEY (event_project_id) REFERENCES public.event_projects(id),
+  CONSTRAINT delivery_trackings_supplier_id_fkey FOREIGN KEY (supplier_id) REFERENCES public.equipment_suppliers(id),
+  CONSTRAINT delivery_trackings_supplier_user_id_fkey FOREIGN KEY (supplier_user_id) REFERENCES public.users(id)
+);
 CREATE TABLE public.document_validations (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   professional_id uuid NOT NULL,
@@ -144,7 +197,7 @@ CREATE TABLE public.event_projects (
   venue_state character varying NOT NULL,
   venue_zip character varying,
   is_urgent boolean DEFAULT false,
-  profit_margin numeric NOT NULL DEFAULT 35.00 CHECK (profit_margin = ANY (ARRAY[35.00, 80.00])),
+  profit_margin numeric NOT NULL CHECK (profit_margin >= 0::numeric AND profit_margin <= 100::numeric),
   budget_range character varying,
   status character varying NOT NULL DEFAULT 'new'::character varying CHECK (status::text = ANY (ARRAY['new'::character varying, 'analyzing'::character varying, 'quoting'::character varying, 'quoted'::character varying, 'proposed'::character varying, 'approved'::character varying, 'in_execution'::character varying, 'completed'::character varying, 'cancelled'::character varying]::text[])),
   total_team_cost numeric DEFAULT 0,
@@ -200,7 +253,7 @@ CREATE TABLE public.notification_preferences (
 CREATE TABLE public.notifications (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   user_id uuid,
-  user_type text NOT NULL CHECK (user_type = ANY (ARRAY['admin'::text, 'professional'::text, 'supplier'::text, 'client'::text])),
+  user_type text NOT NULL CHECK (user_type = ANY (ARRAY['admin'::text, 'professional'::text, 'contractor'::text, 'supplier'::text, 'client'::text])),
   notification_type text NOT NULL CHECK (notification_type = ANY (ARRAY['project_created'::text, 'project_status_changed'::text, 'invitation_received'::text, 'invitation_accepted'::text, 'invitation_rejected'::text, 'quotation_received'::text, 'quotation_accepted'::text, 'document_approved'::text, 'document_rejected'::text, 'document_expiring'::text, 'team_incomplete'::text, 'proposal_sent'::text, 'payment_received'::text, 'event_reminder'::text, 'system_alert'::text])),
   title text NOT NULL,
   message text NOT NULL,
@@ -486,7 +539,6 @@ CREATE TABLE public.users (
   status character varying DEFAULT 'active'::character varying CHECK (status::text = ANY (ARRAY['active'::character varying, 'inactive'::character varying, 'deleted'::character varying]::text[])),
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
-  role character varying DEFAULT 'user'::character varying CHECK (role::text = ANY (ARRAY['user'::character varying, 'admin'::character varying, 'professional'::character varying, 'supplier'::character varying, 'client'::character varying]::text[])),
   CONSTRAINT users_pkey PRIMARY KEY (id)
 );
 

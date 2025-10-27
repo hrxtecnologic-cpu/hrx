@@ -16,6 +16,7 @@ interface Professional {
   email: string;
   phone: string;
   categories: string[];
+  subcategories?: Record<string, string[]>;
   status: string;
 }
 
@@ -362,7 +363,18 @@ export function TeamBatchSelection({ projectId, isOpen, onClose }: TeamBatchSele
                         </p>
                         <p className="text-xs text-zinc-400 truncate">{professional.email}</p>
                         <p className="text-xs text-zinc-400">{professional.phone}</p>
-                        {professional.categories.length > 0 && (
+                        {professional.subcategories && Object.keys(professional.subcategories).length > 0 ? (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {Object.values(professional.subcategories).flat().slice(0, 3).map((sub: string) => (
+                              <span key={sub} className="text-xs bg-red-500/10 text-red-500 px-1.5 py-0.5 rounded">
+                                {sub}
+                              </span>
+                            ))}
+                            {Object.values(professional.subcategories).flat().length > 3 && (
+                              <span className="text-xs text-zinc-500">...</span>
+                            )}
+                          </div>
+                        ) : professional.categories.length > 0 && (
                           <p className="text-xs text-zinc-500 mt-1">
                             {professional.categories.slice(0, 2).join(', ')}
                             {professional.categories.length > 2 && '...'}

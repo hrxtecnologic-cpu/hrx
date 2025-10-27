@@ -18,6 +18,7 @@ interface Professional {
   full_name: string;
   email: string;
   categories: string[];
+  subcategories?: Record<string, string[]>;
   status: 'pending' | 'approved' | 'rejected' | 'incomplete';
   created_at: string;
   distance_km?: number;
@@ -80,18 +81,45 @@ export function ProfessionalsSearchView({ initialProfessionals }: ProfessionalsS
                       </td>
                       <td className="p-4">
                         <div className="flex flex-wrap gap-1">
-                          {prof.categories?.slice(0, 2).map((cat: string) => (
-                            <span
-                              key={cat}
-                              className="text-xs bg-zinc-800 text-zinc-300 px-2 py-1 rounded"
-                            >
-                              {cat}
-                            </span>
-                          ))}
-                          {prof.categories?.length > 2 && (
-                            <span className="text-xs text-zinc-500">
-                              +{prof.categories.length - 2}
-                            </span>
+                          {prof.subcategories && Object.keys(prof.subcategories).length > 0 ? (
+                            <>
+                              {/* Mostrar subcategorias */}
+                              {Object.entries(prof.subcategories).slice(0, 2).map(([category, subs]) => (
+                                <div key={category} className="flex flex-wrap gap-1">
+                                  {subs.slice(0, 2).map((sub: string) => (
+                                    <span
+                                      key={sub}
+                                      className="text-xs bg-red-500/10 text-red-500 px-2 py-1 rounded border border-red-500/20"
+                                      title={`${category}: ${sub}`}
+                                    >
+                                      {sub}
+                                    </span>
+                                  ))}
+                                </div>
+                              ))}
+                              {Object.values(prof.subcategories).flat().length > 4 && (
+                                <span className="text-xs text-zinc-500">
+                                  +{Object.values(prof.subcategories).flat().length - 4}
+                                </span>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              {/* Fallback: Mostrar categories antigas */}
+                              {prof.categories?.slice(0, 2).map((cat: string) => (
+                                <span
+                                  key={cat}
+                                  className="text-xs bg-zinc-800 text-zinc-300 px-2 py-1 rounded"
+                                >
+                                  {cat}
+                                </span>
+                              ))}
+                              {prof.categories?.length > 2 && (
+                                <span className="text-xs text-zinc-500">
+                                  +{prof.categories.length - 2}
+                                </span>
+                              )}
+                            </>
                           )}
                         </div>
                       </td>

@@ -341,6 +341,111 @@ export function getDocumentLabel(documentType: DocumentType): string {
   return DOCUMENT_LABELS[documentType] || documentType;
 }
 
+/**
+ * Valida documentos para SUBCATEGORIAS (novo sistema)
+ *
+ * Esta função substitui validateDocumentsForCategories quando usando subcategorias
+ * ao invés de categorias principais.
+ */
+export function validateDocumentsForSubcategories(
+  subcategories: string[],
+  documents: Record<string, string | null | undefined>,
+  validityFields?: DocumentValidityFields
+): DocumentValidationResult {
+  const errors: DocumentValidationError[] = [];
+  const warnings: DocumentValidationError[] = [];
+  const missingRequired: DocumentType[] = [];
+  const missingValidity: string[] = [];
+
+  if (!subcategories || subcategories.length === 0) {
+    return {
+      valid: true,
+      errors: [],
+      warnings: [],
+      missingRequired: [],
+      missingValidity: [],
+    };
+  }
+
+  // Importar funções de subcategorias
+  const { getRequiredDocumentsForSubcategories } = require('@/lib/categories-subcategories');
+
+  // Obter documentos obrigatórios baseado nas subcategorias
+  const requiredDocs = getRequiredDocumentsForSubcategories(subcategories);
+
+  // Mapear códigos de documento para tipos DocumentType
+  const docTypeMap: Record<string, DocumentType> = {
+    'rg_front': 'rg_front',
+    'rg_back': 'rg_back',
+    'cpf': 'cpf',
+    'proof_of_address': 'proof_of_address',
+    'cnh': 'cnh_photo',
+    'cnv': 'cnv_photo',
+    'nr10': 'nr10_certificate',
+    'nr35': 'nr35_certificate',
+    'drt': 'drt_photo',
+    'profile_photo': 'profile_photo',
+  };
+
+  // Validar cada documento obrigatório
+  requiredDocs.forEach(docCode => {
+    const docType = docTypeMap[docCode];
+    if (!docType) return;
+
+    const documentUrl = documents[docType];
+    const hasDocument = !!documentUrl && documentUrl.trim().length > 0;
+
+    // Validar documento obrigatório
+    if (!hasDocument) {
+      missingRequired.push(docType);
+      errors.push({
+        type: docType,
+        label: DOCUMENT_LABELS[docType] || docCode,
+        reason: `Documento obrigatório não enviado`,
+      });
+    }
+
+    // Validar campo de validade se necessário
+    const validityRequiredDocs = ['cnh', 'cnv', 'nr10', 'nr35', 'drt'];
+    if (hasDocument && validityRequiredDocs.includes(docCode) && validityFields) {
+      const validityField = getValidityFieldName(docType);
+      const validityValue = validityFields[validityField as keyof DocumentValidityFields];
+
+      if (!validityValue || validityValue.trim().length === 0) {
+        missingValidity.push(validityField);
+        errors.push({
+          type: docType,
+          label: DOCUMENT_LABELS[docType] || docCode,
+          reason: `Campo de validade obrigatório`,
+          field: validityField,
+        });
+      } else {
+        // Validar se data não está expirada
+        const validityDate = new Date(validityValue);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (validityDate < today) {
+          warnings.push({
+            type: docType,
+            label: DOCUMENT_LABELS[docType] || docCode,
+            reason: `Documento expirado (validade: ${formatDate(validityValue)})`,
+            field: validityField,
+          });
+        }
+      }
+    }
+  });
+
+  return {
+    valid: errors.length === 0,
+    errors,
+    warnings,
+    missingRequired,
+    missingValidity,
+  };
+}
+
 // =====================================================
 // Constants
 // =====================================================

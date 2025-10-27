@@ -4,6 +4,8 @@ import { createClient } from '@supabase/supabase-js';
 import { rateLimit, RateLimitPresets, createRateLimitError } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 import { AddEquipmentData } from '@/types/event-project';
+import { addEquipmentSchema } from '@/lib/validations/event-project';
+import { z } from 'zod';
 
 // Force dynamic route
 export const dynamic = 'force-dynamic';
@@ -52,13 +54,17 @@ export async function POST(
       body,
     });
 
-    // Validações
-    if (!body.name || !body.category) {
-      logger.error('Validação falhou: nome ou categoria ausente', { body });
-      return NextResponse.json(
-        { error: 'Nome e categoria são obrigatórios' },
-        { status: 400 }
-      );
+    // Validar dados com Zod
+    try {
+      const validatedData = addEquipmentSchema.parse(body);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        logger.error('Validação Zod falhou', { error: error.issues });
+        return NextResponse.json(
+          { error: 'Dados inválidos', details: error.issues },
+          { status: 400 }
+        );
+      }
     }
 
     // Verificar se projeto existe

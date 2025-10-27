@@ -74,6 +74,7 @@ const projectSchema = z.object({
   // Business
   is_urgent: z.boolean().default(false),
   budget_range: z.string().optional(),
+  client_budget: z.number().positive('Orçamento deve ser positivo').optional(),
 
   // Observações
   additional_notes: z.string().optional(),
@@ -478,6 +479,26 @@ export default function NovoProjetoPage() {
                 className="bg-zinc-950 border-zinc-800 text-white"
                 placeholder="Ex: R$ 50.000 - R$ 100.000"
               />
+            </div>
+
+            <div>
+              <Label htmlFor="client_budget" className="text-zinc-300">
+                Orçamento do Cliente (R$)
+              </Label>
+              <Input
+                id="client_budget"
+                type="number"
+                step="0.01"
+                {...register('client_budget', { valueAsNumber: true })}
+                className="bg-zinc-950 border-zinc-800 text-white"
+                placeholder="Ex: 10000.00"
+              />
+              {errors.client_budget && (
+                <p className="text-xs text-red-500 mt-1">{errors.client_budget.message}</p>
+              )}
+              <p className="text-xs text-zinc-500 mt-1">
+                💡 Valor FIXO que o cliente tem disponível para gastar
+              </p>
             </div>
 
             <div>

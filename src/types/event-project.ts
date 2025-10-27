@@ -112,6 +112,7 @@ export interface EventProject {
   is_urgent: boolean;
   profit_margin: ProfitMargin;
   budget_range?: string | null;
+  client_budget?: number | null;
 
   // Status
   status: ProjectStatus;
@@ -363,6 +364,7 @@ export interface CreateEventProjectData {
   // Business
   is_urgent: boolean;
   budget_range?: string;
+  client_budget?: number;
 
   // Observações
   additional_notes?: string;
@@ -403,6 +405,7 @@ export interface UpdateEventProjectData {
   // Business
   is_urgent?: boolean;
   budget_range?: string;
+  client_budget?: number;
   status?: ProjectStatus;
 
   // Observações

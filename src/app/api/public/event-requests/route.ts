@@ -6,6 +6,8 @@ import {
   sendEventRequestAdminNotification,
 } from '@/lib/resend/emails';
 import { rateLimit, RateLimitPresets, createRateLimitError } from '@/lib/rate-limit';
+import { publicEventRequestSchema } from '@/lib/validations/event-project';
+import { z } from 'zod';
 
 /**
  * API PÚBLICA para receber:
@@ -38,6 +40,19 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
+
+    // Validar dados com Zod
+    try {
+      const validatedData = publicEventRequestSchema.parse(body);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return NextResponse.json(
+          { error: 'Dados inválidos', details: error.issues },
+          { status: 400 }
+        );
+      }
+    }
+
     const { request_type } = body;
 
     // ========================================
@@ -156,10 +171,12 @@ export async function POST(req: Request) {
       venue_state,
       venue_zip,
       professionals,
-      equipment_types,
+      equipment,
+      equipment_types, // Suporte legado (manter por compatibilidade)
       equipment_notes,
       is_urgent,
       budget_range,
+      client_budget,
       additional_notes,
     } = body;
 
@@ -236,6 +253,7 @@ export async function POST(req: Request) {
           is_urgent: is_urgent || false,
           profit_margin: is_urgent ? 80 : 35, // Margem automática baseada na urgência
           budget_range: budget_range || null,
+          client_budget: client_budget || null,
           additional_notes: additional_notes || null,
 
           // Criador (se autenticado)
@@ -243,7 +261,7 @@ export async function POST(req: Request) {
 
           // ✅ CORRIGIDO: Salvar demanda original do cliente nos campos JSONB
           professionals_needed: professionals || [],
-          equipment_needed: equipment_types || [],
+          equipment_needed: equipment || equipment_types || [], // Prioriza 'equipment' do wizard, fallback para 'equipment_types' legado
 
           // Metadados da solicitação pública
           internal_notes: `Solicitação pública recebida via formulário do site.\n\nObservações sobre equipamentos: ${equipment_notes || 'Nenhuma'}\n\nObservações adicionais: ${additional_notes || 'Nenhuma'}`,
@@ -270,7 +288,7 @@ export async function POST(req: Request) {
         venueState: venue_state,
         projectNumber: project.project_number,
         professionalCount: professionals.length,
-        equipmentCount: equipment_types?.length || 0,
+        equipmentCount: (equipment || equipment_types)?.length || 0,
         isUrgent: is_urgent,
       }),
       // Notificação para admin
@@ -290,7 +308,7 @@ export async function POST(req: Request) {
         venueState: venue_state,
         expectedAttendance: expected_attendance,
         professionals: professionals,
-        equipmentTypes: equipment_types || [],
+        equipmentTypes: equipment || equipment_types || [],
         equipmentNotes: equipment_notes,
         isUrgent: is_urgent,
         budgetRange: budget_range,

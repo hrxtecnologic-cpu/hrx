@@ -197,45 +197,147 @@ export default async function ProjetoDetailPage({
       </div>
 
       {/* Financial Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Card 1: Orçamento do Cliente (FIXO) */}
         <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-4">
-            <p className="text-xs text-zinc-500 mb-1">Custo Total</p>
-            <p className="text-xl font-bold text-white">
-              {formatCurrency(project.total_cost || 0)}
-            </p>
-            <p className="text-xs text-zinc-600 mt-1">
-              Equipe: {formatCurrency(project.total_team_cost || 0)} + Equip:{' '}
-              {formatCurrency(project.total_equipment_cost || 0)}
-            </p>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm font-semibold text-zinc-400">💰 Orçamento do Cliente</p>
+              {project.client_budget && (
+                <span className="text-xs px-2 py-1 bg-blue-600/20 text-blue-400 rounded-md border border-blue-600/30">
+                  FIXO
+                </span>
+              )}
+            </div>
+
+            {project.client_budget ? (
+              <>
+                <p className="text-3xl font-bold text-blue-400 mb-4">
+                  {formatCurrency(project.client_budget)}
+                </p>
+
+                {/* Status do Orçamento */}
+                {(() => {
+                  const totalCost = project.total_cost || 0;
+                  const budget = project.client_budget || 0;
+                  const remaining = budget - totalCost;
+                  const percentUsed = totalCost > 0 ? (totalCost / budget) * 100 : 0;
+
+                  return (
+                    <>
+                      <div className="space-y-2 mb-3">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-zinc-500">Utilizado</span>
+                          <span className={percentUsed > 100 ? 'text-red-400' : 'text-zinc-400'}>
+                            {percentUsed.toFixed(1)}%
+                          </span>
+                        </div>
+                        <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full transition-all ${
+                              percentUsed > 100 ? 'bg-red-600' :
+                              percentUsed > 90 ? 'bg-yellow-600' :
+                              'bg-blue-600'
+                            }`}
+                            style={{ width: `${Math.min(percentUsed, 100)}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className={`text-sm font-medium ${
+                        remaining < 0 ? 'text-red-400' :
+                        remaining < budget * 0.1 ? 'text-yellow-400' :
+                        'text-green-400'
+                      }`}>
+                        {remaining >= 0 ? (
+                          <>Disponível: {formatCurrency(remaining)}</>
+                        ) : (
+                          <>⚠️ Excede em: {formatCurrency(Math.abs(remaining))}</>
+                        )}
+                      </div>
+                    </>
+                  );
+                })()}
+              </>
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-zinc-500 text-sm">Orçamento não informado</p>
+                <p className="text-zinc-600 text-xs mt-1">Cliente não especificou valor</p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
+        {/* Card 2: Custos HRX */}
         <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-4">
-            <p className="text-xs text-zinc-500 mb-1">Preço Cliente</p>
-            <p className="text-xl font-bold text-green-500">
-              {formatCurrency(project.total_client_price || 0)}
-            </p>
-          </CardContent>
-        </Card>
+          <CardContent className="p-6">
+            <p className="text-sm font-semibold text-zinc-400 mb-4">📊 Custos HRX</p>
 
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-4">
-            <p className="text-xs text-zinc-500 mb-1 flex items-center gap-1">
-              Lucro
-              {project.is_urgent && <TrendingUp className="h-3 w-3 text-red-500" />}
-            </p>
-            <p className="text-xl font-bold text-red-500">
-              {formatCurrency(project.total_profit || 0)}
-            </p>
-          </CardContent>
-        </Card>
+            <div className="space-y-3">
+              {/* Custo Equipe */}
+              <div className="flex justify-between items-center pb-2 border-b border-zinc-800">
+                <span className="text-xs text-zinc-500">Equipe</span>
+                <span className="text-sm font-medium text-white">
+                  {formatCurrency(project.total_team_cost || 0)}
+                </span>
+              </div>
 
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-4">
-            <p className="text-xs text-zinc-500 mb-1">Margem de Lucro</p>
-            <p className="text-xl font-bold text-red-500">{project.profit_margin}%</p>
+              {/* Custo Equipamentos */}
+              <div className="flex justify-between items-center pb-2 border-b border-zinc-800">
+                <span className="text-xs text-zinc-500">Equipamentos</span>
+                <span className="text-sm font-medium text-white">
+                  {formatCurrency(project.total_equipment_cost || 0)}
+                </span>
+              </div>
+
+              {/* Custo Total */}
+              <div className="flex justify-between items-center pt-2">
+                <span className="text-sm font-semibold text-zinc-400">Custo Total</span>
+                <span className="text-2xl font-bold text-white">
+                  {formatCurrency(project.total_cost || 0)}
+                </span>
+              </div>
+
+              {/* Margem e Lucro */}
+              <div className="grid grid-cols-2 gap-3 pt-3 mt-3 border-t border-zinc-800">
+                <div>
+                  <p className="text-xs text-zinc-500 mb-1">Margem</p>
+                  <p className="text-lg font-bold text-red-500">
+                    {project.profit_margin}%
+                    {project.is_urgent && (
+                      <TrendingUp className="inline h-3 w-3 ml-1" />
+                    )}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500 mb-1">Lucro Estimado</p>
+                  <p className="text-lg font-bold text-green-500">
+                    {formatCurrency(project.total_profit || 0)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Lucro Real vs Orçamento Cliente */}
+              {project.client_budget && (
+                <div className="mt-3 pt-3 border-t border-zinc-800">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-zinc-500">Lucro Real</span>
+                    <span className={`text-lg font-bold ${
+                      (project.client_budget - (project.total_cost || 0)) >= 0
+                        ? 'text-green-500'
+                        : 'text-red-500'
+                    }`}>
+                      {formatCurrency((project.client_budget || 0) - (project.total_cost || 0))}
+                    </span>
+                  </div>
+                  <p className="text-xs text-zinc-600 mt-1">
+                    Margem real: {(
+                      ((project.client_budget - (project.total_cost || 0)) / (project.total_cost || 1)) * 100
+                    ).toFixed(1)}%
+                  </p>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -353,6 +455,102 @@ export default async function ProjetoDetailPage({
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Demanda do Cliente */}
+              {((project.professionals_needed && project.professionals_needed.length > 0) ||
+                (project.equipment_needed && project.equipment_needed.length > 0)) && (
+                <Card className="bg-zinc-900 border-zinc-800 lg:col-span-2">
+                  <CardContent className="p-6 space-y-4">
+                    <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                      <Users className="h-5 w-5 text-red-600" />
+                      Demanda Solicitada pelo Cliente
+                    </h3>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Profissionais Solicitados */}
+                      {project.professionals_needed && project.professionals_needed.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-semibold text-zinc-400 mb-3">
+                            Profissionais ({project.professionals_needed.length})
+                          </h4>
+                          <div className="space-y-2">
+                            {project.professionals_needed.map((prof: any, index: number) => (
+                              <div key={index} className="flex items-start gap-3 p-3 bg-zinc-800/50 rounded-md border border-zinc-700/50">
+                                <div className="flex-shrink-0 w-8 h-8 bg-red-600/20 rounded-full flex items-center justify-center border border-red-600/30">
+                                  <span className="text-xs font-bold text-red-500">{index + 1}</span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-white">
+                                    {prof.category || 'Categoria não especificada'}
+                                  </p>
+                                  <p className="text-xs text-zinc-400 mt-1">
+                                    Quantidade: {prof.quantity || 1}
+                                  </p>
+                                  {prof.category_group && (
+                                    <p className="text-xs text-zinc-500 mt-0.5">
+                                      Grupo: {prof.category_group}
+                                    </p>
+                                  )}
+                                  {prof.requirements && (
+                                    <p className="text-xs text-zinc-500 mt-1 italic">
+                                      "{prof.requirements}"
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Equipamentos Solicitados */}
+                      {project.equipment_needed && project.equipment_needed.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-semibold text-zinc-400 mb-3">
+                            Equipamentos ({project.equipment_needed.length})
+                          </h4>
+                          <div className="space-y-2">
+                            {project.equipment_needed.map((equip: any, index: number) => (
+                              <div key={index} className="flex items-start gap-3 p-3 bg-zinc-800/50 rounded-md border border-zinc-700/50">
+                                <div className="flex-shrink-0 w-8 h-8 bg-blue-600/20 rounded-full flex items-center justify-center border border-blue-600/30">
+                                  <span className="text-xs font-bold text-blue-500">{index + 1}</span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-white">
+                                    {equip.type || equip.equipment_type || 'Tipo não especificado'}
+                                  </p>
+                                  <p className="text-xs text-zinc-400 mt-1">
+                                    Quantidade: {equip.quantity || 1}
+                                  </p>
+                                  {equip.equipment_group && (
+                                    <p className="text-xs text-zinc-500 mt-0.5">
+                                      Grupo: {equip.equipment_group}
+                                    </p>
+                                  )}
+                                  {(equip.notes || equip.estimated_daily_rate) && (
+                                    <div className="mt-1 space-y-0.5">
+                                      {equip.estimated_daily_rate > 0 && (
+                                        <p className="text-xs text-zinc-500">
+                                          Diária estimada: {formatCurrency(equip.estimated_daily_rate)}
+                                        </p>
+                                      )}
+                                      {equip.notes && (
+                                        <p className="text-xs text-zinc-500 italic">
+                                          "{equip.notes}"
+                                        </p>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           ),
           team: (

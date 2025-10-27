@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { rateLimit, RateLimitPresets, createRateLimitError } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
@@ -19,6 +20,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+    const rateLimitResult = await rateLimit(ip, RateLimitPresets.PUBLIC_API);
+    if (!rateLimitResult.success) return NextResponse.json(createRateLimitError(rateLimitResult), { status: 429 });
     const { id: projectId } = await params;
     const { searchParams } = new URL(req.url);
     const token = searchParams.get('token');

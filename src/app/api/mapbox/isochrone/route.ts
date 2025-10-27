@@ -1,11 +1,15 @@
 import { NextResponse } from 'next/server';
 import { getIsochrone } from '@/lib/mapbox-isochrone';
+import { rateLimit, RateLimitPresets, createRateLimitError } from '@/lib/rate-limit';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
+    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+    const rateLimitResult = await rateLimit(ip, RateLimitPresets.PUBLIC_API);
+    if (!rateLimitResult.success) return NextResponse.json(createRateLimitError(rateLimitResult), { status: 429 });
     const body = await req.json();
     const { latitude, longitude, minutes, profile } = body;
 
