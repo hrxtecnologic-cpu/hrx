@@ -248,9 +248,10 @@ export const UrgentQuoteAdminEmail: React.FC<UrgentQuoteAdminEmailProps> = ({
         </div>
 
         {/* Action Button */}
+        {/* TODO: Criar rota /admin/orcamentos/[id] para processar orçamentos */}
         <div className="action-buttons">
-          <a href={`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/admin/orcamentos/${quoteRequestId}`} className="button">
-            🔥 Processar Orçamento Agora
+          <a href={`${HRX_CONTACT_INFO.siteUrl}/admin`} className="button">
+            🔥 Acessar Painel Administrativo
           </a>
         </div>
 

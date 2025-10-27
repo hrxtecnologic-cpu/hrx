@@ -121,3 +121,40 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* =====================================================
+   Mapbox Popup Customization
+   ===================================================== */
+
+/* Remove borda branca e fundo padrão */
+.mapboxgl-popup-content {
+  background: transparent !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+/* Estilizar a ponta do popup */
+.mapboxgl-popup-tip {
+  border-top-color: rgb(24 24 27) !important; /* zinc-900 */
+  border-bottom-color: rgb(24 24 27) !important;
+}
+
+/* Botão de fechar */
+.mapboxgl-popup-close-button {
+  color: rgb(161 161 170) !important; /* zinc-400 */
+  font-size: 20px !important;
+  padding: 4px 8px !important;
+  right: 4px !important;
+  top: 4px !important;
+  background: transparent !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: color 0.2s !important;
+}
+
+.mapboxgl-popup-close-button:hover {
+  color: rgb(255 255 255) !important; /* white */
+  background: rgb(39 39 42) !important; /* zinc-800 */
+  border-radius: 4px !important;
+}

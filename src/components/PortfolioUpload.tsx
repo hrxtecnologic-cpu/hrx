@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { formatFileSize } from '@/lib/supabase/storage';
 
@@ -20,6 +20,13 @@ export function PortfolioUpload({
   const [previews, setPreviews] = useState<string[]>(currentUrls);
   const [error, setError] = useState<string>('');
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Atualizar previews quando currentUrls mudar (carregamento de dados existentes)
+  useEffect(() => {
+    if (currentUrls && currentUrls.length > 0) {
+      setPreviews(currentUrls);
+    }
+  }, [currentUrls]);
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const selectedFiles = Array.from(e.target.files || []);

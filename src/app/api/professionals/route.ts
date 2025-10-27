@@ -250,6 +250,9 @@ export async function POST(req: Request) {
         latitude: latitude || null,
         longitude: longitude || null,
 
+        // Raio de Atuação
+        service_radius_km: validatedData.serviceRadiusKm || 50,
+
         // Experiência
         categories: validatedData.categories,
         has_experience: validatedData.hasExperience,

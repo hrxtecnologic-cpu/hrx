@@ -304,9 +304,9 @@ export async function GET(
 
             <div class="contact">
               <h3>📞 Contato</h3>
-              <p>📧 Email: <a href="mailto:contato@hrxeventos.com.br">contato@hrxeventos.com.br</a></p>
-              <p>📱 WhatsApp: <a href="https://wa.me/5521999999999">(21) 99999-9999</a></p>
               <p>🌐 Site: <a href="https://www.hrxeventos.com.br">www.hrxeventos.com.br</a></p>
+              <p>📧 Email: <a href="mailto:atendimento@hrxeventos.com.br">atendimento@hrxeventos.com.br</a></p>
+              <p>📱 WhatsApp: <a href="https://wa.me/5521999952457">(21) 99995-2457</a></p>
             </div>
 
             <div class="footer">

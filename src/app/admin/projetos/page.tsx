@@ -82,6 +82,7 @@ interface ProjectSummary {
   status: string;
   is_urgent: boolean;
   profit_margin: number;
+  client_budget: number;
   total_cost: number;
   total_client_price: number;
   total_profit: number;
@@ -406,26 +407,30 @@ export default function ProjetosPage() {
                     {/* Financeiro */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 p-3 bg-zinc-950/50 rounded-lg">
                       <div>
-                        <p className="text-xs text-zinc-500">Custo Total</p>
+                        <p className="text-xs text-zinc-500">💰 Orçamento Cliente</p>
+                        <p className="text-sm font-semibold text-blue-400">
+                          {formatCurrency(project.client_budget || 0)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-zinc-500">Custo HRX</p>
                         <p className="text-sm font-semibold text-white">
                           {formatCurrency(project.total_cost || 0)}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs text-zinc-500">Preço Cliente</p>
-                        <p className="text-sm font-semibold text-green-500">
-                          {formatCurrency(project.total_client_price || 0)}
-                        </p>
-                      </div>
-                      <div>
                         <p className="text-xs text-zinc-500 flex items-center gap-1">
-                          Lucro ({project.profit_margin}%)
+                          Margem Disponível
                           {project.is_urgent && (
                             <TrendingUp className="h-3 w-3 text-red-500" />
                           )}
                         </p>
-                        <p className="text-sm font-semibold text-red-500">
-                          {formatCurrency(project.total_profit || 0)}
+                        <p className={`text-sm font-semibold ${
+                          (project.client_budget || 0) - (project.total_cost || 0) >= 0
+                            ? 'text-green-500'
+                            : 'text-red-500'
+                        }`}>
+                          {formatCurrency((project.client_budget || 0) - (project.total_cost || 0))}
                         </p>
                       </div>
                     </div>

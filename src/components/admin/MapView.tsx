@@ -11,7 +11,7 @@
 
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import Map, { Marker, Popup, NavigationControl, GeolocateControl, Source, Layer, FullscreenControl } from 'react-map-gl/mapbox';
-import { MapPin, User, Package, Clock, Route, X, DollarSign, Maximize2, Minimize2 } from 'lucide-react';
+import { MapPin, User, Package, Clock, Route, X, DollarSign, Maximize2, Minimize2, Phone, Mail, Home } from 'lucide-react';
 
 // =====================================================
 // Types
@@ -27,6 +27,9 @@ export interface MapMarker {
   categories?: string[];
   city?: string;
   state?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
 }
 
 interface MapViewProps {
@@ -117,6 +120,9 @@ export function MapView({
     return inside;
   }, [isochroneData]);
 
+  // Estado para clustering
+  const [enableClustering, setEnableClustering] = useState(true);
+
   // Filtrar markers
   const filteredMarkers = useMemo(() => {
     let filtered = markers;
@@ -140,6 +146,32 @@ export function MapView({
 
     return filtered;
   }, [markers, filter, filterByIsochrone, showIsochrone, isochroneData, selectedEventForIsochrone, isPointInIsochrone]);
+
+  // Converter markers para GeoJSON para clustering
+  const markersGeoJSON = useMemo(() => {
+    return {
+      type: 'FeatureCollection',
+      features: filteredMarkers.map(marker => ({
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [marker.longitude, marker.latitude]
+        },
+        properties: {
+          id: marker.id,
+          type: marker.type,
+          name: marker.name,
+          city: marker.city,
+          state: marker.state,
+          status: marker.status,
+          categories: marker.categories,
+          address: marker.address,
+          phone: marker.phone,
+          email: marker.email,
+        }
+      }))
+    };
+  }, [filteredMarkers]);
 
   // Handler para clique no marker
   const handleMarkerClick = useCallback((marker: MapMarker) => {
@@ -538,6 +570,23 @@ export function MapView({
         </div>
       </div>
 
+      {/* Toggle Clustering */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Package className="w-4 h-4 text-zinc-500" />
+          <span className="text-sm font-medium text-zinc-200">Agrupar Marcadores</span>
+        </div>
+        <label className="relative inline-flex items-center cursor-pointer">
+          <input
+            type="checkbox"
+            checked={enableClustering}
+            onChange={(e) => setEnableClustering(e.target.checked)}
+            className="sr-only peer"
+          />
+          <div className="w-11 h-6 bg-zinc-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+        </label>
+      </div>
+
       {/* Filtros - Grid responsivo: 2 colunas no mobile, 4 no desktop */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-1 bg-zinc-900 border border-zinc-800 rounded-lg">
         <button
@@ -612,32 +661,166 @@ export function MapView({
           onMove={evt => setViewState(evt.viewState)}
           mapStyle="mapbox://styles/mapbox/dark-v11"
           mapboxAccessToken={mapboxToken}
+          interactiveLayerIds={enableClustering ? ['clusters', 'unclustered-point'] : undefined}
+          onClick={(event) => {
+            if (!enableClustering) return;
+
+            const feature = event.features?.[0];
+            if (!feature) return;
+
+            // Se clicou em um cluster, fazer zoom
+            if (feature.layer.id === 'clusters') {
+              const clusterId = feature.properties?.cluster_id;
+              const source = event.target.getSource('markers');
+
+              if (source && 'getClusterExpansionZoom' in source) {
+                (source as any).getClusterExpansionZoom(clusterId, (err: any, zoom: number) => {
+                  if (err) return;
+
+                  setViewState({
+                    ...viewState,
+                    longitude: (feature.geometry as any).coordinates[0],
+                    latitude: (feature.geometry as any).coordinates[1],
+                    zoom: zoom,
+                  });
+                });
+              }
+            }
+
+            // Se clicou em um ponto individual, mostrar popup
+            if (feature.layer.id === 'unclustered-point') {
+              const markerId = feature.properties?.id;
+              const marker = filteredMarkers.find(m => m.id === markerId);
+              if (marker) {
+                handleMarkerClick(marker);
+              }
+            }
+          }}
         >
           {/* Controles */}
           <NavigationControl position="top-right" style={{ marginTop: isFullscreen ? '60px' : '10px' }} />
           <GeolocateControl position="top-right" style={{ marginTop: isFullscreen ? '110px' : '60px' }} />
 
-          {/* Markers */}
-          {filteredMarkers.map((marker) => {
-            const Icon = getMarkerIcon(marker.type);
-            const bgColor = getMarkerBgColor(marker.type);
+          {/* Markers com Clustering */}
+          {enableClustering ? (
+            <Source
+              id="markers"
+              type="geojson"
+              data={markersGeoJSON}
+              cluster={true}
+              clusterMaxZoom={14}
+              clusterRadius={50}
+            >
+              {/* Clusters (círculos com números) */}
+              <Layer
+                id="clusters"
+                type="circle"
+                filter={['has', 'point_count']}
+                paint={{
+                  'circle-color': [
+                    'step',
+                    ['get', 'point_count'],
+                    '#3b82f6', // azul para poucos
+                    10,
+                    '#10b981', // verde para médio
+                    25,
+                    '#f59e0b', // laranja para muitos
+                    50,
+                    '#ef4444', // vermelho para muito muitos
+                  ],
+                  'circle-radius': [
+                    'step',
+                    ['get', 'point_count'],
+                    20, // tamanho base
+                    10,
+                    25, // cresce com quantidade
+                    25,
+                    30,
+                    50,
+                    35,
+                  ],
+                  'circle-opacity': 0.8,
+                  'circle-stroke-width': 2,
+                    'circle-stroke-color': '#fff',
+                }}
+              />
 
-            return (
-              <Marker
-                key={marker.id}
-                longitude={marker.longitude}
-                latitude={marker.latitude}
-                anchor="bottom"
-                onClick={() => handleMarkerClick(marker)}
-              >
-                <div className="cursor-pointer transform hover:scale-125 transition-all duration-200">
-                  <div className={`${bgColor} rounded-full p-1.5 shadow-lg border border-zinc-700`}>
-                    <Icon className="w-2.5 h-2.5 text-white" />
+              {/* Número dentro do cluster */}
+              <Layer
+                id="cluster-count"
+                type="symbol"
+                filter={['has', 'point_count']}
+                layout={{
+                  'text-field': '{point_count_abbreviated}',
+                  'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+                  'text-size': 14,
+                }}
+                paint={{
+                  'text-color': '#ffffff',
+                }}
+              />
+
+              {/* Pontos individuais (quando não clusterizados) */}
+              <Layer
+                id="unclustered-point"
+                type="circle"
+                filter={['!', ['has', 'point_count']]}
+                paint={{
+                  'circle-color': [
+                    'match',
+                    ['get', 'type'],
+                    'professional', '#3b82f6', // azul
+                    'supplier', '#10b981', // verde
+                    'event', '#ef4444', // vermelho
+                    '#6b7280' // cinza default
+                  ],
+                  'circle-radius': 8,
+                  'circle-stroke-width': 2,
+                  'circle-stroke-color': '#fff',
+                }}
+              />
+
+              {/* Ícone no ponto individual */}
+              <Layer
+                id="unclustered-icon"
+                type="symbol"
+                filter={['!', ['has', 'point_count']]}
+                layout={{
+                  'icon-image': [
+                    'match',
+                    ['get', 'type'],
+                    'professional', 'marker-15', // Mapbox tem ícones built-in
+                    'supplier', 'marker-15',
+                    'event', 'marker-15',
+                    'marker-15'
+                  ],
+                  'icon-size': 0.5,
+                }}
+              />
+            </Source>
+          ) : (
+            // Modo sem clustering (original)
+            filteredMarkers.map((marker) => {
+              const Icon = getMarkerIcon(marker.type);
+              const bgColor = getMarkerBgColor(marker.type);
+
+              return (
+                <Marker
+                  key={marker.id}
+                  longitude={marker.longitude}
+                  latitude={marker.latitude}
+                  anchor="bottom"
+                  onClick={() => handleMarkerClick(marker)}
+                >
+                  <div className="cursor-pointer transform hover:scale-125 transition-all duration-200">
+                    <div className={`${bgColor} rounded-full p-1.5 shadow-lg border border-zinc-700`}>
+                      <Icon className="w-2.5 h-2.5 text-white" />
+                    </div>
                   </div>
-                </div>
-              </Marker>
-            );
-          })}
+                </Marker>
+              );
+            })
+          )}
 
           {/* Isochrone Layer */}
           {showIsochrone && isochroneData && (
@@ -696,40 +879,117 @@ export function MapView({
               closeButton={true}
               closeOnClick={false}
             >
-              <div className="p-2 min-w-[200px] bg-zinc-900 border border-zinc-800 rounded">
-                <h3 className="font-semibold text-white mb-1">
-                  {selectedMarker.name}
-                </h3>
-                <p className="text-sm text-zinc-400 mb-2">
-                  {selectedMarker.city}, {selectedMarker.state}
-                </p>
-                {selectedMarker.status && (
-                  <span className="inline-block px-2 py-1 text-xs font-medium rounded bg-zinc-800 text-zinc-300">
-                    {selectedMarker.status}
-                  </span>
-                )}
-                {selectedMarker.categories && selectedMarker.categories.length > 0 && (
-                  <div className="mt-2">
-                    <p className="text-xs font-medium text-zinc-500 mb-1">
-                      Categorias:
-                    </p>
-                    <div className="flex flex-wrap gap-1">
-                      {selectedMarker.categories.slice(0, 3).map((cat, i) => (
-                        <span
-                          key={i}
-                          className="text-xs px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded"
-                        >
-                          {cat}
-                        </span>
-                      ))}
-                      {selectedMarker.categories.length > 3 && (
-                        <span className="text-xs text-zinc-500">
-                          +{selectedMarker.categories.length - 3}
-                        </span>
-                      )}
+              <div className="min-w-[220px] max-w-[280px] bg-zinc-900 border border-zinc-800 rounded-lg shadow-xl overflow-hidden">
+                {/* Header com gradiente de acordo com o tipo */}
+                <div className={`px-4 py-3 ${
+                  selectedMarker.type === 'professional' ? 'bg-gradient-to-r from-blue-600/20 to-blue-500/10 border-b border-blue-500/30' :
+                  selectedMarker.type === 'supplier' ? 'bg-gradient-to-r from-emerald-600/20 to-emerald-500/10 border-b border-emerald-500/30' :
+                  'bg-gradient-to-r from-rose-600/20 to-rose-500/10 border-b border-rose-500/30'
+                }`}>
+                  <div className="flex items-start gap-2">
+                    <div className={`${getMarkerBgColor(selectedMarker.type)} rounded-lg p-2 shadow-lg mt-0.5`}>
+                      {(() => {
+                        const Icon = getMarkerIcon(selectedMarker.type);
+                        return <Icon className="w-4 h-4 text-white" />;
+                      })()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-white text-base leading-tight mb-1 truncate">
+                        {selectedMarker.name}
+                      </h3>
+                      <p className="text-xs text-zinc-400 flex items-center gap-1">
+                        <MapPin className="w-3 h-3" />
+                        {selectedMarker.city}, {selectedMarker.state}
+                      </p>
                     </div>
                   </div>
-                )}
+                </div>
+
+                {/* Content */}
+                <div className="px-4 py-3 space-y-3">
+                  {selectedMarker.status && (
+                    <div>
+                      <span className="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-md bg-zinc-800 text-zinc-300 border border-zinc-700">
+                        {selectedMarker.status}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Endereço */}
+                  {selectedMarker.address && (
+                    <div className="flex items-start gap-2">
+                      <Home className="w-4 h-4 text-zinc-500 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-zinc-400 mb-0.5">Endereço</p>
+                        <p className="text-xs text-white leading-relaxed">
+                          {selectedMarker.address}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Telefone */}
+                  {selectedMarker.phone && (
+                    <div className="flex items-center gap-2">
+                      <Phone className="w-4 h-4 text-zinc-500 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-zinc-400 mb-0.5">Telefone</p>
+                        <a
+                          href={`https://wa.me/55${selectedMarker.phone.replace(/\D/g, '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-emerald-400 hover:text-emerald-300 hover:underline transition-colors"
+                        >
+                          {selectedMarker.phone}
+                        </a>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Email */}
+                  {selectedMarker.email && (
+                    <div className="flex items-center gap-2">
+                      <Mail className="w-4 h-4 text-zinc-500 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-zinc-400 mb-0.5">Email</p>
+                        <a
+                          href={`mailto:${selectedMarker.email}`}
+                          className="text-xs text-blue-400 hover:text-blue-300 hover:underline transition-colors truncate block"
+                        >
+                          {selectedMarker.email}
+                        </a>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Categorias */}
+                  {selectedMarker.categories && selectedMarker.categories.length > 0 && (
+                    <div className="pt-2 border-t border-zinc-800">
+                      <p className="text-xs font-semibold text-zinc-400 mb-2 uppercase tracking-wide">
+                        Categorias
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {selectedMarker.categories.slice(0, 3).map((cat, i) => (
+                          <span
+                            key={i}
+                            className={`text-xs px-2.5 py-1 rounded-md font-medium ${
+                              selectedMarker.type === 'professional' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
+                              selectedMarker.type === 'supplier' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
+                              'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                            }`}
+                          >
+                            {cat}
+                          </span>
+                        ))}
+                        {selectedMarker.categories.length > 3 && (
+                          <span className="text-xs px-2.5 py-1 text-zinc-500 bg-zinc-800 rounded-md border border-zinc-700 font-medium">
+                            +{selectedMarker.categories.length - 3}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </Popup>
           )}

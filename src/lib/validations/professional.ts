@@ -93,6 +93,14 @@ export const professionalSchema = z.object({
   accountNumber: z.string().optional(),
   pixKey: z.string().optional(),
 
+  // Raio de Atuação
+  serviceRadiusKm: z
+    .number()
+    .min(5, 'Raio mínimo é 5km')
+    .max(500, 'Raio máximo é 500km')
+    .optional()
+    .default(50),
+
   // Termos
   acceptsTerms: z.boolean().refine((val) => val === true, 'Você deve aceitar os termos de uso'),
   acceptsNotifications: z.boolean().optional().default(true),

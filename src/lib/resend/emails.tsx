@@ -13,6 +13,7 @@ import { ProfessionalInvitationEmail } from './templates/ProfessionalInvitationE
 import { QuoteResponseAdminEmail } from './templates/QuoteResponseAdminEmail';
 import { IncompleteRegistrationReminderEmail } from './templates/IncompleteRegistrationReminderEmail';
 import { logEmail } from './email-logger';
+import { HRX_CONTACT_INFO } from './templates/EmailFooterDark';
 
 interface SendProfessionalWelcomeEmailParams {
   professionalName: string;
@@ -686,7 +687,7 @@ export async function sendProfessionalAllocationEmail(
                   </ul>
 
                   <div style="text-align: center; margin: 30px 0 0 0;">
-                    <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard/profissional"
+                    <a href="${HRX_CONTACT_INFO.siteUrl}/dashboard/profissional"
                        style="display: inline-block; background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
                       Acessar Meu Dashboard
                     </a>
@@ -846,7 +847,7 @@ export async function sendTeamCompleteEmail(
                   </div>
 
                   <div style="text-align: center; margin: 30px 0 0 0;">
-                    <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard/contratante"
+                    <a href="${HRX_CONTACT_INFO.siteUrl}/dashboard/contratante"
                        style="display: inline-block; background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
                       Acessar Meu Dashboard
                     </a>
@@ -952,7 +953,7 @@ export async function sendProfessionalApprovalEmail(
                   </ul>
 
                   <div style="text-align: center; margin: 30px 0 0 0;">
-                    <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard"
+                    <a href="${HRX_CONTACT_INFO.siteUrl}/dashboard"
                        style="display: inline-block; background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
                       Acessar Dashboard
                     </a>
@@ -1028,7 +1029,7 @@ export async function sendProfessionalRejectionEmail(
   params: SendProfessionalRejectionEmailParams
 ): Promise<{ success: boolean; error?: string; emailId?: string }> {
   try {
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.hrxeventos.com.br';
+    const appUrl = HRX_CONTACT_INFO.siteUrl;
 
     const { data, error } = await resend.emails.send({
       from: `HRX <${FROM_EMAIL}>`,
@@ -1359,7 +1360,7 @@ export async function sendQuoteRequestEmail(
   const subject = `📋 Solicitação de Orçamento - ${params.clientName}`;
 
   try {
-    const responseUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/fornecedor/orcamentos/${params.quoteRequestId}/responder`;
+    const responseUrl = `${HRX_CONTACT_INFO.siteUrl}/fornecedor/orcamentos/${params.quoteRequestId}/responder`;
 
     const { data, error } = await resend.emails.send({
       from: `HRX <${FROM_EMAIL}>`,
@@ -1757,7 +1758,7 @@ export async function sendUrgentProjectAdminEmail(
                   </div>
 
                   <div style="margin: 30px 0; text-align: center;">
-                    <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/admin/projetos/${params.projectId}"
+                    <a href="${HRX_CONTACT_INFO.siteUrl}/admin/projetos/${params.projectId}"
                        style="display: inline-block; background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-weight: 700; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 4px 6px rgba(220, 38, 38, 0.4);">
                       🚀 VER PROJETO AGORA
                     </a>
@@ -1827,7 +1828,7 @@ export async function sendEquipmentQuoteRequestEmail(
   params: SendEquipmentQuoteRequestEmailParams
 ): Promise<{ success: boolean; error?: string; emailId?: string }> {
   try {
-    const responseUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/quotations/${params.quotationId}/respond?token=${encodeURIComponent(params.supplierEmail)}`;
+    const responseUrl = `${HRX_CONTACT_INFO.siteUrl}/api/quotations/${params.quotationId}/respond?token=${encodeURIComponent(params.supplierEmail)}`;
 
     const { data, error } = await resend.emails.send({
       from: `HRX <${FROM_EMAIL}>`,
@@ -2380,7 +2381,7 @@ export async function sendEventRequestAdminNotification(
 
                 <!-- Botão de Ação -->
                 <div style="text-align: center; margin: 30px 0;">
-                  <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/admin/projetos/${params.projectId}"
+                  <a href="${HRX_CONTACT_INFO.siteUrl}/admin/projetos/${params.projectId}"
                      style="display: inline-block; background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: #ffffff; text-decoration: none; padding: 15px 40px; border-radius: 8px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px rgba(220, 38, 38, 0.3);">
                     🚀 VER PROJETO COMPLETO
                   </a>
@@ -2476,7 +2477,7 @@ export async function sendProfessionalInvitation(
     : `🎯 Convite para trabalhar: ${params.eventName}`;
 
   try {
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const appUrl = HRX_CONTACT_INFO.siteUrl;
 
     // URLs de confirmação e rejeição
     const confirmUrl = `${appUrl}/professional/confirm/${params.invitationToken}?action=confirm`;

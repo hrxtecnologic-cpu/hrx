@@ -188,7 +188,7 @@ export const AdminNotificationEmail: React.FC<AdminNotificationEmailProps> = ({
         {/* Alert */}
         <div className="alert">
           <div className="alert-title">⚠️ Ação Necessária</div>
-          <div>Este cadastro precisa ser analisado e aprovado no backoffice.</div>
+          <div>Este cadastro precisa ser analisado e aprovado no painel administrativo.</div>
         </div>
 
         {/* Dados Pessoais */}
@@ -249,10 +249,10 @@ export const AdminNotificationEmail: React.FC<AdminNotificationEmailProps> = ({
 
         {/* Action Buttons */}
         <div className="action-buttons">
-          <a href={`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/backoffice/profissionais/${professionalId}`} className="button button-primary">
+          <a href={`${HRX_CONTACT_INFO.siteUrl}/admin/profissionais/${professionalId}`} className="button button-primary">
             Analisar Cadastro
           </a>
-          <a href={`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/backoffice/profissionais`} className="button button-secondary">
+          <a href={`${HRX_CONTACT_INFO.siteUrl}/admin/profissionais`} className="button button-secondary">
             Ver Todos os Cadastros
           </a>
         </div>

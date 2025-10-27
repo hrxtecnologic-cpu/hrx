@@ -19,6 +19,8 @@ import {
   TrendingUp,
   DollarSign,
   Loader2,
+  User,
+  Edit,
 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
@@ -140,9 +142,9 @@ export default function DashboardContratantePage() {
       />
 
       <main className="max-w-7xl mx-auto px-4 py-8">
-        {/* Botão Novo Projeto */}
-        <div className="flex justify-end mb-6">
-          <Link href="/solicitar-evento">
+        {/* Botão de Ação */}
+        <div className="flex justify-end items-center mb-6">
+          <Link href="/solicitar-evento-wizard?type=client">
             <Button className="bg-red-600 hover:bg-red-500 text-white">
               <Plus className="h-4 w-4 mr-2" />
               Novo Projeto
@@ -339,12 +341,22 @@ export default function DashboardContratantePage() {
                             Tipo: <span className="text-zinc-400">{project.event_type}</span>
                           </div>
 
-                          <Link href={`/dashboard/contratante/projetos/${project.id}`}>
-                            <Button size="sm" className="bg-red-600 hover:bg-red-500 text-white">
-                              <Eye className="h-4 w-4 mr-2" />
-                              Ver Detalhes
-                            </Button>
-                          </Link>
+                          <div className="flex items-center gap-2">
+                            {project.status === 'new' && (
+                              <Link href={`/solicitar-evento-wizard?type=client&projectId=${project.id}`}>
+                                <Button size="sm" variant="outline" className="border-zinc-700 hover:bg-zinc-800 text-white">
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Editar
+                                </Button>
+                              </Link>
+                            )}
+                            <Link href={`/dashboard/contratante/projetos/${project.id}`}>
+                              <Button size="sm" className="bg-red-600 hover:bg-red-500 text-white">
+                                <Eye className="h-4 w-4 mr-2" />
+                                Ver Detalhes
+                              </Button>
+                            </Link>
+                          </div>
                         </div>
                       </div>
                     </div>

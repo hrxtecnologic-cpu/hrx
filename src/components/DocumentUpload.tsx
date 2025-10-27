@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { formatFileSize } from '@/lib/supabase/storage';
 
@@ -27,7 +27,16 @@ export function DocumentUpload({
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string>('');
   const [preview, setPreview] = useState<string>(currentUrl || '');
+  const [hasExistingDocument, setHasExistingDocument] = useState<boolean>(!!currentUrl);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Atualizar preview quando currentUrl mudar (carregamento de dados existentes)
+  useEffect(() => {
+    if (currentUrl) {
+      setPreview(currentUrl);
+      setHasExistingDocument(true);
+    }
+  }, [currentUrl]);
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const selectedFile = e.target.files?.[0];
@@ -86,13 +95,22 @@ export function DocumentUpload({
           </div>
         )}
 
-        {/* Info do arquivo */}
-        {file && (
+        {/* Info do arquivo ou documento existente */}
+        {(file || hasExistingDocument) && (
           <div className="mb-4 p-2 sm:p-3 bg-zinc-900 rounded-lg border border-zinc-700">
             <div className="flex items-center justify-between gap-2">
               <div className="flex-1 min-w-0">
-                <p className="text-xs sm:text-sm text-white truncate">{file.name}</p>
-                <p className="text-xs text-zinc-500">{formatFileSize(file.size)}</p>
+                {file ? (
+                  <>
+                    <p className="text-xs sm:text-sm text-white truncate">{file.name}</p>
+                    <p className="text-xs text-zinc-500">{formatFileSize(file.size)}</p>
+                  </>
+                ) : hasExistingDocument ? (
+                  <>
+                    <p className="text-xs sm:text-sm text-white">Documento enviado anteriormente</p>
+                    <p className="text-xs text-green-500">✓ Arquivo já carregado</p>
+                  </>
+                ) : null}
               </div>
               {uploading && (
                 <div className="ml-2 sm:ml-3 flex-shrink-0">
@@ -138,7 +156,7 @@ export function DocumentUpload({
             size="sm"
             className="w-full sm:w-auto border-zinc-600 hover:bg-zinc-700 text-zinc-300 text-xs sm:text-sm"
           >
-            {file ? 'Trocar arquivo' : 'Escolher arquivo'}
+            {file ? 'Trocar arquivo' : hasExistingDocument ? 'Atualizar documento' : 'Escolher arquivo'}
           </Button>
           <p className="text-xs text-zinc-500 mt-2 px-2">
             PDF ou imagem (JPG, PNG, WEBP) - Máx. 10MB

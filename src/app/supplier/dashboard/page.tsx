@@ -17,7 +17,8 @@ import {
   AlertCircle,
   Mail,
   Phone,
-  MapPin
+  MapPin,
+  User
 } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/format';
 
@@ -142,12 +143,20 @@ export default function SupplierDashboardPage() {
               Olá, {supplier?.company_name || 'Fornecedor'}!
             </p>
           </div>
-          <Link href="/">
-            <Button className="bg-red-600 hover:bg-red-700 text-white border-0">
-              <Building2 className="h-4 w-4 mr-2" />
-              Home
-            </Button>
-          </Link>
+          <div className="flex gap-3">
+            <Link href="/solicitar-evento-wizard?type=supplier&edit=true">
+              <Button variant="outline" className="border-zinc-700 hover:bg-zinc-800 text-white">
+                <User className="h-4 w-4 mr-2" />
+                Editar Perfil
+              </Button>
+            </Link>
+            <Link href="/">
+              <Button className="bg-red-600 hover:bg-red-700 text-white border-0">
+                <Building2 className="h-4 w-4 mr-2" />
+                Home
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Stats Cards */}

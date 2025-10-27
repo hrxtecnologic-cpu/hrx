@@ -331,7 +331,7 @@ export default function ProfessionalDashboardPage() {
               </p>
             </div>
             <div className="flex gap-3">
-              <Link href="/cadastro-profissional">
+              <Link href="/cadastro-profissional-wizard">
                 <Button className="bg-red-600 hover:bg-red-700 text-white border-0">
                   <User className="h-4 w-4 mr-2" />
                   Editar Perfil
@@ -630,7 +630,7 @@ export default function ProfessionalDashboardPage() {
                     <span className="text-sm">Nenhum documento enviado</span>
                   </div>
                 )}
-                <Link href="/cadastro-profissional">
+                <Link href="/cadastro-profissional-wizard">
                   <Button
                     variant="outline"
                     size="sm"

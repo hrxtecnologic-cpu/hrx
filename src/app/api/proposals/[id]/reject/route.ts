@@ -277,16 +277,16 @@ export async function GET(
                 <li>Evento foi cancelado?</li>
                 <li>Outro motivo?</li>
               </ul>
-              <p>Por favor, responda para: <strong>contato@hrxeventos.com.br</strong></p>
+              <p>Por favor, responda para: <strong>atendimento@hrxeventos.com.br</strong></p>
             </div>
 
             <div class="contact">
               <h3>📞 Ficamos à Disposição</h3>
               <p>Se mudar de ideia ou tiver qualquer dúvida, estamos aqui para ajudar!</p>
               <p style="margin-top: 15px;">
-                📧 Email: <a href="mailto:contato@hrxeventos.com.br">contato@hrxeventos.com.br</a><br>
-                📱 WhatsApp: <a href="https://wa.me/5521999999999">(21) 99999-9999</a><br>
-                🌐 Site: <a href="https://www.hrxeventos.com.br">www.hrxeventos.com.br</a>
+                🌐 Site: <a href="https://www.hrxeventos.com.br">www.hrxeventos.com.br</a><br>
+                📧 Email: <a href="mailto:atendimento@hrxeventos.com.br">atendimento@hrxeventos.com.br</a><br>
+                📱 WhatsApp: <a href="https://wa.me/5521999952457">(21) 99995-2457</a>
               </p>
             </div>
 

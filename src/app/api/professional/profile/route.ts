@@ -62,10 +62,12 @@ export async function PATCH(req: Request) {
 
     const body = await req.json();
     const {
-      full_name,
+      fullName,
+      full_name, // Aceitar ambos os formatos
       phone,
       cpf,
-      birth_date,
+      birthDate,
+      birth_date, // Aceitar ambos os formatos
       street,
       number,
       complement,
@@ -74,11 +76,28 @@ export async function PATCH(req: Request) {
       state,
       cep,
       categories,
-      has_experience,
-      years_of_experience,
+      subcategories,
+      certifications,
+      hasExperience,
+      has_experience, // Aceitar ambos os formatos
+      experienceYears,
+      years_of_experience, // Aceitar ambos os formatos
+      experienceDescription,
+      experience_description, // Aceitar ambos os formatos
       availability,
       documents,
+      portfolio,
+      latitude,
+      longitude,
+      acceptsNotifications,
     } = body;
+
+    // Normalizar campos (aceitar camelCase ou snake_case)
+    const normalizedFullName = fullName || full_name;
+    const normalizedBirthDate = birthDate || birth_date;
+    const normalizedHasExperience = hasExperience !== undefined ? hasExperience : has_experience;
+    const normalizedExperienceYears = experienceYears || years_of_experience;
+    const normalizedExperienceDescription = experienceDescription || experience_description;
 
     const supabase = await createClient();
 
@@ -97,10 +116,10 @@ export async function PATCH(req: Request) {
     const { data: professional, error } = await supabase
       .from('professionals')
       .update({
-        full_name,
+        full_name: normalizedFullName,
         phone,
         cpf,
-        birth_date,
+        birth_date: normalizedBirthDate,
         street,
         number,
         complement,
@@ -109,10 +128,16 @@ export async function PATCH(req: Request) {
         state,
         cep,
         categories,
-        has_experience,
-        years_of_experience,
+        subcategories,
+        has_experience: normalizedHasExperience,
+        experience_years: normalizedExperienceYears,
+        experience_description: normalizedExperienceDescription,
         availability,
         documents,
+        portfolio_urls: portfolio,
+        latitude,
+        longitude,
+        accepts_notifications: acceptsNotifications,
         // Se foi rejeitado, voltar para pending após edição
         status: 'pending',
         updated_at: new Date().toISOString(),

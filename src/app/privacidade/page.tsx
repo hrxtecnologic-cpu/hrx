@@ -310,13 +310,19 @@ export default function PrivacidadePage() {
                   Para questões sobre esta Política de Privacidade ou sobre o tratamento de seus dados:
                 </p>
                 <ul className="space-y-2 list-none mt-4">
-                  <li>📧 Email: privacidade@hrx.com.br</li>
-                  <li>📧 DPO: dpo@hrx.com.br</li>
-                  <li>📱 WhatsApp: (21) 99999-9999</li>
+                  <li>🌐 Site: www.hrxeventos.com.br</li>
+                  <li>📧 Email: atendimento@hrxeventos.com.br</li>
+                  <li>📱 WhatsApp: (21) 99995-2457</li>
                   <li>
-                    🌐 Site:{' '}
+                    📧 DPO: dpo@hrx.com.br
+                  </li>
+                  <li>
+                    📧 Privacidade: privacidade@hrx.com.br
+                  </li>
+                  <li>
+                    🔗 Contato:{' '}
                     <Link href="/contato" className="text-red-500 hover:text-red-400 underline">
-                      hrx.com.br/contato
+                      /contato
                     </Link>
                   </li>
                 </ul>

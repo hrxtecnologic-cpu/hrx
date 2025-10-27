@@ -41,6 +41,7 @@ import { EQUIPMENT_CATEGORIES } from '@/lib/equipment-types';
 import { CATEGORIES_WITH_SUBCATEGORIES } from '@/lib/categories-subcategories';
 import { WizardContainer, WizardStep, useWizard } from '@/components/Wizard';
 import { LocationPicker, ParsedAddress } from '@/components/LocationPicker';
+import { MapboxAutocomplete } from '@/components/MapboxAutocomplete';
 
 // ==========================================
 // Schemas de validação
@@ -140,15 +141,29 @@ function SolicitarEventoWizardContent() {
   const [selectedEquipmentTypes, setSelectedEquipmentTypes] = useState<string[]>([]);
   const [mapLatitude, setMapLatitude] = useState<number | undefined>();
   const [mapLongitude, setMapLongitude] = useState<number | undefined>();
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [projectId, setProjectId] = useState<string | null>(null);
+  const [loadingData, setLoadingData] = useState(false);
 
   const wizard = useWizard(requestType === 'client' ? CLIENT_WIZARD_STEPS.length : SUPPLIER_WIZARD_STEPS.length);
 
   // Detectar tipo da URL - OBRIGATÓRIO vir como parâmetro
   useEffect(() => {
     const typeFromUrl = searchParams.get('type');
+    const editParam = searchParams.get('edit');
+    const projectIdParam = searchParams.get('projectId');
+
     if (typeFromUrl === 'client' || typeFromUrl === 'supplier') {
       setRequestType(typeFromUrl);
       setValue('request_type', typeFromUrl);
+
+      // Detectar modo de edição
+      if (editParam === 'true' || projectIdParam) {
+        setIsEditMode(true);
+        if (projectIdParam) {
+          setProjectId(projectIdParam);
+        }
+      }
     } else {
       // Se não vier type na URL, redireciona para onboarding
       router.push('/onboarding');
@@ -185,6 +200,153 @@ function SolicitarEventoWizardContent() {
   });
 
   const isUrgent = watch('is_urgent');
+
+  // Carregar dados existentes do fornecedor quando em modo de edição
+  useEffect(() => {
+    const loadSupplierData = async () => {
+      if (!isEditMode || requestType !== 'supplier') {
+        return;
+      }
+
+      setLoadingData(true);
+
+      try {
+        const response = await fetch('/api/supplier/profile');
+
+        if (response.ok) {
+          const result = await response.json();
+          const supplier = result.data;
+
+          if (supplier) {
+            console.log('📋 Carregando dados do fornecedor para edição:', supplier);
+
+            // Preencher campos do formulário
+            setValue('company_name', supplier.company_name || '');
+            setValue('contact_name', supplier.contact_name || '');
+            setValue('email', supplier.email || '');
+            setValue('phone', supplier.phone || '');
+            setValue('equipment_types', supplier.equipment_types || []);
+            setValue('notes', supplier.notes || '');
+
+            // Preencher pricing se existir
+            if (supplier.pricing) {
+              setValue('pricing', {
+                daily: supplier.pricing.daily || '',
+                three_days: supplier.pricing.three_days || '',
+                weekly: supplier.pricing.weekly || '',
+                discount_notes: supplier.pricing.discount_notes || '',
+              });
+            }
+
+            // Atualizar tipos de equipamento selecionados
+            if (supplier.equipment_types && Array.isArray(supplier.equipment_types)) {
+              setSelectedEquipmentTypes(supplier.equipment_types);
+            }
+          }
+        } else if (response.status === 404) {
+          toast.error('Perfil de fornecedor não encontrado');
+          router.push('/supplier/dashboard');
+        }
+      } catch (error) {
+        console.error('Erro ao carregar dados do fornecedor:', error);
+        toast.error('Erro ao carregar dados');
+      } finally {
+        setLoadingData(false);
+      }
+    };
+
+    loadSupplierData();
+  }, [isEditMode, requestType, setValue, router]);
+
+  // Carregar dados do projeto quando em modo de edição
+  useEffect(() => {
+    const loadProjectData = async () => {
+      if (!projectId || requestType !== 'client') {
+        return;
+      }
+
+      setLoadingData(true);
+
+      try {
+        const response = await fetch(`/api/contratante/meus-projetos/${projectId}`);
+
+        if (response.ok) {
+          const result = await response.json();
+          const project = result.project;
+
+          if (project) {
+            console.log('📋 Carregando dados do projeto para edição:', project);
+
+            // Preencher campos do cliente
+            setValue('client_name', project.client_name || '');
+            setValue('client_email', project.client_email || '');
+            setValue('client_phone', project.client_phone || '');
+            setValue('client_company', project.client_company || '');
+
+            // Preencher dados do evento
+            setValue('event_name', project.event_name || '');
+            setValue('event_type', project.event_type || '');
+            setValue('event_description', project.event_description || '');
+            setValue('event_date', project.event_date || '');
+            setValue('start_time', project.start_time || '');
+            setValue('end_time', project.end_time || '');
+            setValue('expected_attendance', project.expected_attendance || '');
+
+            // Preencher local do evento
+            setValue('venue_name', project.venue_name || '');
+            setValue('venue_address', project.venue_address || '');
+            setValue('venue_city', project.venue_city || '');
+            setValue('venue_state', project.venue_state || '');
+            setValue('venue_zip', project.venue_zip || '');
+
+            // Preencher outros campos
+            setValue('is_urgent', project.is_urgent || false);
+            setValue('client_budget', project.client_budget || '');
+            setValue('additional_notes', project.additional_notes || '');
+
+            // Carregar profissionais se existirem
+            if (project.project_team && Array.isArray(project.project_team) && project.project_team.length > 0) {
+              const professionals = project.project_team.map((member: any) => ({
+                category_group: member.category || '',
+                category: member.subcategory || '',
+                quantity: member.quantity || 1,
+                requirements: member.role || '',
+              }));
+              setValue('professionals', professionals);
+            }
+
+            // Carregar equipamentos se existirem
+            if (project.project_equipment && Array.isArray(project.project_equipment) && project.project_equipment.length > 0) {
+              const equipment = project.project_equipment.map((item: any) => ({
+                equipment_group: item.category || '',
+                equipment_type: item.subcategory || item.equipment_type || '',
+                quantity: item.quantity || 1,
+                estimated_daily_rate: 0,
+                notes: item.description || '',
+              }));
+              setValue('equipment', equipment);
+            }
+
+            toast.success('Projeto carregado para edição');
+          }
+        } else if (response.status === 404) {
+          toast.error('Projeto não encontrado');
+          router.push('/dashboard/contratante');
+        } else if (response.status === 403) {
+          toast.error('Projeto não pode ser editado');
+          router.push('/dashboard/contratante');
+        }
+      } catch (error) {
+        console.error('Erro ao carregar dados do projeto:', error);
+        toast.error('Erro ao carregar projeto');
+        router.push('/dashboard/contratante');
+      } finally {
+        setLoadingData(false);
+      }
+    };
+
+    loadProjectData();
+  }, [projectId, requestType, setValue, router]);
 
   // Toggle categoria
   const toggleCategory = (categoryName: string) => {
@@ -317,10 +479,61 @@ function SolicitarEventoWizardContent() {
   };
 
   const onSubmit = async (data: any) => {
-    console.log('🚀 [Wizard] onSubmit chamado!', { requestType, data });
+    console.log('🚀 [Wizard] onSubmit chamado!', { requestType, isEditMode, data });
     setIsSubmitting(true);
 
     try {
+      // Se está editando fornecedor, usar endpoint de profile
+      if (isEditMode && requestType === 'supplier') {
+        console.log('📤 [Wizard] Atualizando perfil do fornecedor...');
+
+        const response = await fetch('/api/supplier/profile', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          console.error('❌ [Wizard] Erro ao atualizar:', result);
+          throw new Error(result.error || 'Erro ao atualizar perfil');
+        }
+
+        console.log('✅ [Wizard] Perfil atualizado com sucesso!');
+        toast.success('Perfil atualizado com sucesso!');
+        router.push('/supplier/dashboard');
+        return;
+      }
+
+      // Se está editando projeto de cliente, usar endpoint de update
+      if (projectId && requestType === 'client') {
+        console.log('📤 [Wizard] Atualizando projeto do cliente...');
+
+        const response = await fetch(`/api/contratante/meus-projetos/${projectId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          console.error('❌ [Wizard] Erro ao atualizar projeto:', result);
+          throw new Error(result.error || 'Erro ao atualizar projeto');
+        }
+
+        console.log('✅ [Wizard] Projeto atualizado com sucesso!');
+        toast.success('Projeto atualizado com sucesso!');
+        router.push(`/dashboard/contratante/projetos/${projectId}`);
+        return;
+      }
+
+      // Caso contrário, usar fluxo normal de criação
       // Preparar payload completo e mapear campos
       const payload = {
         request_type: requestType,
@@ -381,13 +594,15 @@ function SolicitarEventoWizardContent() {
     }
   };
 
-  // Se não tem tipo definido, mostra loading (o useEffect vai redirecionar)
-  if (!requestType) {
+  // Se não tem tipo definido ou está carregando dados, mostra loading
+  if (!requestType || loadingData) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-950 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-12 w-12 text-red-600 animate-spin mx-auto mb-4" />
-          <p className="text-zinc-400">Carregando...</p>
+          <p className="text-zinc-400">
+            {loadingData ? 'Carregando seus dados...' : 'Carregando...'}
+          </p>
         </div>
       </div>
     );
@@ -654,12 +869,25 @@ function SolicitarEventoWizardContent() {
                         <Label htmlFor="venue_address" className="text-sm font-medium text-zinc-200">
                           Endereço *
                         </Label>
-                        <Input
-                          id="venue_address"
-                          {...register('venue_address')}
-                          className="bg-zinc-800 border-zinc-700 text-white mt-2"
-                          placeholder="Rua, número, complemento"
-                        />
+                        <div className="mt-2">
+                          <MapboxAutocomplete
+                            value={watch('venue_address') || ''}
+                            onChange={(value) => setValue('venue_address', value)}
+                            onSelect={(suggestion) => {
+                              setValue('venue_address', suggestion.placeName);
+                              setValue('venue_city', suggestion.city || '');
+                              setValue('venue_state', suggestion.state || '');
+
+                              // Atualizar coordenadas no mapa se houver
+                              if (suggestion.coordinates) {
+                                setMapLatitude(suggestion.coordinates.latitude);
+                                setMapLongitude(suggestion.coordinates.longitude);
+                              }
+                            }}
+                            placeholder="Digite o endereço do evento..."
+                            className="w-full"
+                          />
+                        </div>
                         {errors.venue_address && (
                           <p className="text-xs text-red-400 mt-1.5">{errors.venue_address.message}</p>
                         )}

@@ -25,12 +25,23 @@ export async function GET(request: NextRequest) {
     // Buscar profissionais com coordenadas
     const { data: professionals } = await supabase
       .from('professionals')
-      .select('id, full_name, latitude, longitude, city, state, status, categories, subcategories')
+      .select('id, full_name, latitude, longitude, city, state, status, categories, subcategories, street, number, complement, neighborhood, phone, email')
       .not('latitude', 'is', null)
       .not('longitude', 'is', null);
 
     if (professionals) {
       professionals.forEach(prof => {
+        // Montar endereço completo
+        const addressParts = [
+          prof.street,
+          prof.number && `nº ${prof.number}`,
+          prof.complement,
+          prof.neighborhood,
+        ].filter(Boolean);
+        const fullAddress = addressParts.length > 0
+          ? `${addressParts.join(', ')} - ${prof.city}/${prof.state}`
+          : null;
+
         markers.push({
           id: prof.id,
           type: 'professional',
@@ -42,6 +53,9 @@ export async function GET(request: NextRequest) {
           status: prof.status,
           categories: prof.categories,
           subcategories: prof.subcategories,
+          address: fullAddress,
+          phone: prof.phone,
+          email: prof.email,
         });
       });
     }
@@ -49,7 +63,7 @@ export async function GET(request: NextRequest) {
     // Buscar fornecedores com coordenadas
     const { data: suppliers } = await supabase
       .from('equipment_suppliers')
-      .select('id, company_name, latitude, longitude, city, state, status, equipment_types')
+      .select('id, company_name, latitude, longitude, city, state, status, equipment_types, address, phone, email')
       .not('latitude', 'is', null)
       .not('longitude', 'is', null);
 
@@ -65,6 +79,9 @@ export async function GET(request: NextRequest) {
           state: sup.state,
           status: sup.status,
           categories: sup.equipment_types,
+          address: sup.address,
+          phone: sup.phone,
+          email: sup.email,
         });
       });
     }
@@ -72,7 +89,7 @@ export async function GET(request: NextRequest) {
     // Buscar eventos próximos com coordenadas
     const { data: events } = await supabase
       .from('event_projects')
-      .select('id, project_number, event_name, latitude, longitude, venue_city, venue_state, status')
+      .select('id, project_number, event_name, latitude, longitude, venue_city, venue_state, venue_address, client_phone, client_email, status')
       .not('latitude', 'is', null)
       .not('longitude', 'is', null)
       .gte('event_date', new Date().toISOString())
@@ -90,6 +107,9 @@ export async function GET(request: NextRequest) {
           city: event.venue_city,
           state: event.venue_state,
           status: event.status,
+          address: event.venue_address,
+          phone: event.client_phone,
+          email: event.client_email,
         });
       });
     }

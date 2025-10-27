@@ -54,20 +54,30 @@ export default function SucessoPage() {
 
             <div className="bg-zinc-950/50 rounded-lg p-6 mb-8">
               <h3 className="text-white font-semibold mb-3">Precisa de ajuda imediata?</h3>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <div className="flex flex-col items-center justify-center gap-3 text-zinc-300">
                 <a
-                  href="mailto:contato@hrx.com"
+                  href="https://www.hrxeventos.com.br"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-red-500 hover:text-red-400 transition"
+                >
+                  <span>🌐 Site: www.hrxeventos.com.br</span>
+                </a>
+                <a
+                  href="mailto:atendimento@hrxeventos.com.br"
                   className="flex items-center gap-2 text-red-500 hover:text-red-400 transition"
                 >
                   <Mail className="h-4 w-4" />
-                  <span>contato@hrx.com</span>
+                  <span>atendimento@hrxeventos.com.br</span>
                 </a>
                 <a
-                  href="tel:+5511999999999"
+                  href="https://wa.me/5521999952457"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="flex items-center gap-2 text-red-500 hover:text-red-400 transition"
                 >
                   <Phone className="h-4 w-4" />
-                  <span>(11) 99999-9999</span>
+                  <span>(21) 99995-2457</span>
                 </a>
               </div>
             </div>

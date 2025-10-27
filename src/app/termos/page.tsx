@@ -203,12 +203,14 @@ export default function TermosPage() {
                   Para questões sobre estes Termos de Uso, entre em contato:
                 </p>
                 <ul className="space-y-2 list-none">
-                  <li>📧 Email: juridico@hrx.com.br</li>
-                  <li>📱 WhatsApp: (21) 99999-9999</li>
+                  <li>🌐 Site: www.hrxeventos.com.br</li>
+                  <li>📧 Email: atendimento@hrxeventos.com.br</li>
+                  <li>📱 WhatsApp: (21) 99995-2457</li>
+                  <li>📧 Jurídico: juridico@hrx.com.br</li>
                   <li>
-                    🌐 Site:{' '}
+                    🔗 Contato:{' '}
                     <Link href="/contato" className="text-red-500 hover:text-red-400 underline">
-                      hrx.com.br/contato
+                      /contato
                     </Link>
                   </li>
                 </ul>

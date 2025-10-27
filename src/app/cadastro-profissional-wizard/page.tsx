@@ -24,6 +24,7 @@ import { PortfolioUpload } from '@/components/PortfolioUpload';
 import { CategorySubcategorySelector } from '@/components/CategorySubcategorySelector';
 import { BasicDocumentsUpload } from '@/components/BasicDocumentsUpload';
 import { LocationPicker, ParsedAddress } from '@/components/LocationPicker';
+import { ServiceRadiusSelector } from '@/components/ServiceRadiusSelector';
 import { WizardContainer, WizardStep, useWizard } from '@/components/Wizard';
 import {
   User,
@@ -77,6 +78,8 @@ export default function CadastroProfissionalWizardPage() {
   const [searchingCEP, setSearchingCEP] = useState(false);
   const [uploadedDocuments, setUploadedDocuments] = useState<Record<string, string>>({});
   const [portfolioUrls, setPortfolioUrls] = useState<string[]>([]);
+  const [loadingProfessional, setLoadingProfessional] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false); // Se está atualizando cadastro existente
 
   // Sistema de subcategorias e certificações
   const [subcategories, setSubcategories] = useState<Subcategories>({});
@@ -119,6 +122,103 @@ export default function CadastroProfissionalWizardPage() {
   const availability = watch('availability');
   const acceptsTerms = watch('acceptsTerms');
   const acceptsNotifications = watch('acceptsNotifications');
+
+  // Carregar dados do profissional existente (se houver)
+  useEffect(() => {
+    const loadProfessionalData = async () => {
+      if (!user) {
+        setLoadingProfessional(false);
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/professional/profile');
+
+        if (response.ok) {
+          const result = await response.json();
+          const professional = result.data;
+
+          if (professional) {
+            console.log('📋 Carregando dados do profissional:', professional);
+
+            // Marcar que está atualizando um cadastro existente
+            setIsUpdating(true);
+
+            // Dados pessoais
+            if (professional.full_name) setValue('fullName', professional.full_name);
+            if (professional.cpf) setValue('cpf', professional.cpf);
+            if (professional.birth_date) setValue('birthDate', professional.birth_date);
+            if (professional.email) setValue('email', professional.email);
+            if (professional.phone) setValue('phone', professional.phone);
+
+            // Endereço
+            if (professional.cep) setValue('cep', professional.cep);
+            if (professional.street) setValue('street', professional.street);
+            if (professional.number) setValue('number', professional.number);
+            if (professional.complement) setValue('complement', professional.complement);
+            if (professional.neighborhood) setValue('neighborhood', professional.neighborhood);
+            if (professional.city) setValue('city', professional.city);
+            if (professional.state) setValue('state', professional.state);
+
+            // Coordenadas do mapa
+            if (professional.latitude && professional.longitude) {
+              setMapLatitude(professional.latitude);
+              setMapLongitude(professional.longitude);
+            }
+
+            // Categorias e subcategorias
+            if (professional.categories && professional.categories.length > 0) {
+              setValue('categories', professional.categories);
+            }
+
+            if (professional.subcategories) {
+              setSubcategories(professional.subcategories);
+            }
+
+            // Documentos já enviados
+            if (professional.documents) {
+              setUploadedDocuments(professional.documents);
+            }
+
+            // Portfólio
+            if (professional.portfolio_urls) {
+              setPortfolioUrls(professional.portfolio_urls);
+            }
+
+            // Experiência e disponibilidade
+            if (professional.experience_years !== undefined) {
+              setValue('hasExperience', professional.experience_years > 0);
+              setValue('experienceYears', professional.experience_years);
+            }
+
+            if (professional.experience_description) {
+              setValue('experienceDescription', professional.experience_description);
+            }
+
+            if (professional.availability) {
+              setValue('availability', {
+                weekdays: professional.availability.weekdays || false,
+                weekends: professional.availability.weekends || false,
+                holidays: professional.availability.holidays || false,
+                night: professional.availability.night || false,
+                travel: professional.availability.travel || false,
+              });
+            }
+
+            // Termos e notificações
+            setValue('acceptsTerms', true); // Já aceitou ao cadastrar
+            setValue('acceptsNotifications', professional.accepts_notifications !== false);
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao carregar dados do profissional:', error);
+      } finally {
+        setLoadingProfessional(false);
+      }
+    };
+
+    loadProfessionalData();
+  }, [user, setValue]);
 
   // Validação por step
   const validateStep = async (step: number): Promise<boolean> => {
@@ -260,8 +360,15 @@ export default function CadastroProfissionalWizardPage() {
         longitude: mapLongitude,
       };
 
-      const response = await fetch('/api/professionals', {
-        method: 'POST',
+      // Se está atualizando, usar PATCH em /api/professional/profile
+      // Se é novo cadastro, usar POST em /api/professionals
+      const endpoint = isUpdating ? '/api/professional/profile' : '/api/professionals';
+      const method = isUpdating ? 'PATCH' : 'POST';
+
+      console.log(`${method} ${endpoint} - ${isUpdating ? 'Atualizando' : 'Criando'} cadastro`);
+
+      const response = await fetch(endpoint, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
@@ -271,12 +378,30 @@ export default function CadastroProfissionalWizardPage() {
         throw new Error(errorData.error || 'Erro ao salvar cadastro');
       }
 
-      router.push('/cadastro-profissional/sucesso');
+      // Se foi atualização bem-sucedida, redirecionar para o dashboard
+      if (isUpdating) {
+        alert('✅ Cadastro atualizado com sucesso!');
+        router.push('/professional/dashboard');
+      } else {
+        router.push('/cadastro-profissional/sucesso');
+      }
     } catch (error) {
       console.error('Erro:', error);
       alert(error instanceof Error ? error.message : 'Erro ao salvar cadastro');
       setIsSubmitting(false);
     }
+  }
+
+  // Loading state enquanto carrega dados do profissional
+  if (loadingProfessional) {
+    return (
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin h-12 w-12 border-4 border-red-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-zinc-400">Carregando seus dados...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -669,6 +794,14 @@ export default function CadastroProfissionalWizardPage() {
                     <p className="text-red-500 text-sm mt-4">{errors.availability.message}</p>
                   )}
                 </div>
+
+                {/* Raio de Atuação */}
+                <div className="mt-8 pt-6 border-t border-zinc-700">
+                  <ServiceRadiusSelector
+                    value={watch('serviceRadiusKm') || 50}
+                    onChange={(value) => setValue('serviceRadiusKm', value)}
+                  />
+                </div>
               </WizardStep>
             )}
 
@@ -701,6 +834,11 @@ export default function CadastroProfissionalWizardPage() {
                     <div>
                       <h3 className="text-sm font-medium text-zinc-400 mb-2">Categorias</h3>
                       <p className="text-white">{selectedCategories.join(', ') || 'Nenhuma selecionada'}</p>
+                    </div>
+
+                    <div>
+                      <h3 className="text-sm font-medium text-zinc-400 mb-2">Raio de Atuação</h3>
+                      <p className="text-white">Até {watch('serviceRadiusKm') || 50} km de distância</p>
                     </div>
                   </div>
 
