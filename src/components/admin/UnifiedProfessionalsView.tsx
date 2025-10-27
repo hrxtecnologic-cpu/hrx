@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import { UnifiedProfessional } from '@/app/api/admin/professionals/unified/route';
 import { useAuth } from '@clerk/nextjs';
+import Link from 'next/link';
 
 interface UnifiedProfessionalsViewProps {
   initialStats: {
@@ -415,17 +416,18 @@ export function UnifiedProfessionalsView({ initialStats }: UnifiedProfessionalsV
                         {/* Ações */}
                         <td className="p-4 text-right">
                           <div className="flex gap-2 justify-end">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="text-zinc-400 hover:text-white"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                // TODO: Abrir modal
-                              }}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
+                            <Link href={`/admin/profissionais/${prof.id}`}>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-zinc-400 hover:text-white"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                }}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </Link>
                           </div>
                         </td>
                       </tr>
@@ -547,10 +549,12 @@ export function UnifiedProfessionalsView({ initialStats }: UnifiedProfessionalsV
                                   </>
                                 )}
                               </Button>
-                              <Button size="sm" variant="outline" className="border-zinc-700 text-white">
-                                <FileText className="h-4 w-4 mr-2" />
-                                Ver Documentos
-                              </Button>
+                              <Link href={`/admin/profissionais/${prof.id}`}>
+                                <Button size="sm" variant="outline" className="border-zinc-700 text-white hover:bg-zinc-700">
+                                  <FileText className="h-4 w-4 mr-2" />
+                                  Ver Documentos
+                                </Button>
+                              </Link>
                             </div>
                           </td>
                         </tr>

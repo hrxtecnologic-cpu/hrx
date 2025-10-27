@@ -53,8 +53,8 @@ export default async function Home() {
     },
     {
       icon: Zap,
-      title: 'Matching Automático',
-      description: 'IA conecta os profissionais certos para cada evento',
+      title: 'Matching Preciso',
+      description: 'Conectamos os profissionais certos para cada evento',
       color: 'text-red-500',
       gradient: 'from-red-500/20 to-transparent',
     },
@@ -70,7 +70,7 @@ export default async function Home() {
   const stats = [
     { value: '100%', label: 'Digital', icon: Database },
     { value: '24/7', label: 'Monitoramento', icon: Clock },
-    { value: 'IA', label: 'Matching', icon: Sparkles },
+    { value: 'HRX', label: 'Matching', icon: Sparkles },
     { value: 'GPS', label: 'Tracking', icon: MapPin },
   ];
 
@@ -135,9 +135,9 @@ export default async function Home() {
             </h1>
             <p className="text-xl md:text-2xl text-zinc-300 max-w-4xl mx-auto leading-relaxed">
               Conectamos profissionais e fornecedores com eventos através de
-              <span className="text-red-500 font-semibold"> geolocalização</span>,
+              <span className="text-red-500 font-semibold"> Qualidade de Serviço</span>,
               <span className="text-red-500 font-semibold"> tracking em tempo real</span> e
-              <span className="text-red-500 font-semibold"> inteligência artificial</span>.
+              <span className="text-red-500 font-semibold"> geolocalização precisa </span>.
             </p>
             <p className="text-lg text-zinc-400 max-w-3xl mx-auto mt-4">
               Gestão completa de ponta a ponta - da cotação à entrega.
@@ -204,7 +204,7 @@ export default async function Home() {
               <span className="text-red-500"> Única Plataforma</span>
             </h2>
             <p className="text-xl text-zinc-400 max-w-3xl mx-auto">
-              Não somos apenas um marketplace. Somos uma produtora digital de eventos com tecnologia que conecta, gerencia e monitora tudo em tempo real.
+              Não somos apenas um marketplace. Somos uma produtora digital de eventos com tecnologia que conecta, gerencia e monitora em tempo real.
             </p>
           </div>
 
