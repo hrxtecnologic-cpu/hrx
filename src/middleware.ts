@@ -33,6 +33,7 @@ const isPublicRoute = createRouteMatcher([
 const isDashboardRoute = createRouteMatcher([
   '/dashboard/profissional(.*)',
   '/dashboard/contratante(.*)',
+  '/supplier(.*)', // Dashboard e rotas de fornecedor
 ]);
 
 // Rotas administrativas (requerem role 'admin')

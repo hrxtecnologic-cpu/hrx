@@ -1,6 +1,5 @@
-import { auth } from '@clerk/nextjs/server';
 import { createClient } from '@/lib/supabase/server';
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import {
   unauthorizedResponse,
   notFoundResponse,
@@ -8,16 +7,13 @@ import {
   internalErrorResponse,
 } from '@/lib/api-response';
 import { logger } from '@/lib/logger';
+import { withAuth } from '@/lib/api';
 
 /**
  * GET: Buscar dados do profissional logado
  */
-export async function GET() {
+export const GET = withAuth(async (userId: string, req: Request) => {
   try {
-    const { userId } = await auth();
-    if (!userId) {
-      return unauthorizedResponse();
-    }
 
     const supabase = await createClient();
 
@@ -48,17 +44,13 @@ export async function GET() {
     logger.error('Erro ao buscar perfil profissional', error instanceof Error ? error : undefined);
     return internalErrorResponse('Erro ao buscar perfil');
   }
-}
+});
 
 /**
  * PATCH: Atualizar dados do profissional logado
  */
-export async function PATCH(req: Request) {
+export const PATCH = withAuth(async (userId: string, req: Request) => {
   try {
-    const { userId } = await auth();
-    if (!userId) {
-      return unauthorizedResponse();
-    }
 
     const body = await req.json();
     const {
@@ -134,7 +126,7 @@ export async function PATCH(req: Request) {
         experience_description: normalizedExperienceDescription,
         availability,
         documents,
-        portfolio_urls: portfolio,
+        portfolio: portfolio, // Corrigido: portfolio_urls → portfolio
         latitude,
         longitude,
         accepts_notifications: acceptsNotifications,
@@ -162,4 +154,4 @@ export async function PATCH(req: Request) {
     logger.error('Erro ao atualizar perfil profissional', error instanceof Error ? error : undefined);
     return internalErrorResponse('Erro ao atualizar perfil');
   }
-}
+});

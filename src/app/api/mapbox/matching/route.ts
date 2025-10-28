@@ -141,8 +141,6 @@ export async function POST(req: Request) {
       }
     }
 
-    console.log(`🔍 Matching: ${candidates.length} candidatos encontrados`);
-
     // Executar matching
     const result = await findNearbyProfessionals(eventLocation, candidates, {
       maxDistanceKm,
@@ -154,8 +152,6 @@ export async function POST(req: Request) {
     // Adicionar custo de deslocamento
     const matchesWithCost = calculateTravelCosts(result.matches);
 
-    console.log(`✅ Matching: ${result.totalFound} matches em ${result.executionTime}ms`);
-
     return NextResponse.json({
       success: true,
       data: {
@@ -164,7 +160,6 @@ export async function POST(req: Request) {
       },
     });
   } catch (error: any) {
-    console.error('❌ Erro no matching:', error);
     return NextResponse.json(
       { error: error?.message || 'Erro interno do servidor' },
       { status: 500 }

@@ -40,12 +40,12 @@ export default function OnboardingPage() {
       const userType = user.publicMetadata?.userType as string | undefined;
       const onboardingCompleted = user.publicMetadata?.onboardingCompleted as boolean | undefined;
 
-      console.log('🔍 [Onboarding] Verificando metadata do usuário:', {
+      /* console.log('🔍 [Onboarding] Verificando metadata do usuário:', {
         email: user.primaryEmailAddress?.emailAddress,
         userType: userType,
         onboardingCompleted: onboardingCompleted,
         publicMetadata: user.publicMetadata,
-      });
+      }); */
 
       // IMPORTANTE: Só redirecionar se onboardingCompleted === true
       // Isso evita redirecionamentos automáticos se metadata ficou "preso"

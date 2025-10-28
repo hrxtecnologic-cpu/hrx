@@ -1,10 +1,11 @@
-import { auth } from '@clerk/nextjs/server';
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { rateLimit, RateLimitPresets, createRateLimitError } from '@/lib/rate-limit';
+import { withAdmin } from '@/lib/api';
+import { logger } from '@/lib/logger';
 
 // GET - List all event types
-export async function GET(req: NextRequest) {
+export const GET = withAdmin(async (userId: string, req: Request) => {
   try {
     // ========== Rate Limiting ==========
     const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
@@ -19,12 +20,6 @@ export async function GET(req: NextRequest) {
           'Retry-After': Math.ceil((rateLimitResult.reset - Date.now()) / 1000).toString(),
         }
       });
-    }
-
-    // ========== Autenticação ==========
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     }
 
     const supabase = await createClient();
@@ -45,10 +40,10 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
 // POST - Create new event type
-export async function POST(req: NextRequest) {
+export const POST = withAdmin(async (userId: string, req: Request) => {
   try {
     // ========== Rate Limiting ==========
     const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
@@ -63,12 +58,6 @@ export async function POST(req: NextRequest) {
           'Retry-After': Math.ceil((rateLimitResult.reset - Date.now()) / 1000).toString(),
         }
       });
-    }
-
-    // ========== Autenticação ==========
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     }
 
     const { name, description } = await req.json();
@@ -103,14 +92,17 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error) {
+      logger.error('Erro ao criar tipo de evento', error, { userId, name });
       throw error;
     }
 
+    logger.info('Tipo de evento criado', { userId, eventTypeId: data.id, name });
     return NextResponse.json(data);
   } catch (error) {
+    logger.error('Erro ao criar tipo de evento', error instanceof Error ? error : undefined, { userId });
     return NextResponse.json(
       { error: 'Erro ao criar tipo de evento' },
       { status: 500 }
     );
   }
-}
+});

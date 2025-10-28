@@ -22,8 +22,9 @@ export default function SucessoFornecedorPage() {
       primaryButtonText="Acessar Meu Dashboard"
       primaryButtonHref="/supplier/dashboard"
       showContactInfo={true}
-      contactEmail="hrxtecnologic@gmail.com"
-      contactPhone="(21) 99876-8572"
+      contactEmail="atendimento@hrxeventos.com.br"
+      contactPhone="(21) 99995-2457"
+      contactWebsite="www.hrxeventos.com.br"
     />
   );
 }

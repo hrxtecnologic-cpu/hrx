@@ -7,14 +7,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
 import { rateLimit, RateLimitPresets, createRateLimitError } from '@/lib/rate-limit';
+import { withAdmin } from '@/lib/api';
 
 /**
  * DELETE: Remover membro da equipe
  */
-export async function DELETE(
+export const DELETE = withAdmin(async (
+  userId: string,
   request: NextRequest,
   context: { params: Promise<{ id: string; memberId: string }> }
-) {
+) => {
   try {
     // Rate Limiting
     const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
@@ -73,15 +75,16 @@ export async function DELETE(
       { status: 500 }
     );
   }
-}
+});
 
 /**
  * PATCH: Atualizar dados do membro
  */
-export async function PATCH(
+export const PATCH = withAdmin(async (
+  userId: string,
   request: NextRequest,
   context: { params: Promise<{ id: string; memberId: string }> }
-) {
+) => {
   try {
     // Rate Limiting
     const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
@@ -163,4 +166,4 @@ export async function PATCH(
       { status: 500 }
     );
   }
-}
+});

@@ -1,10 +1,11 @@
-import { auth } from '@clerk/nextjs/server';
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { rateLimit, RateLimitPresets, createRateLimitError } from '@/lib/rate-limit';
+import { withAdmin } from '@/lib/api';
+import { logger } from '@/lib/logger';
 
 // GET - List all suppliers
-export async function GET(req: NextRequest) {
+export const GET = withAdmin(async (userId: string, req: Request) => {
   try {
     // ========== Rate Limiting ==========
     const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
@@ -19,12 +20,6 @@ export async function GET(req: NextRequest) {
           'Retry-After': Math.ceil((rateLimitResult.reset - Date.now()) / 1000).toString(),
         }
       });
-    }
-
-    // ========== Autenticação ==========
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     }
 
     const { searchParams } = new URL(req.url);
@@ -89,15 +84,16 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(suppliersWithStats);
   } catch (error) {
+    logger.error('Erro ao buscar fornecedores', error instanceof Error ? error : undefined, { userId });
     return NextResponse.json(
       { error: 'Erro ao buscar fornecedores' },
       { status: 500 }
     );
   }
-}
+});
 
 // POST - Create new supplier
-export async function POST(req: NextRequest) {
+export const POST = withAdmin(async (userId: string, req: Request) => {
   try {
     // ========== Rate Limiting ==========
     const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
@@ -112,12 +108,6 @@ export async function POST(req: NextRequest) {
           'Retry-After': Math.ceil((rateLimitResult.reset - Date.now()) / 1000).toString(),
         }
       });
-    }
-
-    // ========== Autenticação ==========
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     }
 
     const body = await req.json();
@@ -171,14 +161,17 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error) {
+      logger.error('Erro ao criar fornecedor', error, { userId, company_name });
       throw error;
     }
 
+    logger.info('Fornecedor criado com sucesso', { userId, supplierId: data.id, company_name });
     return NextResponse.json(data, { status: 201 });
   } catch (error) {
+    logger.error('Erro ao criar fornecedor', error instanceof Error ? error : undefined, { userId });
     return NextResponse.json(
       { error: 'Erro ao criar fornecedor' },
       { status: 500 }
     );
   }
-}
+});

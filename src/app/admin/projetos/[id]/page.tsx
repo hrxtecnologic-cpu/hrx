@@ -83,12 +83,12 @@ export default async function ProjetoDetailPage({
     .order('created_at', { ascending: true });
 
   // DEBUG: Log equipment query
-  console.log('[SERVER] Equipment query result:', {
+  /* console.log('[SERVER] Equipment query result:', {
     count: equipment?.length || 0,
     error: equipmentError,
     sample: equipment?.[0],
     hasSupplier: equipment?.[0]?.supplier ? true : false,
-  });
+  }); */
 
   // Buscar profissionais disponíveis (apenas aprovados)
   const { data: professionals, error: professionalsError } = await supabase

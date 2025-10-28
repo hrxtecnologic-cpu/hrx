@@ -4,6 +4,7 @@ import { auth } from '@clerk/nextjs/server';
 import {
   sendEventRequestClientConfirmation,
   sendEventRequestAdminNotification,
+  sendSupplierConfirmation,
 } from '@/lib/resend/emails';
 import { rateLimit, RateLimitPresets, createRateLimitError } from '@/lib/rate-limit';
 import { publicEventRequestSchema } from '@/lib/validations/event-project';
@@ -68,6 +69,13 @@ export async function POST(req: Request) {
         phone,
         equipment_catalog,
         notes,
+        // Campos de localização
+        latitude,
+        longitude,
+        address,
+        city,
+        state,
+        zip_code,
       } = body;
 
       // Validações
@@ -131,18 +139,42 @@ export async function POST(req: Request) {
             equipment_catalog: equipment_catalog || [],
             notes: notes || null,
             status: 'active',
+            // Campos de localização
+            latitude: latitude || null,
+            longitude: longitude || null,
+            address: address || null,
+            city: city || null,
+            state: state || null,
+            zip_code: zip_code || null,
           },
         ])
         .select()
         .single();
 
       if (supplierError) {
-        console.error('Erro ao criar fornecedor:', supplierError);
         throw supplierError;
       }
 
-      // TODO: Enviar email de confirmação para fornecedor
-      // await sendSupplierConfirmationEmail(supplier);
+      // Enviar email de confirmação para fornecedor
+      const catalogPreview = equipment_catalog.slice(0, 5).map((item: any) => ({
+        name: item.name,
+        category: item.category,
+        subcategory: item.subcategory,
+      }));
+
+      // Enviar email em background (não bloqueia a resposta)
+      sendSupplierConfirmation({
+        contactName: contact_name,
+        companyName: company_name,
+        legalName: legal_name,
+        cnpj,
+        email,
+        phone,
+        catalogItemsCount: equipment_catalog.length,
+        catalogPreview,
+      }).catch(() => {
+        // Email silently failed
+      });
 
       return NextResponse.json({
         success: true,
@@ -320,17 +352,8 @@ export async function POST(req: Request) {
         budgetRange: budget_range,
         additionalNotes: additional_notes,
       }),
-    ])
-      .then(([clientResult, adminResult]) => {
-        if (clientResult.success) {
-        } else {
-        }
-
-        if (adminResult.success) {
-        } else {
-        }
-      })
-      .catch((error) => {
+    ]).catch(() => {
+        // Emails silently failed
       });
 
     return NextResponse.json(
@@ -342,7 +365,6 @@ export async function POST(req: Request) {
       { status: 201 }
     );
   } catch (error: any) {
-
     // Se for erro de tabela não existir, retornar mensagem amigável
     if (error.message?.includes('relation') && error.message?.includes('does not exist')) {
       return NextResponse.json(
@@ -354,8 +376,31 @@ export async function POST(req: Request) {
       );
     }
 
+    // Se for erro de coluna não existir, retornar mensagem específica
+    if (error.message?.includes('column') && error.message?.includes('does not exist')) {
+      return NextResponse.json(
+        {
+          error: 'Estrutura do banco de dados desatualizada. Execute a migration 036.',
+          details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        },
+        { status: 503 }
+      );
+    }
+
+    // Se for erro de CNPJ duplicado
+    if (error.code === '23505' && error.message?.includes('cnpj')) {
+      return NextResponse.json(
+        { error: 'CNPJ já cadastrado no sistema' },
+        { status: 409 }
+      );
+    }
+
+    // Retornar erro mais detalhado em desenvolvimento
     return NextResponse.json(
-      { error: 'Erro ao processar sua solicitação. Tente novamente mais tarde.' },
+      {
+        error: 'Erro ao processar sua solicitação. Tente novamente mais tarde.',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      },
       { status: 500 }
     );
   }

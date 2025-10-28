@@ -119,14 +119,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
     }
 
-    console.log('🔍 Buscando profissionais com query unificada...');
     const startTime = Date.now();
 
     // ========== QUERY OTIMIZADA COM JOINS ==========
     const { data: professionals, error } = await supabase.rpc('get_unified_professionals_data');
 
     if (error) {
-      console.error('❌ Erro na query:', error);
       return NextResponse.json({ error: 'Erro ao buscar profissionais', details: error.message }, { status: 500 });
     }
 
@@ -135,8 +133,6 @@ export async function GET(req: NextRequest) {
     const clerkDataMap = new Map();
 
     if (clerkIds.length > 0) {
-      console.log(`📞 Buscando dados do Clerk para ${clerkIds.length} profissionais...`);
-
       // Buscar em lotes de 100 para evitar timeout
       const batchSize = 100;
       for (let i = 0; i < clerkIds.length; i += batchSize) {
@@ -155,7 +151,7 @@ export async function GET(req: NextRequest) {
             });
           });
         } catch (clerkError) {
-          console.error('❌ Erro ao buscar lote do Clerk:', clerkError);
+          // Erro silencioso ao buscar Clerk
         }
       }
     }
@@ -222,8 +218,6 @@ export async function GET(req: NextRequest) {
     const endTime = Date.now();
     const duration = ((endTime - startTime) / 1000).toFixed(2);
 
-    console.log(`✅ Query concluída em ${duration}s (${enrichedProfessionals.length} profissionais)`);
-
     return NextResponse.json({
       success: true,
       total: enrichedProfessionals.length,
@@ -235,7 +229,6 @@ export async function GET(req: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('❌ Erro ao buscar profissionais unificados:', error);
     return NextResponse.json(
       { error: 'Erro ao buscar profissionais', details: error.message },
       { status: 500 }

@@ -39,13 +39,74 @@ export async function GET(
 
     const { id: projectId } = await params;
 
-    // Buscar projeto
-    const { data: project, error: projectError } = await supabase
-      .from('event_projects')
-      .select('*')
-      .eq('id', projectId)
-      .single();
+    // OTIMIZAÇÃO: Executar todas as queries em paralelo (4x mais rápido)
+    const [
+      { data: project, error: projectError },
+      { data: team, error: teamError },
+      { data: equipment, error: equipmentError },
+      { data: quotations, error: quotationsError },
+      { data: emails, error: emailsError }
+    ] = await Promise.all([
+      // Buscar projeto
+      supabase
+        .from('event_projects')
+        .select('*')
+        .eq('id', projectId)
+        .single(),
 
+      // Buscar equipe
+      supabase
+        .from('project_team')
+        .select(`
+          *,
+          professional:professionals(
+            id,
+            full_name,
+            email,
+            phone,
+            categories
+          )
+        `)
+        .eq('project_id', projectId)
+        .order('created_at', { ascending: true }),
+
+      // Buscar equipamentos
+      supabase
+        .from('project_equipment')
+        .select('*')
+        .eq('project_id', projectId)
+        .order('created_at', { ascending: true }),
+
+      // Buscar cotações
+      supabase
+        .from('supplier_quotations')
+        .select(`
+          *,
+          supplier:equipment_suppliers(
+            id,
+            company_name,
+            contact_name,
+            email,
+            phone
+          ),
+          equipment:project_equipment(
+            id,
+            name,
+            category
+          )
+        `)
+        .eq('project_id', projectId)
+        .order('created_at', { ascending: false }),
+
+      // Buscar emails
+      supabase
+        .from('project_emails')
+        .select('*')
+        .eq('project_id', projectId)
+        .order('created_at', { ascending: false })
+    ]);
+
+    // Verificar se projeto existe
     if (projectError || !project) {
       return NextResponse.json(
         { error: 'Projeto não encontrado' },
@@ -53,35 +114,13 @@ export async function GET(
       );
     }
 
-    // Buscar equipe
-    const { data: team, error: teamError } = await supabase
-      .from('project_team')
-      .select(`
-        *,
-        professional:professionals(
-          id,
-          full_name,
-          email,
-          phone,
-          categories
-        )
-      `)
-      .eq('project_id', projectId)
-      .order('created_at', { ascending: true });
-
+    // Log de erros em queries secundárias (não bloqueia resposta)
     if (teamError) {
       logger.error('Erro ao buscar equipe do projeto', {
         error: teamError.message,
         projectId,
       });
     }
-
-    // Buscar equipamentos
-    const { data: equipment, error: equipmentError } = await supabase
-      .from('project_equipment')
-      .select('*')
-      .eq('project_id', projectId)
-      .order('created_at', { ascending: true });
 
     if (equipmentError) {
       logger.error('Erro ao buscar equipamentos do projeto', {
@@ -90,40 +129,12 @@ export async function GET(
       });
     }
 
-    // Buscar cotações
-    const { data: quotations, error: quotationsError } = await supabase
-      .from('supplier_quotations')
-      .select(`
-        *,
-        supplier:equipment_suppliers(
-          id,
-          company_name,
-          contact_name,
-          email,
-          phone
-        ),
-        equipment:project_equipment(
-          id,
-          name,
-          category
-        )
-      `)
-      .eq('project_id', projectId)
-      .order('created_at', { ascending: false });
-
     if (quotationsError) {
       logger.error('Erro ao buscar cotações do projeto', {
         error: quotationsError.message,
         projectId,
       });
     }
-
-    // Buscar emails
-    const { data: emails, error: emailsError } = await supabase
-      .from('project_emails')
-      .select('*')
-      .eq('project_id', projectId)
-      .order('created_at', { ascending: false });
 
     if (emailsError) {
       logger.error('Erro ao buscar emails do projeto', {

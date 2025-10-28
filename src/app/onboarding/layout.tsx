@@ -12,10 +12,10 @@ export default async function OnboardingLayout({
   if (sessionClaims?.metadata?.onboardingComplete) {
     const userType = sessionClaims.metadata.userType;
 
-    console.log('✅ [Onboarding Layout] Usuário já completou onboarding:', {
+    /* console.log('✅ [Onboarding Layout] Usuário já completou onboarding:', {
       userType,
       redirecting: true,
-    });
+    }); */
 
     // Redireciona para o dashboard apropriado
     if (userType === 'professional') {

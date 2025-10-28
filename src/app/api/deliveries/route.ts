@@ -74,7 +74,6 @@ export async function GET(req: Request) {
       deliveries: deliveries || [],
     });
   } catch (error: any) {
-    console.error('Erro ao buscar entregas:', error);
     return NextResponse.json(
       { error: error.message || 'Erro ao buscar entregas' },
       { status: 500 }
@@ -162,7 +161,6 @@ export async function POST(req: Request) {
       delivery,
     });
   } catch (error: any) {
-    console.error('Erro ao criar entrega:', error);
     return NextResponse.json(
       { error: error.message || 'Erro ao criar entrega' },
       { status: 500 }

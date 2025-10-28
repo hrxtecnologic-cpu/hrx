@@ -111,6 +111,11 @@ class Logger {
     };
 
     console.warn(this.formatLog(entry));
+
+    // Enviar warnings críticos para Sentry em produção
+    if (!this.isDevelopment && context?.critical) {
+      this.sendToSentry(new Error(message), context, 'warning');
+    }
   }
 
   /**
@@ -127,10 +132,9 @@ class Logger {
 
     console.error(this.formatLog(entry));
 
-    // Em produção, enviar para serviço de monitoring (Sentry, etc)
-    if (!this.isDevelopment && typeof window !== 'undefined') {
-      // TODO: Integrar com Sentry aqui
-      // Sentry.captureException(error, { contexts: { custom: context } });
+    // Enviar para Sentry em produção
+    if (!this.isDevelopment) {
+      this.sendToSentry(error || new Error(message), context, 'error');
     }
   }
 
@@ -148,9 +152,45 @@ class Logger {
 
     console.warn(this.formatLog(entry));
 
-    // Em produção, alertar time de segurança
+    // Enviar para Sentry com tag de segurança
     if (!this.isDevelopment) {
-      // TODO: Enviar alerta para canal de segurança (Slack, email, etc)
+      this.sendToSentry(new Error(message), { ...context, securityEvent: true }, 'warning');
+    }
+  }
+
+  /**
+   * Envia erro para Sentry com contexto estruturado
+   */
+  private sendToSentry(error: Error, context?: LogContext, level: 'error' | 'warning' = 'error') {
+    // Importação dinâmica para evitar problemas em edge runtime
+    if (typeof window !== 'undefined') {
+      // Client-side
+      import('@sentry/nextjs').then((Sentry) => {
+        Sentry.captureException(error, {
+          level,
+          contexts: {
+            custom: context || {},
+          },
+          tags: {
+            userId: context?.userId,
+            securityEvent: context?.securityEvent ? 'true' : 'false',
+          },
+        });
+      });
+    } else {
+      // Server-side
+      import('@sentry/nextjs').then((Sentry) => {
+        Sentry.captureException(error, {
+          level,
+          contexts: {
+            custom: context || {},
+          },
+          tags: {
+            userId: context?.userId,
+            securityEvent: context?.securityEvent ? 'true' : 'false',
+          },
+        });
+      });
     }
   }
 }

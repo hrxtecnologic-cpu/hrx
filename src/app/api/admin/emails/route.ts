@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { rateLimit, RateLimitPresets, createRateLimitError } from '@/lib/rate-limit';
-import { auth } from '@clerk/nextjs/server';
 import { getEmailHistory } from '@/lib/resend/email-logger';
+import { withAdmin } from '@/lib/api';
 
 /**
  * GET /api/admin/emails
  *
  * Busca historico de emails enviados com filtros opcionais
  */
-export async function GET(req: NextRequest) {
+export const GET = withAdmin(async (userId: string, req: Request) => {
   try {
     // ========== Rate Limiting ==========
     const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
@@ -23,12 +23,6 @@ export async function GET(req: NextRequest) {
           'Retry-After': Math.ceil((rateLimitResult.reset - Date.now()) / 1000).toString(),
         }
       });
-    }
-
-    // ========== Autenticação ==========
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: 'Nao autenticado' }, { status: 401 });
     }
 
     const { searchParams } = new URL(req.url);
@@ -71,4 +65,4 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

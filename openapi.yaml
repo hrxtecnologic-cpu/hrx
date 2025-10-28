@@ -1,0 +1,584 @@
+openapi: 3.0.3
+info:
+  title: HRX API
+  description: |
+    API para gerenciamento de profissionais, fornecedores e projetos de eventos.
+
+    ## Autenticação
+    Todas as rotas requerem autenticação via Clerk. O token JWT deve ser enviado no header Authorization.
+
+    ## Rate Limiting
+    - Leitura: 100 requests/minuto
+    - Escrita: 20 requests/minuto
+
+    ## Otimizações
+    - Índices geográficos para buscas por localização
+    - RPC functions para queries complexas
+    - Cache com Redis para dados frequentes
+  version: 1.0.0
+  contact:
+    name: HRX Tecnologia
+    email: contato@hrxeventos.com.br
+  license:
+    name: Proprietary
+
+servers:
+  - url: https://hrx.vercel.app/api
+    description: Produção
+  - url: http://localhost:3000/api
+    description: Desenvolvimento
+
+tags:
+  - name: Professionals
+    description: Gerenciamento de profissionais
+  - name: Event Projects
+    description: Gerenciamento de projetos de eventos
+  - name: Suppliers
+    description: Gerenciamento de fornecedores de equipamentos
+  - name: Geocoding
+    description: Geocodificação e geolocalização
+  - name: Map Data
+    description: Dados para visualização em mapas
+
+components:
+  securitySchemes:
+    ClerkAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Token JWT do Clerk
+
+  schemas:
+    Professional:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        full_name:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        cpf:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        latitude:
+          type: number
+          format: double
+          nullable: true
+        longitude:
+          type: number
+          format: double
+          nullable: true
+        categories:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [pending, active, inactive, rejected]
+        has_experience:
+          type: boolean
+        years_of_experience:
+          type: string
+          enum: ['0-1', '1-2', '2-5', '5-10', '10+']
+        distance_km:
+          type: number
+          format: double
+          description: Distância calculada em buscas geográficas
+      required:
+        - id
+        - full_name
+        - email
+        - phone
+        - cpf
+
+    EventProject:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        project_number:
+          type: string
+          example: "PRJ-2025-001"
+        event_name:
+          type: string
+        event_type:
+          type: string
+        event_date:
+          type: string
+          format: date
+        client_name:
+          type: string
+        venue_city:
+          type: string
+        venue_state:
+          type: string
+        status:
+          type: string
+          enum: [new, analyzing, quoting, quoted, proposed, approved, in_execution, completed, cancelled]
+        is_urgent:
+          type: boolean
+        total_cost:
+          type: number
+          format: double
+        total_client_price:
+          type: number
+          format: double
+        professionals_needed:
+          type: array
+          items:
+            type: object
+            properties:
+              category:
+                type: string
+              quantity:
+                type: integer
+        equipment_needed:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              quantity:
+                type: integer
+
+    SearchParams:
+      type: object
+      properties:
+        query:
+          type: string
+          description: Busca textual (nome, email, telefone, etc)
+        status:
+          type: array
+          items:
+            type: string
+        categories:
+          type: array
+          items:
+            type: string
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        radius:
+          type: number
+          description: Raio de busca em km
+        city:
+          type: string
+        state:
+          type: string
+        hasExperience:
+          type: boolean
+        page:
+          type: integer
+          default: 1
+        limit:
+          type: integer
+          default: 20
+        sortBy:
+          type: string
+          enum: [name, distance, experience, createdAt]
+        sortOrder:
+          type: string
+          enum: [asc, desc]
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        details:
+          type: string
+          description: Apenas em desenvolvimento
+
+    RateLimitError:
+      type: object
+      properties:
+        error:
+          type: string
+        limit:
+          type: integer
+        remaining:
+          type: integer
+        reset:
+          type: string
+          format: date-time
+
+paths:
+  /admin/professionals/search:
+    post:
+      summary: Busca avançada de profissionais
+      description: |
+        Busca profissionais com múltiplos filtros e busca geográfica otimizada.
+
+        **Otimizações:**
+        - Usa RPC do PostgreSQL para cálculo de distância (8x mais rápido)
+        - Índices geográficos (lat/lng)
+        - Filtros JSONB otimizados para categorias
+        - Cache de resultados
+      tags:
+        - Professionals
+      security:
+        - ClerkAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchParams'
+            examples:
+              textSearch:
+                summary: Busca textual
+                value:
+                  query: "João Silva"
+                  page: 1
+                  limit: 20
+              geoSearch:
+                summary: Busca geográfica
+                value:
+                  latitude: -23.5505
+                  longitude: -46.6333
+                  radius: 30
+                  categories: ["Fotografia", "Videomaker"]
+                  status: ["active"]
+                  page: 1
+                  limit: 20
+      responses:
+        '200':
+          description: Busca realizada com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  professionals:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Professional'
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  limit:
+                    type: integer
+                  totalPages:
+                    type: integer
+                  hasMore:
+                    type: boolean
+        '401':
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate limit excedido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RateLimitError'
+        '500':
+          description: Erro interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /admin/event-projects:
+    get:
+      summary: Listar projetos de eventos
+      description: |
+        Lista projetos com filtros e paginação.
+
+        **Otimização:** Select otimizado (apenas campos necessários)
+      tags:
+        - Event Projects
+      security:
+        - ClerkAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: is_urgent
+          in: query
+          schema:
+            type: boolean
+        - name: client_name
+          in: query
+          schema:
+            type: string
+        - name: event_type
+          in: query
+          schema:
+            type: string
+        - name: venue_city
+          in: query
+          schema:
+            type: string
+        - name: venue_state
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Lista de projetos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  projects:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/EventProject'
+                  total:
+                    type: integer
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+
+    post:
+      summary: Criar novo projeto
+      tags:
+        - Event Projects
+      security:
+        - ClerkAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventProject'
+      responses:
+        '201':
+          description: Projeto criado
+        '400':
+          description: Dados inválidos
+        '401':
+          description: Não autenticado
+
+  /admin/event-projects/{id}:
+    get:
+      summary: Detalhes do projeto
+      description: |
+        Busca detalhes completos do projeto.
+
+        **Otimização:** Queries paralelas com Promise.all() (4x mais rápido)
+      tags:
+        - Event Projects
+      security:
+        - ClerkAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Detalhes do projeto
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EventProject'
+                  - type: object
+                    properties:
+                      team:
+                        type: array
+                        items:
+                          type: object
+                      equipment:
+                        type: array
+                        items:
+                          type: object
+                      quotations:
+                        type: array
+                        items:
+                          type: object
+                      emails:
+                        type: array
+                        items:
+                          type: object
+        '404':
+          description: Projeto não encontrado
+
+  /admin/geocode/batch:
+    post:
+      summary: Geocodificação em lote
+      description: |
+        Geocodifica múltiplos profissionais/fornecedores de uma vez.
+
+        **Otimização:** Fix N+1 query (6x mais rápido - 60s → 10s para 100 itens)
+      tags:
+        - Geocoding
+      security:
+        - ClerkAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum: [professionals, suppliers, events]
+                ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+              required:
+                - type
+                - ids
+      responses:
+        '200':
+          description: Geocodificação concluída
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      results:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                            success:
+                              type: boolean
+                            latitude:
+                              type: number
+                            longitude:
+                              type: number
+                            formattedAddress:
+                              type: string
+                            error:
+                              type: string
+                      summary:
+                        type: object
+                        properties:
+                          total:
+                            type: integer
+                          successful:
+                            type: integer
+                          failed:
+                            type: integer
+
+  /admin/map-data:
+    get:
+      summary: Dados para mapa
+      description: |
+        Retorna marcadores para visualização em mapa.
+
+        **Otimizações:**
+        - Suporte a viewport (bounding box)
+        - Queries paralelas
+        - Filtro por tipos de marcadores
+      tags:
+        - Map Data
+      security:
+        - ClerkAuth: []
+      parameters:
+        - name: minLat
+          in: query
+          schema:
+            type: number
+          description: Latitude mínima do viewport
+        - name: maxLat
+          in: query
+          schema:
+            type: number
+        - name: minLng
+          in: query
+          schema:
+            type: number
+        - name: maxLng
+          in: query
+          schema:
+            type: number
+        - name: types
+          in: query
+          schema:
+            type: string
+          description: Tipos separados por vírgula (professional,supplier,event)
+      responses:
+        '200':
+          description: Marcadores do mapa
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  markers:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        type:
+                          type: string
+                          enum: [professional, supplier, event]
+                        latitude:
+                          type: number
+                        longitude:
+                          type: number
+                        name:
+                          type: string
+                        city:
+                          type: string
+                        state:
+                          type: string
+                        status:
+                          type: string
+                  total:
+                    type: integer
+                  viewport:
+                    type: object
+                    nullable: true
+                    properties:
+                      minLat:
+                        type: number
+                      maxLat:
+                        type: number
+                      minLng:
+                        type: number
+                      maxLng:
+                        type: number
+
+security:
+  - ClerkAuth: []

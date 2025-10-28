@@ -1,6 +1,5 @@
-import { auth } from '@clerk/nextjs/server';
 import { createClient } from '@/lib/supabase/server';
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import {
   unauthorizedResponse,
   notFoundResponse,
@@ -8,16 +7,13 @@ import {
   internalErrorResponse,
 } from '@/lib/api-response';
 import { logger } from '@/lib/logger';
+import { withAuth } from '@/lib/api';
 
 /**
  * GET: Buscar dados do fornecedor logado
  */
-export async function GET() {
-  try {
-    const { userId } = await auth();
-    if (!userId) {
-      return unauthorizedResponse();
-    }
+export const GET = withAuth(async (userId: string, req: Request) => {
+  try{
 
     const supabase = await createClient();
 
@@ -37,21 +33,18 @@ export async function GET() {
     logger.error('Erro ao buscar perfil do fornecedor', error instanceof Error ? error : undefined);
     return internalErrorResponse('Erro ao buscar perfil');
   }
-}
+});
 
 /**
  * PATCH: Atualizar dados do fornecedor logado
  */
-export async function PATCH(req: Request) {
+export const PATCH = withAuth(async (userId: string, req: Request) => {
   try {
-    const { userId } = await auth();
-    if (!userId) {
-      return unauthorizedResponse();
-    }
 
     const body = await req.json();
     const {
       company_name,
+      legal_name,
       contact_name,
       email,
       phone,
@@ -64,9 +57,12 @@ export async function PATCH(req: Request) {
       city,
       state,
       cep,
+      address,
+      zip_code,
       latitude,
       longitude,
       equipment_types,
+      equipment_catalog,
       pricing,
       delivery_radius_km,
       delivery_policy,
@@ -127,6 +123,7 @@ export async function PATCH(req: Request) {
       .from('equipment_suppliers')
       .update({
         company_name,
+        legal_name: legal_name || null,
         contact_name,
         email,
         phone,
@@ -139,9 +136,12 @@ export async function PATCH(req: Request) {
         city: city || null,
         state: state || null,
         cep: cep || null,
+        address: address || null,
+        zip_code: zip_code || null,
         latitude: latitude || null,
         longitude: longitude || null,
         equipment_types: equipment_types || null,
+        equipment_catalog: equipment_catalog || null,
         pricing: pricing || null,
         delivery_radius_km: delivery_radius_km || null,
         delivery_policy: delivery_policy || null,
@@ -169,4 +169,4 @@ export async function PATCH(req: Request) {
     logger.error('Erro ao atualizar perfil do fornecedor', error instanceof Error ? error : undefined);
     return internalErrorResponse('Erro ao atualizar perfil');
   }
-}
+});

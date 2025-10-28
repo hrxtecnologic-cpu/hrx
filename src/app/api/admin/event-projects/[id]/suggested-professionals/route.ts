@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { rateLimit, RateLimitPresets, createRateLimitError } from '@/lib/rate-limit';
+import { withAdmin } from '@/lib/api';
 
 interface SuggestedProfessional {
   id: string;
@@ -42,10 +43,11 @@ interface SuggestedProfessional {
   years_of_experience: string;
 }
 
-export async function GET(
+export const GET = withAdmin(async (
+  userId: string,
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
-) {
+) => {
   try {
     // Rate Limiting
     const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
@@ -73,6 +75,7 @@ export async function GET(
       .single();
 
     if (projectError || !project) {
+      console.error('[suggested-professionals] Projeto não encontrado:', { projectId, error: projectError });
       return NextResponse.json(
         { success: false, error: 'Projeto não encontrado' },
         { status: 404 }
@@ -81,10 +84,19 @@ export async function GET(
 
     // Validar geolocalização
     if (!project.latitude || !project.longitude) {
+      console.warn('[suggested-professionals] Projeto sem localização:', {
+        projectId,
+        hasLat: !!project.latitude,
+        hasLng: !!project.longitude
+      });
       return NextResponse.json(
         {
           success: false,
           error: 'Projeto não possui localização definida. Configure a localização do evento primeiro.',
+          details: {
+            hasLatitude: !!project.latitude,
+            hasLongitude: !!project.longitude
+          }
         },
         { status: 400 }
       );
@@ -117,7 +129,6 @@ export async function GET(
     );
 
     if (suggestionsError) {
-      console.error('Erro ao buscar sugestões de profissionais:', suggestionsError);
       return NextResponse.json(
         {
           success: false,
@@ -173,4 +184,4 @@ export async function GET(
       { status: 500 }
     );
   }
-}
+});

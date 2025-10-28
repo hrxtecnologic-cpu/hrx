@@ -83,13 +83,13 @@ export async function recalculateProjectCosts(projectId: string) {
       return { success: false, error: updateError.message };
     }
 
-    console.log(`💰 Custos recalculados para projeto ${projectId}:`, {
+    /* console.log(`💰 Custos recalculados para projeto ${projectId}:`, {
       totalTeamCost,
       totalEquipmentCost,
       totalCost,
       totalClientPrice,
       totalProfit,
-    });
+    }); */
 
     return {
       success: true,

@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { createClient } from '@supabase/supabase-js';
 import { rateLimit, RateLimitPresets, createRateLimitError } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
@@ -22,19 +21,13 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+import { withAdmin } from '@/lib/api';
+
 // =============================================
 // GET /api/admin/event-projects - Listar projetos
 // =============================================
-export async function GET(req: Request) {
+export const GET = withAdmin(async (userId: string, req: Request) => {
   try {
-
-    // Verificar autenticação
-    const { userId } = await auth();
-
-    if (!userId) {
-      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
-    }
-
     // Rate limiting
     const rateLimitResult = await rateLimit(userId, RateLimitPresets.API_READ);
     if (!rateLimitResult.success) {
@@ -56,10 +49,27 @@ export async function GET(req: Request) {
     const offset = parseInt(searchParams.get('offset') || '0');
 
 
-    // Query simples - contadores serão calculados a partir dos arrays JSONB
+    // Query otimizada - seleciona apenas campos necessários para listagem
     let query = supabase
       .from('event_projects')
-      .select('*')
+      .select(`
+        id,
+        project_number,
+        client_name,
+        event_name,
+        event_type,
+        event_date,
+        venue_city,
+        venue_state,
+        status,
+        is_urgent,
+        professionals_needed,
+        equipment_needed,
+        total_cost,
+        total_client_price,
+        created_at,
+        updated_at
+      `)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -146,19 +156,13 @@ export async function GET(req: Request) {
       { status: 500 }
     );
   }
-}
+});
 
 // =============================================
 // POST /api/admin/event-projects - Criar novo projeto
 // =============================================
-export async function POST(req: Request) {
+export const POST = withAdmin(async (userId: string, req: Request) => {
   try {
-    // Verificar autenticação
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
-    }
-
     // Rate limiting
     const rateLimitResult = await rateLimit(userId, RateLimitPresets.API_WRITE);
     if (!rateLimitResult.success) {
@@ -350,4 +354,4 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
-}
+});

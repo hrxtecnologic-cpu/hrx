@@ -59,13 +59,6 @@ export async function POST(req: Request) {
   if (eventType === 'user.created') {
     const { id, email_addresses, first_name, last_name, image_url, public_metadata } = evt.data;
 
-    console.log('🔵 [WEBHOOK] user.created:', {
-      clerk_id: id,
-      email: email_addresses[0]?.email_address,
-      full_name: `${first_name || ''} ${last_name || ''}`.trim(),
-      user_type: (public_metadata as any)?.userType
-    });
-
     try {
       const { data, error } = await supabase.from('users').insert({
         clerk_id: id,
@@ -77,12 +70,6 @@ export async function POST(req: Request) {
       }).select();
 
       if (error) {
-        console.error('❌ [WEBHOOK] Erro ao inserir usuário:', {
-          code: error.code,
-          message: error.message,
-          details: error.details,
-          hint: error.hint
-        });
         return new Response(JSON.stringify({
           error: 'Erro no banco de dados',
           details: error.message,
@@ -90,10 +77,7 @@ export async function POST(req: Request) {
         }), { status: 500, headers: { 'Content-Type': 'application/json' } });
       }
 
-      console.log('✅ [WEBHOOK] Usuário criado com sucesso:', data);
-
     } catch (error: any) {
-      console.error('❌ [WEBHOOK] Exceção ao criar usuário:', error);
       return new Response(JSON.stringify({
         error: 'Erro ao criar usuário',
         message: error.message
@@ -104,8 +88,6 @@ export async function POST(req: Request) {
   // USER UPDATED
   if (eventType === 'user.updated') {
     const { id, email_addresses, first_name, last_name, image_url, public_metadata } = evt.data;
-
-    console.log('🔵 [WEBHOOK] user.updated:', { clerk_id: id });
 
     try {
       const { error } = await supabase
@@ -120,17 +102,13 @@ export async function POST(req: Request) {
         .eq('clerk_id', id);
 
       if (error) {
-        console.error('❌ [WEBHOOK] Erro ao atualizar usuário:', error);
         return new Response(JSON.stringify({
           error: 'Erro atualizando usuário',
           details: error.message
         }), { status: 500, headers: { 'Content-Type': 'application/json' } });
       }
 
-      console.log('✅ [WEBHOOK] Usuário atualizado com sucesso');
-
     } catch (error: any) {
-      console.error('❌ [WEBHOOK] Exceção ao atualizar usuário:', error);
       return new Response(JSON.stringify({
         error: 'Erro ao atualizar usuário',
         message: error.message
@@ -141,8 +119,6 @@ export async function POST(req: Request) {
   // USER DELETED
   if (eventType === 'user.deleted') {
     const { id } = evt.data;
-
-    console.log('🔵 [WEBHOOK] user.deleted:', { clerk_id: id });
 
     try {
     // Soft delete
@@ -155,17 +131,13 @@ export async function POST(req: Request) {
         .eq('clerk_id', id);
 
       if (error) {
-        console.error('❌ [WEBHOOK] Erro ao deletar usuário:', error);
         return new Response(JSON.stringify({
           error: 'Erro ao deletar usuário',
           details: error.message
         }), { status: 500, headers: { 'Content-Type': 'application/json' } });
       }
 
-      console.log('✅ [WEBHOOK] Usuário deletado com sucesso');
-
     } catch (error: any) {
-      console.error('❌ [WEBHOOK] Exceção ao deletar usuário:', error);
       return new Response(JSON.stringify({
         error: 'Erro ao deletar usuário',
         message: error.message

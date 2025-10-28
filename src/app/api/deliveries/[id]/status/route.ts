@@ -91,7 +91,6 @@ export async function PATCH(
       message: 'Status atualizado',
     });
   } catch (error: any) {
-    console.error('Erro ao atualizar status:', error);
     return NextResponse.json(
       { error: error.message || 'Erro ao atualizar status' },
       { status: 500 }

@@ -88,7 +88,6 @@ export async function POST(
       message: 'Localização atualizada',
     });
   } catch (error: any) {
-    console.error('Erro ao atualizar localização:', error);
     return NextResponse.json(
       { error: error.message || 'Erro ao atualizar localização' },
       { status: 500 }
@@ -128,7 +127,6 @@ export async function GET(
       locations: locations || [],
     });
   } catch (error: any) {
-    console.error('Erro ao buscar histórico:', error);
     return NextResponse.json(
       { error: error.message || 'Erro ao buscar histórico' },
       { status: 500 }

@@ -1,7 +1,6 @@
-import { auth } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { withAdmin } from '@/lib/api';
 import { createClient } from '@/lib/supabase/server';
-import { isAdmin } from '@/lib/auth';
 import { logger } from '@/lib/logger';
 import { rateLimit, RateLimitPresets, createRateLimitError } from '@/lib/rate-limit';
 
@@ -15,7 +14,7 @@ import { rateLimit, RateLimitPresets, createRateLimitError } from '@/lib/rate-li
  *   documents: number  // Profissionais com status 'pending'
  * }
  */
-export async function GET(req: NextRequest) {
+export const GET = withAdmin(async (userId: string, req: Request) => {
   try {
     // ========== Rate Limiting ==========
     const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
@@ -30,21 +29,6 @@ export async function GET(req: NextRequest) {
           'Retry-After': Math.ceil((rateLimitResult.reset - Date.now()) / 1000).toString(),
         }
       });
-    }
-
-    // ========== Autenticação ==========
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
-    }
-
-    // Verificar se é admin
-    const { isAdmin: userIsAdmin } = await isAdmin();
-    if (!userIsAdmin) {
-      return NextResponse.json(
-        { error: 'Acesso negado. Apenas administradores podem visualizar contadores.' },
-        { status: 403 }
-      );
     }
 
     const supabase = await createClient();
@@ -78,4 +62,4 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

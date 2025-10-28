@@ -26,6 +26,7 @@ import { BasicDocumentsUpload } from '@/components/BasicDocumentsUpload';
 import { LocationPicker, ParsedAddress } from '@/components/LocationPicker';
 import { ServiceRadiusSelector } from '@/components/ServiceRadiusSelector';
 import { WizardContainer, WizardStep, useWizard } from '@/components/Wizard';
+import { MapboxAutocomplete, AddressSuggestion } from '@/components/MapboxAutocomplete';
 import {
   User,
   MapPin,
@@ -283,6 +284,18 @@ export default function CadastroProfissionalWizardPage() {
     setSearchingCEP(false);
   }
 
+  // Handler para seleção do Mapbox Autocomplete
+  function handleAddressSelect(suggestion: AddressSuggestion) {
+    // Preencher campos com os dados do autocomplete
+    setValue('street', suggestion.address || '');
+    setValue('city', suggestion.city || '');
+    setValue('state', suggestion.state || '');
+
+    // Atualizar coordenadas no mapa
+    setMapLatitude(suggestion.coordinates.latitude);
+    setMapLongitude(suggestion.coordinates.longitude);
+  }
+
   // Handler para mudança de subcategorias
   const handleSubcategoriesChange = (newSubcategories: Subcategories) => {
     setSubcategories(newSubcategories);
@@ -537,6 +550,23 @@ export default function CadastroProfissionalWizardPage() {
                 description="Onde você está localizado"
                 icon={<MapPin className="w-6 h-6" />}
               >
+                {/* Autocomplete Mapbox */}
+                <div className="mb-6">
+                  <Label className="text-sm font-medium text-zinc-200 mb-2 block">
+                    Buscar Endereço (Opcional - facilita o preenchimento)
+                  </Label>
+                  <MapboxAutocomplete
+                    value={watch('street') || ''}
+                    onChange={(value) => setValue('street', value)}
+                    onSelect={handleAddressSelect}
+                    placeholder="Digite seu endereço completo..."
+                    className="bg-zinc-800 border-zinc-700 text-white"
+                  />
+                  <p className="text-xs text-zinc-400 mt-2">
+                    💡 Dica: Comece digitando para ver sugestões automáticas. Ou preencha manualmente abaixo.
+                  </p>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
                     <Label htmlFor="cep" className="text-sm font-medium text-zinc-200">

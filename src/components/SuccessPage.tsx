@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, Home, Mail, Phone } from 'lucide-react';
+import { CheckCircle, Home, Mail, Phone, Globe } from 'lucide-react';
 import Link from 'next/link';
 import { ReactNode } from 'react';
 
@@ -20,6 +20,7 @@ interface SuccessPageProps {
   showContactInfo?: boolean;
   contactEmail?: string;
   contactPhone?: string;
+  contactWebsite?: string;
 }
 
 export function SuccessPage({
@@ -31,6 +32,7 @@ export function SuccessPage({
   showContactInfo = true,
   contactEmail = 'atendimento@hrxeventos.com.br',
   contactPhone = '(21) 99995-2457',
+  contactWebsite = 'www.hrxeventos.com.br',
 }: SuccessPageProps) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-950 flex items-center justify-center px-4">
@@ -84,6 +86,17 @@ export function SuccessPage({
                     <Phone className="h-4 w-4" />
                     <span>{contactPhone}</span>
                   </a>
+                  {contactWebsite && (
+                    <a
+                      href={`https://${contactWebsite}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-red-500 hover:text-red-400 transition"
+                    >
+                      <Globe className="h-4 w-4" />
+                      <span>{contactWebsite}</span>
+                    </a>
+                  )}
                 </div>
               </div>
             )}

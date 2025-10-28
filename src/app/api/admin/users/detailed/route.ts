@@ -82,39 +82,24 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    console.log(`🔍 Total de usuários no Clerk: ${allUsers.length}`);
-
     // Verificar documentos no storage para TODOS os usuários (detectar órfãos)
     const allClerkIds = allUsers.map(u => u.id);
     const storageDocuments = await checkMultipleUsersDocuments(allClerkIds);
-    console.log(`📁 Verificados documentos no storage para ${allClerkIds.length} usuários`);
 
     // Buscar todos os profissionais do Supabase
-    const { data: professionals, error: profError } = await supabase
+    const { data: professionals } = await supabase
       .from('professionals')
       .select('id, clerk_id, user_id, full_name, email, cpf, status, created_at, updated_at, documents, rg_photo_url, cpf_photo_url, proof_of_residence_url, profile_photo_url, rejection_reason, approved_at');
 
-    if (profError) {
-      console.error('Erro ao buscar profissionais:', profError);
-    }
-
     // Buscar contratantes
-    const { data: contractors, error: contractorError } = await supabase
+    const { data: contractors } = await supabase
       .from('contractors')
       .select('id, clerk_id, user_id, full_name, email, company_name, status, created_at, updated_at');
 
-    if (contractorError) {
-      console.error('Erro ao buscar contratantes:', contractorError);
-    }
-
     // Buscar fornecedores
-    const { data: suppliers, error: supplierError } = await supabase
+    const { data: suppliers } = await supabase
       .from('equipment_suppliers')
       .select('id, clerk_id, company_name, contact_name, email, status, created_at, updated_at');
-
-    if (supplierError) {
-      console.error('Erro ao buscar fornecedores:', supplierError);
-    }
 
     // Buscar último email enviado para cada usuário
     const { data: emailLogs } = await supabase
@@ -277,7 +262,6 @@ export async function GET(req: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('Erro ao buscar usuários detalhados:', error);
     return NextResponse.json(
       { error: 'Erro ao buscar usuários', details: error.message },
       { status: 500 }

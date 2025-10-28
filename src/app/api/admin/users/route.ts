@@ -1,14 +1,9 @@
-import { auth, clerkClient } from '@clerk/nextjs/server';
+import { clerkClient } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { rateLimit, RateLimitPresets, createRateLimitError } from '@/lib/rate-limit';
+import { withAdmin } from '@/lib/api';
 
-// Emails com acesso admin
-const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '')
-  .split(',')
-  .map(e => e.trim().toLowerCase())
-  .filter(e => e.length > 0);
-
-export async function GET(req: NextRequest) {
+export const GET = withAdmin(async (userId: string, req: Request) => {
   try {
     // ========== Rate Limiting ==========
     const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
@@ -25,26 +20,8 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // ========== Autenticação ==========
-    const { userId, sessionClaims } = await auth();
-
-    if (!userId) {
-      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
-    }
-
-    // Verificar se o usuário atual é admin
-    const client = await clerkClient();
-    const currentUser = await client.users.getUser(userId);
-    const currentUserEmail = currentUser.emailAddresses[0]?.emailAddress?.toLowerCase() || '';
-
-    const publicMetadata = sessionClaims?.publicMetadata as { role?: string } | undefined;
-    const isAdmin = ADMIN_EMAILS.includes(currentUserEmail) || publicMetadata?.role === 'admin';
-
-    if (!isAdmin) {
-      return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
-    }
-
     // Buscar todos os usuários (limite aumentado para 500)
+    const client = await clerkClient();
     const response = await client.users.getUserList({
       limit: 500,
       orderBy: '-created_at',
@@ -67,4 +44,4 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

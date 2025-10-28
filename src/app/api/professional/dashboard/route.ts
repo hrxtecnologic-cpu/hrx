@@ -1,4 +1,4 @@
-import { auth } from '@clerk/nextjs/server';
+import { withAuth } from '@/lib/api';
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
@@ -14,64 +14,24 @@ import { NextResponse } from 'next/server';
  *  - Eventos concluídos (status: completed)
  *  - Estatísticas (total ganho, a receber, etc)
  */
-export async function GET(req: Request) {
+export const GET = withAuth(async (userId: string) => {
   try {
-    const { userId } = await auth();
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Não autenticado' },
-        { status: 401 }
-      );
-    }
-
     const supabase = await createClient();
 
     // ========================================
     // 1. BUSCAR PROFISSIONAL PELO CLERK ID
     // ========================================
-    // Suporta 2 modelos: clerk_id direto OU user_id via tabela users
-
-    // Tentar buscar direto por clerk_id
-    let professional = null;
-    let professionalError = null;
-
-    const { data: profByClerkId, error: err1 } = await supabase
+    const { data: professional, error: profError } = await supabase
       .from('professionals')
       .select('id, full_name, email, phone, status, categories, subcategories, documents, city, state, rejection_reason')
       .eq('clerk_id', userId)
       .single();
 
-    if (profByClerkId) {
-      professional = profByClerkId;
-    } else {
-      // Tentar buscar via users table (modelo antigo)
-      const { data: userData } = await supabase
-        .from('users')
-        .select('id')
-        .eq('clerk_id', userId)
-        .single();
-
-      if (userData) {
-        const { data: profByUserId, error: err2 } = await supabase
-          .from('professionals')
-          .select('id, full_name, email, phone, status, categories, subcategories, documents, city, state, rejection_reason')
-          .eq('user_id', userData.id)
-          .single();
-
-        if (profByUserId) {
-          professional = profByUserId;
-        } else {
-          professionalError = err2;
-        }
-      }
-    }
-
-    if (!professional) {
+    if (profError || !professional) {
       return NextResponse.json(
         {
           error: 'Profissional não encontrado',
-          message: 'Seu perfil não foi encontrado no sistema',
+          message: 'Seu perfil não foi encontrado no sistema. Complete seu cadastro.',
         },
         { status: 404 }
       );
@@ -126,7 +86,7 @@ export async function GET(req: Request) {
     // 3. PROCESSAR E CATEGORIZAR EVENTOS
     // ========================================
     const allEvents = (teamMembers || [])
-      .filter((member: any) => member.event_projects) // Garantir que tem projeto
+      .filter((member: any) => member.event_projects)
       .map((member: any) => {
         const project = member.event_projects;
         return {
@@ -155,35 +115,19 @@ export async function GET(req: Request) {
       });
 
     // Categorizar eventos
-    const pendingEvents = allEvents.filter(
-      (event: any) => event.status === 'invited'
-    );
-
+    const pendingEvents = allEvents.filter((event: any) => event.status === 'invited');
     const upcomingEvents = allEvents.filter(
       (event: any) =>
         (event.status === 'confirmed' || event.status === 'allocated') &&
         new Date(event.event_date) >= new Date()
     );
-
-    const completedEvents = allEvents.filter(
-      (event: any) => event.status === 'completed'
-    );
+    const completedEvents = allEvents.filter((event: any) => event.status === 'completed');
 
     // ========================================
     // 4. CALCULAR ESTATÍSTICAS
     // ========================================
-
-    // Total ganho (eventos concluídos)
-    const totalEarned = completedEvents.reduce(
-      (sum: number, event: any) => sum + (event.total_cost || 0),
-      0
-    );
-
-    // A receber (eventos confirmados + alocados)
-    const pendingEarnings = upcomingEvents.reduce(
-      (sum: number, event: any) => sum + (event.total_cost || 0),
-      0
-    );
+    const totalEarned = completedEvents.reduce((sum: number, event: any) => sum + (event.total_cost || 0), 0);
+    const pendingEarnings = upcomingEvents.reduce((sum: number, event: any) => sum + (event.total_cost || 0), 0);
 
     const stats = {
       pending_invitations: pendingEvents.length,
@@ -225,4 +169,4 @@ export async function GET(req: Request) {
       { status: 500 }
     );
   }
-}
+});

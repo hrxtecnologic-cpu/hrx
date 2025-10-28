@@ -1,6 +1,6 @@
-import { auth } from '@clerk/nextjs/server';
 import { createClient } from '@/lib/supabase/server';
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
+import { withAuth } from '@/lib/api';
 
 /**
  * ====================================
@@ -8,13 +8,8 @@ import { NextResponse } from 'next/server';
  * ====================================
  * Retorna dashboard do fornecedor com cotações e estatísticas
  */
-export async function GET() {
+export const GET = withAuth(async (userId: string, req: Request) => {
   try {
-    const { userId } = await auth();
-
-    if (!userId) {
-      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
-    }
 
     const supabase = await createClient();
 
@@ -28,7 +23,6 @@ export async function GET() {
       .maybeSingle();
 
     if (supplierError) {
-      console.error('Erro ao buscar fornecedor:', supplierError);
       throw supplierError;
     }
 
@@ -125,4 +119,4 @@ export async function GET() {
       { status: 500 }
     );
   }
-}
+});

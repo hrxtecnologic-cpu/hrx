@@ -54,11 +54,33 @@ export async function POST(req: Request) {
       );
     }
 
-    // Validar tipo de arquivo
+    // Validar tipo de arquivo (MIME type)
     const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
         { error: 'Tipo de arquivo não permitido. Use PDF ou imagens (JPG, PNG, WEBP)' },
+        { status: 400 }
+      );
+    }
+
+    // 🔒 SECURITY: Validar magic bytes (primeiros bytes do arquivo)
+    const fileBuffer = Buffer.from(await file.arrayBuffer());
+    const magicBytes = fileBuffer.slice(0, 4).toString('hex');
+
+    const validMagicBytes: Record<string, string[]> = {
+      'application/pdf': ['25504446'], // %PDF
+      'image/jpeg': ['ffd8ffe0', 'ffd8ffe1', 'ffd8ffe2', 'ffd8ffe3', 'ffd8ffe8'],
+      'image/jpg': ['ffd8ffe0', 'ffd8ffe1', 'ffd8ffe2', 'ffd8ffe3', 'ffd8ffe8'],
+      'image/png': ['89504e47'],
+      'image/webp': ['52494646'], // RIFF (primeiros 4 bytes)
+    };
+
+    const allowedMagicBytes = validMagicBytes[file.type] || [];
+    const isValidMagicBytes = allowedMagicBytes.some(magic => magicBytes.startsWith(magic));
+
+    if (!isValidMagicBytes) {
+      return NextResponse.json(
+        { error: 'Arquivo corrompido ou tipo inválido. O conteúdo do arquivo não corresponde à extensão.' },
         { status: 400 }
       );
     }

@@ -43,6 +43,10 @@ import { WizardContainer, WizardStep, useWizard } from '@/components/Wizard';
 import { LocationPicker, ParsedAddress } from '@/components/LocationPicker';
 import { MapboxAutocomplete } from '@/components/MapboxAutocomplete';
 import { SimpleCatalogItemsManager } from '@/components/admin/SimpleCatalogItemsManager';
+import { SimpleProfessionalsManager } from '@/components/admin/SimpleProfessionalsManager';
+import { SimpleEquipmentManager } from '@/components/admin/SimpleEquipmentManager';
+import { useFormAutoSave } from '@/hooks/useFormAutoSave';
+import { FormDraftManager } from '@/components/FormDraftManager';
 
 // ==========================================
 // Schemas de validação
@@ -99,6 +103,13 @@ const supplierRequestSchema = z.object({
   email: z.string().email('Email inválido'),
   phone: z.string().min(10, 'Telefone é obrigatório'),
   notes: z.string().optional(),
+  // Campos de localização
+  address: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  zip_code: z.string().optional(),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
 });
 
 const requestSchema = z.discriminatedUnion('request_type', [
@@ -122,6 +133,7 @@ const CLIENT_WIZARD_STEPS = [
 
 const SUPPLIER_WIZARD_STEPS = [
   { id: 'company', title: 'Empresa', description: 'Dados da empresa' },
+  { id: 'location', title: 'Localização', description: 'Onde sua empresa está' },
   { id: 'catalog', title: 'Catálogo', description: 'Equipamentos detalhados' },
   { id: 'review', title: 'Revisão', description: 'Confirme os dados' },
 ];
@@ -140,6 +152,10 @@ function SolicitarEventoWizardContent() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [projectId, setProjectId] = useState<string | null>(null);
   const [loadingData, setLoadingData] = useState(false);
+
+  // States para catálogos do cliente
+  const [professionalItems, setProfessionalItems] = useState<any[]>([]);
+  const [equipmentItems, setEquipmentItems] = useState<any[]>([]);
 
   const wizard = useWizard(requestType === 'client' ? CLIENT_WIZARD_STEPS.length : SUPPLIER_WIZARD_STEPS.length);
 
@@ -185,7 +201,45 @@ function SolicitarEventoWizardContent() {
     },
   });
 
-  const { fields, append, remove } = useFieldArray({
+  // Auto-save do formulário
+  const formData = watch(); // Observa todos os campos
+  const { clearDraft, hasDraft, loadDraft } = useFormAutoSave({
+    storageKey: `wizard-${requestType}-${isEditMode ? 'edit' : 'new'}`,
+    data: {
+      ...formData,
+      catalogItems, // Incluir catálogo no auto-save
+      mapLatitude,
+      mapLongitude,
+    },
+    debounceMs: 2000,
+    showToast: true,
+    enabled: !!requestType, // Só salva quando tem tipo definido
+  });
+
+  // Handler para restaurar rascunho
+  const handleLoadDraft = (draft: any) => {
+    if (!draft) return;
+
+    // Restaurar campos do formulário
+    Object.keys(draft).forEach((key) => {
+      if (key !== 'catalogItems' && key !== 'mapLatitude' && key !== 'mapLongitude') {
+        setValue(key as any, draft[key]);
+      }
+    });
+
+    // Restaurar catálogo
+    if (draft.catalogItems) {
+      setCatalogItems(draft.catalogItems);
+    }
+
+    // Restaurar coordenadas do mapa
+    if (draft.mapLatitude) setMapLatitude(draft.mapLatitude);
+    if (draft.mapLongitude) setMapLongitude(draft.mapLongitude);
+
+    toast.success('Rascunho restaurado com sucesso!');
+  };
+
+  const { fields: professionalFields, append, remove } = useFieldArray({
     control,
     name: 'professionals',
   });
@@ -196,6 +250,14 @@ function SolicitarEventoWizardContent() {
   });
 
   const isUrgent = watch('is_urgent');
+
+  // Helper para extrair mensagem de erro
+  const getErrorMessage = (error: any): string => {
+    if (!error) return '';
+    if (typeof error === 'string') return error;
+    if (error.message && typeof error.message === 'string') return error.message;
+    return '';
+  };
 
   // Carregar dados existentes do fornecedor quando em modo de edição
   useEffect(() => {
@@ -372,7 +434,7 @@ function SolicitarEventoWizardContent() {
     const category = EQUIPMENT_CATEGORIES.find((c) => c.name === categoryName);
     if (!category) return 0;
     return category.subtypes.filter((subtype) =>
-      equipmentFields.some((field) => field.category === subtype.label)
+      equipmentFields.some((field: any) => field.category === subtype.label)
     ).length;
   };
 
@@ -406,23 +468,23 @@ function SolicitarEventoWizardContent() {
   // Validação por step
   const validateStep = async (step: number): Promise<boolean> => {
     if (requestType === 'client') {
-      const fieldsToValidate: Record<number, (keyof any)[]> = {
+      const fieldsToValidate: Record<number, string[]> = {
         0: ['client_name', 'client_email', 'client_phone'],
         1: ['event_name', 'event_type', 'event_description'],
         2: ['venue_address', 'venue_city', 'venue_state'],
         3: ['professionals'],
         4: [], // Review
       };
-      const result = await trigger(fieldsToValidate[step]);
+      const result = await trigger(fieldsToValidate[step] as any);
       return result;
     } else if (requestType === 'supplier') {
-      const fieldsToValidate: Record<number, (keyof any)[]> = {
+      const fieldsToValidate: Record<number, string[]> = {
         0: ['company_name', 'contact_name', 'email', 'phone'],
         1: ['equipment_types'],
         2: [], // Pricing is optional
         3: [], // Review
       };
-      const result = await trigger(fieldsToValidate[step]);
+      const result = await trigger(fieldsToValidate[step] as any);
       return result;
     }
     return true;
@@ -485,6 +547,13 @@ function SolicitarEventoWizardContent() {
 
         const supplierPayload = {
           ...data,
+          // Adicionar campos de localização do mapa
+          latitude: mapLatitude || data.latitude,
+          longitude: mapLongitude || data.longitude,
+          address: data.address,
+          city: data.city,
+          state: data.state,
+          zip_code: data.zip_code,
           ...(catalogItems.length > 0 && {
             equipment_catalog: catalogItems.map(item => ({
               id: item.id,
@@ -530,6 +599,7 @@ function SolicitarEventoWizardContent() {
 
         console.log('✅ [Wizard] Perfil atualizado com sucesso!');
         toast.success('Perfil atualizado com sucesso!');
+        clearDraft(); // Limpar rascunho após sucesso
         router.push('/supplier/dashboard');
         return;
       }
@@ -555,6 +625,7 @@ function SolicitarEventoWizardContent() {
 
         console.log('✅ [Wizard] Projeto atualizado com sucesso!');
         toast.success('Projeto atualizado com sucesso!');
+        clearDraft(); // Limpar rascunho após sucesso
         router.push(`/dashboard/contratante/projetos/${projectId}`);
         return;
       }
@@ -564,11 +635,33 @@ function SolicitarEventoWizardContent() {
       const payload = {
         request_type: requestType,
         ...data,
-        // Mapear equipment_type → type para compatibilidade com schema backend
-        equipment: data.equipment?.map((equip: any) => ({
-          type: equip.equipment_type || equip.type,
-          quantity: equip.quantity,
-        })) || [],
+        // Adicionar campos de localização do mapa (para supplier)
+        ...(requestType === 'supplier' && {
+          latitude: mapLatitude || data.latitude,
+          longitude: mapLongitude || data.longitude,
+          address: data.address,
+          city: data.city,
+          state: data.state,
+          zip_code: data.zip_code,
+        }),
+        // Para cliente: usar dados dos catálogos visuais
+        ...(requestType === 'client' && {
+          professionals: professionalItems,
+          equipment: equipmentItems.map((equip: any) => ({
+            equipment_group: equip.equipment_group,
+            equipment_type: equip.equipment_type,
+            quantity: equip.quantity,
+            estimated_daily_rate: equip.estimated_daily_rate,
+            notes: equip.notes,
+          })),
+        }),
+        // Para supplier: Mapear equipment_type → type para compatibilidade com schema backend
+        ...(requestType === 'supplier' && {
+          equipment: data.equipment?.map((equip: any) => ({
+            type: equip.equipment_type || equip.type,
+            quantity: equip.quantity,
+          })) || [],
+        }),
         // Adicionar catálogo detalhado se for fornecedor
         ...(requestType === 'supplier' && catalogItems.length > 0 && {
           equipment_catalog: catalogItems.map(item => ({
@@ -631,6 +724,9 @@ function SolicitarEventoWizardContent() {
       console.log('✅ [Wizard] Solicitação enviada com sucesso!');
       toast.success(requestType === 'supplier' ? 'Cadastro enviado com sucesso!' : 'Solicitação enviada com sucesso!');
 
+      // Limpar rascunho após sucesso
+      clearDraft();
+
       if (requestType === 'supplier') {
         console.log('🔀 [Wizard] Redirecionando para /solicitar-evento/sucesso-fornecedor');
         router.push('/solicitar-evento/sucesso-fornecedor');
@@ -678,9 +774,13 @@ function SolicitarEventoWizardContent() {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <WizardContainer
-              steps={CLIENT_WIZARD_STEPS}
+          <FormDraftManager
+            storageKey={`wizard-${requestType}-${isEditMode ? 'edit' : 'new'}`}
+            onLoadDraft={handleLoadDraft}
+          >
+            <form onSubmit={handleSubmit(onSubmit)}>
+              <WizardContainer
+                steps={CLIENT_WIZARD_STEPS}
               currentStep={wizard.currentStep}
               onNext={handleNext}
               onPrevious={wizard.previousStep}
@@ -710,7 +810,7 @@ function SolicitarEventoWizardContent() {
                         placeholder="Seu nome completo"
                       />
                       {errors.client_name && (
-                        <p className="text-xs text-red-400 mt-1.5">{errors.client_name.message}</p>
+                        <p className="text-xs text-red-400 mt-1.5">{getErrorMessage(errors.client_name)}</p>
                       )}
                     </div>
 
@@ -727,7 +827,7 @@ function SolicitarEventoWizardContent() {
                         placeholder="seu@email.com"
                       />
                       {errors.client_email && (
-                        <p className="text-xs text-red-400 mt-1.5">{errors.client_email.message}</p>
+                        <p className="text-xs text-red-400 mt-1.5">{getErrorMessage(errors.client_email)}</p>
                       )}
                     </div>
 
@@ -743,7 +843,7 @@ function SolicitarEventoWizardContent() {
                         placeholder="(00) 00000-0000"
                       />
                       {errors.client_phone && (
-                        <p className="text-xs text-red-400 mt-1.5">{errors.client_phone.message}</p>
+                        <p className="text-xs text-red-400 mt-1.5">{getErrorMessage(errors.client_phone)}</p>
                       )}
                     </div>
 
@@ -793,7 +893,7 @@ function SolicitarEventoWizardContent() {
                         placeholder="Ex: Conferência Anual de Tecnologia 2025"
                       />
                       {errors.event_name && (
-                        <p className="text-xs text-red-400 mt-1.5">{errors.event_name.message}</p>
+                        <p className="text-xs text-red-400 mt-1.5">{getErrorMessage(errors.event_name)}</p>
                       )}
                     </div>
 
@@ -816,7 +916,7 @@ function SolicitarEventoWizardContent() {
                         </SelectContent>
                       </Select>
                       {errors.event_type && (
-                        <p className="text-xs text-red-400 mt-1.5">{errors.event_type.message}</p>
+                        <p className="text-xs text-red-400 mt-1.5">{getErrorMessage(errors.event_type)}</p>
                       )}
                     </div>
 
@@ -881,7 +981,7 @@ function SolicitarEventoWizardContent() {
                         rows={4}
                       />
                       {errors.event_description && (
-                        <p className="text-xs text-red-400 mt-1.5">{errors.event_description.message}</p>
+                        <p className="text-xs text-red-400 mt-1.5">{getErrorMessage(errors.event_description)}</p>
                       )}
                     </div>
                   </div>
@@ -942,7 +1042,7 @@ function SolicitarEventoWizardContent() {
                           />
                         </div>
                         {errors.venue_address && (
-                          <p className="text-xs text-red-400 mt-1.5">{errors.venue_address.message}</p>
+                          <p className="text-xs text-red-400 mt-1.5">{getErrorMessage(errors.venue_address)}</p>
                         )}
                       </div>
 
@@ -957,7 +1057,7 @@ function SolicitarEventoWizardContent() {
                           placeholder="Cidade"
                         />
                         {errors.venue_city && (
-                          <p className="text-xs text-red-400 mt-1.5">{errors.venue_city.message}</p>
+                          <p className="text-xs text-red-400 mt-1.5">{getErrorMessage(errors.venue_city)}</p>
                         )}
                       </div>
 
@@ -973,7 +1073,7 @@ function SolicitarEventoWizardContent() {
                           maxLength={2}
                         />
                         {errors.venue_state && (
-                          <p className="text-xs text-red-400 mt-1.5">{errors.venue_state.message}</p>
+                          <p className="text-xs text-red-400 mt-1.5">{getErrorMessage(errors.venue_state)}</p>
                         )}
                       </div>
 
@@ -1002,243 +1102,46 @@ function SolicitarEventoWizardContent() {
                 >
                   <div className="space-y-6">
                     {/* Profissionais */}
-                    <Card className="bg-zinc-800/50 border-zinc-700">
-                      <CardContent className="pt-6 space-y-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Users className="h-5 w-5 text-red-600" />
-                            <Label className="text-base font-semibold text-zinc-200">
-                              Profissionais Necessários *
-                            </Label>
-                          </div>
-                          <Button
-                            type="button"
-                            size="sm"
-                            onClick={() => append({ category_group: '', category: '', quantity: 1, requirements: '' })}
-                            className="bg-red-600 hover:bg-red-500 text-white"
-                          >
-                            <Plus className="h-4 w-4 mr-1" />
-                            Adicionar
-                          </Button>
-                        </div>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-5 w-5 text-blue-500" />
+                        <h3 className="text-lg font-semibold text-white">
+                          Profissionais Necessários *
+                        </h3>
+                      </div>
+                      <p className="text-sm text-zinc-400">
+                        Adicione os profissionais que você precisa para o seu evento.
+                      </p>
 
-                        {fields.map((field, index) => (
-                          <div
-                            key={field.id}
-                            className="p-4 bg-zinc-900/50 border border-zinc-700 rounded-lg space-y-4"
-                          >
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
-                                <div className="space-y-2">
-                                  <Label className="text-sm font-medium text-zinc-200">Categoria *</Label>
-                                  <Select
-                                    value={watch(`professionals.${index}.category_group`) || ''}
-                                    onValueChange={(value) => {
-                                      setValue(`professionals.${index}.category_group`, value);
-                                      setValue(`professionals.${index}.category`, '');
-                                    }}
-                                  >
-                                    <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white [&>span]:text-white">
-                                      <SelectValue placeholder="Ex: Produção" />
-                                    </SelectTrigger>
-                                    <SelectContent className="bg-zinc-900 border-zinc-800 text-white">
-                                      {CATEGORIES_WITH_SUBCATEGORIES.map((category) => (
-                                        <SelectItem key={category.name} value={category.name}>
-                                          {category.label}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
+                      <SimpleProfessionalsManager
+                        items={professionalItems}
+                        onChange={setProfessionalItems}
+                      />
 
-                                <div className="space-y-2">
-                                  <Label className="text-sm font-medium text-zinc-200">Função *</Label>
-                                  <Select
-                                    value={watch(`professionals.${index}.category`) || ''}
-                                    onValueChange={(value) =>
-                                      setValue(`professionals.${index}.category`, value)
-                                    }
-                                    disabled={!watch(`professionals.${index}.category_group`)}
-                                  >
-                                    <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white [&>span]:text-white disabled:opacity-50">
-                                      <SelectValue placeholder="Selecione" />
-                                    </SelectTrigger>
-                                    <SelectContent className="bg-zinc-900 border-zinc-800 text-white">
-                                      {watch(`professionals.${index}.category_group`) &&
-                                        CATEGORIES_WITH_SUBCATEGORIES.find(
-                                          (cat) => cat.name === watch(`professionals.${index}.category_group`)
-                                        )?.subcategories.map((subcat) => (
-                                          <SelectItem key={subcat.name} value={subcat.label}>
-                                            {subcat.label}
-                                          </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-
-                                <div className="space-y-2">
-                                  <Label className="text-sm font-medium text-zinc-200">Quantidade *</Label>
-                                  <Input
-                                    type="number"
-                                    min="1"
-                                    {...register(`professionals.${index}.quantity`, {
-                                      valueAsNumber: true,
-                                    })}
-                                    className="bg-zinc-800 border-zinc-700 text-white"
-                                    placeholder="1"
-                                  />
-                                </div>
-
-                                <div className="space-y-2">
-                                  <Label className="text-sm font-medium text-zinc-200">Requisitos</Label>
-                                  <Input
-                                    {...register(`professionals.${index}.requirements`)}
-                                    className="bg-zinc-800 border-zinc-700 text-white"
-                                    placeholder="Ex: 5 anos exp."
-                                  />
-                                </div>
-                              </div>
-
-                              {fields.length > 1 && (
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => remove(index)}
-                                  className="border-red-600/30 text-red-400 hover:bg-red-600/10 mt-7"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                        {errors.professionals && (
-                          <p className="text-xs text-red-400">{errors.professionals.message}</p>
-                        )}
-                      </CardContent>
-                    </Card>
+                      {professionalItems.length === 0 && (
+                        <p className="text-sm text-red-400 text-center py-2">
+                          ⚠️ Adicione pelo menos um profissional para continuar
+                        </p>
+                      )}
+                    </div>
 
                     {/* Equipamentos */}
-                    <Card className="bg-zinc-800/50 border-zinc-700">
-                      <CardContent className="pt-6 space-y-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Package className="h-5 w-5 text-red-600" />
-                            <Label className="text-base font-semibold text-zinc-200">
-                              Equipamentos Necessários (Opcional)
-                            </Label>
-                          </div>
-                          <Button
-                            type="button"
-                            size="sm"
-                            onClick={() => appendEquipment({ equipment_group: '', equipment_type: '', quantity: 1, estimated_daily_rate: 0, notes: '' })}
-                            className="bg-red-600 hover:bg-red-500 text-white"
-                          >
-                            <Plus className="h-4 w-4 mr-1" />
-                            Adicionar
-                          </Button>
-                        </div>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Package className="h-5 w-5 text-green-500" />
+                        <h3 className="text-lg font-semibold text-white">
+                          Equipamentos Necessários (Opcional)
+                        </h3>
+                      </div>
+                      <p className="text-sm text-zinc-400">
+                        Adicione os equipamentos que você vai precisar (som, luz, estrutura, etc).
+                      </p>
 
-                        {equipmentFields.length === 0 && (
-                          <p className="text-sm text-zinc-400 text-center py-4">
-                            Nenhum equipamento adicionado. Clique em "Adicionar" para incluir equipamentos.
-                          </p>
-                        )}
-
-                        {equipmentFields.map((field, index) => (
-                          <div
-                            key={field.id}
-                            className="p-4 bg-zinc-900/50 border border-zinc-700 rounded-lg space-y-4"
-                          >
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
-                                <div className="space-y-2">
-                                  <Label className="text-sm font-medium text-zinc-200">Categoria *</Label>
-                                  <Select
-                                    value={watch(`equipment.${index}.equipment_group`) || ''}
-                                    onValueChange={(value) => {
-                                      setValue(`equipment.${index}.equipment_group`, value);
-                                      setValue(`equipment.${index}.equipment_type`, '');
-                                    }}
-                                  >
-                                    <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white [&>span]:text-white">
-                                      <SelectValue placeholder="Ex: Som" />
-                                    </SelectTrigger>
-                                    <SelectContent className="bg-zinc-900 border-zinc-800 text-white">
-                                      {EQUIPMENT_CATEGORIES.map((category) => (
-                                        <SelectItem key={category.name} value={category.name}>
-                                          {category.label}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-
-                                <div className="space-y-2">
-                                  <Label className="text-sm font-medium text-zinc-200">Tipo *</Label>
-                                  <Select
-                                    value={watch(`equipment.${index}.equipment_type`) || ''}
-                                    onValueChange={(value) =>
-                                      setValue(`equipment.${index}.equipment_type`, value)
-                                    }
-                                    disabled={!watch(`equipment.${index}.equipment_group`)}
-                                  >
-                                    <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white [&>span]:text-white disabled:opacity-50">
-                                      <SelectValue placeholder="Selecione" />
-                                    </SelectTrigger>
-                                    <SelectContent className="bg-zinc-900 border-zinc-800 text-white">
-                                      {watch(`equipment.${index}.equipment_group`) &&
-                                        EQUIPMENT_CATEGORIES.find(
-                                          (cat) => cat.name === watch(`equipment.${index}.equipment_group`)
-                                        )?.subtypes.map((subtype) => (
-                                          <SelectItem key={subtype.label} value={subtype.label}>
-                                            {subtype.label}
-                                          </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-
-                                <div className="space-y-2">
-                                  <Label className="text-sm font-medium text-zinc-200">Quantidade *</Label>
-                                  <Input
-                                    type="number"
-                                    min="1"
-                                    {...register(`equipment.${index}.quantity`, {
-                                      valueAsNumber: true,
-                                    })}
-                                    className="bg-zinc-800 border-zinc-700 text-white"
-                                    placeholder="1"
-                                  />
-                                </div>
-
-                                <div className="space-y-2">
-                                  <Label className="text-sm font-medium text-zinc-200">Observações</Label>
-                                  <Input
-                                    {...register(`equipment.${index}.notes`)}
-                                    className="bg-zinc-800 border-zinc-700 text-white"
-                                    placeholder="Ex: Cabo 10m"
-                                  />
-                                </div>
-                              </div>
-
-                              {equipmentFields.length > 0 && (
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => removeEquipment(index)}
-                                  className="border-red-600/30 text-red-400 hover:bg-red-600/10 mt-7"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </CardContent>
-                    </Card>
+                      <SimpleEquipmentManager
+                        items={equipmentItems}
+                        onChange={setEquipmentItems}
+                      />
+                    </div>
 
                     {/* Urgência e Orçamento */}
                     <Card className="bg-zinc-800/50 border-zinc-700">
@@ -1364,11 +1267,11 @@ function SolicitarEventoWizardContent() {
 
                     <div className="p-4 bg-zinc-800/50 border border-zinc-700 rounded-lg">
                       <h3 className="text-sm font-semibold text-red-500 mb-3">Profissionais Solicitados</h3>
-                      {fields.length === 0 ? (
+                      {professionalFields.length === 0 ? (
                         <p className="text-sm text-zinc-500">Nenhum profissional adicionado</p>
                       ) : (
                         <div className="space-y-2">
-                          {fields.map((field, index) => (
+                          {professionalFields.map((field, index) => (
                             <div key={field.id} className="flex items-start gap-3 p-3 bg-zinc-900/50 rounded-md border border-zinc-700/50">
                               <div className="flex-shrink-0 w-8 h-8 bg-red-600/20 rounded-full flex items-center justify-center border border-red-600/30">
                                 <span className="text-xs font-bold text-red-500">{index + 1}</span>
@@ -1429,6 +1332,7 @@ function SolicitarEventoWizardContent() {
               )}
             </WizardContainer>
           </form>
+        </FormDraftManager>
         </div>
       </div>
     );
@@ -1451,9 +1355,13 @@ function SolicitarEventoWizardContent() {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <WizardContainer
-              steps={SUPPLIER_WIZARD_STEPS}
+          <FormDraftManager
+            storageKey={`wizard-${requestType}-${isEditMode ? 'edit' : 'new'}`}
+            onLoadDraft={handleLoadDraft}
+          >
+            <form onSubmit={handleSubmit(onSubmit)}>
+              <WizardContainer
+                steps={SUPPLIER_WIZARD_STEPS}
               currentStep={wizard.currentStep}
               onNext={handleNext}
               onPrevious={wizard.previousStep}
@@ -1483,7 +1391,7 @@ function SolicitarEventoWizardContent() {
                         placeholder="Ex: Equipamentos XYZ"
                       />
                       {errors.company_name && (
-                        <p className="text-xs text-red-400 mt-1.5">{errors.company_name.message}</p>
+                        <p className="text-xs text-red-400 mt-1.5">{getErrorMessage(errors.company_name)}</p>
                       )}
                     </div>
 
@@ -1522,7 +1430,7 @@ function SolicitarEventoWizardContent() {
                         placeholder="Seu nome"
                       />
                       {errors.contact_name && (
-                        <p className="text-xs text-red-400 mt-1.5">{errors.contact_name.message}</p>
+                        <p className="text-xs text-red-400 mt-1.5">{getErrorMessage(errors.contact_name)}</p>
                       )}
                     </div>
 
@@ -1538,7 +1446,7 @@ function SolicitarEventoWizardContent() {
                         placeholder="(00) 00000-0000"
                       />
                       {errors.phone && (
-                        <p className="text-xs text-red-400 mt-1.5">{errors.phone.message}</p>
+                        <p className="text-xs text-red-400 mt-1.5">{getErrorMessage(errors.phone)}</p>
                       )}
                     </div>
 
@@ -1555,15 +1463,51 @@ function SolicitarEventoWizardContent() {
                         placeholder="contato@empresa.com"
                       />
                       {errors.email && (
-                        <p className="text-xs text-red-400 mt-1.5">{errors.email.message}</p>
+                        <p className="text-xs text-red-400 mt-1.5">{getErrorMessage(errors.email)}</p>
                       )}
                     </div>
+
                   </div>
                 </WizardStep>
               )}
 
-              {/* Step 1: Catálogo Detalhado */}
+              {/* Step 1: Localização */}
               {wizard.currentStep === 1 && (
+                <WizardStep
+                  title="Localização da Empresa"
+                  description="Onde sua empresa está localizada"
+                  icon={<MapPin className="h-6 w-6" />}
+                >
+                  <p className="text-sm text-zinc-300 mb-4">
+                    Clique no mapa para marcar a localização da sua empresa. Isso ajuda clientes próximos a encontrarem você.
+                  </p>
+
+                  <LocationPicker
+                    latitude={mapLatitude}
+                    longitude={mapLongitude}
+                    onLocationSelect={async (lat: number, lng: number, address?: string) => {
+                      setMapLatitude(lat);
+                      setMapLongitude(lng);
+                      setValue('latitude', lat);
+                      setValue('longitude', lng);
+
+                      // Se tem endereço do geocoding reverso, atualizar campos
+                      if (address) {
+                        const parts = address.split(',').map(p => p.trim());
+                        if (parts.length >= 2) {
+                          setValue('city', parts[parts.length - 2]);
+                          setValue('state', parts[parts.length - 1]);
+                          setValue('address', parts.slice(0, -2).join(', '));
+                        }
+                      }
+                    }}
+                    disabled={isSubmitting}
+                  />
+                </WizardStep>
+              )}
+
+              {/* Step 2: Catálogo Detalhado */}
+              {wizard.currentStep === 2 && (
                 <WizardStep
                   title="Catálogo de Equipamentos"
                   description="Adicione itens detalhados com especificações técnicas (opcional)"
@@ -1580,8 +1524,8 @@ function SolicitarEventoWizardContent() {
                 </WizardStep>
               )}
 
-              {/* Step 2: Revisão */}
-              {wizard.currentStep === 2 && (
+              {/* Step 3: Revisão */}
+              {wizard.currentStep === 3 && (
                 <WizardStep
                   title="Revise seu Cadastro"
                   description="Confira todos os dados antes de enviar"
@@ -1617,6 +1561,7 @@ function SolicitarEventoWizardContent() {
               )}
             </WizardContainer>
           </form>
+        </FormDraftManager>
         </div>
       </div>
     );

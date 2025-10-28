@@ -1,5 +1,5 @@
-import { auth, currentUser } from '@clerk/nextjs/server';
 import { createClient } from '@supabase/supabase-js';
+import { NextRequest, NextResponse } from 'next/server';
 import {
   unauthorizedResponse,
   notFoundResponse,
@@ -9,6 +9,8 @@ import {
   noContentResponse,
 } from '@/lib/api-response';
 import { logger } from '@/lib/logger';
+import { withAdmin } from '@/lib/api';
+import { rateLimit, RateLimitPresets, createRateLimitError } from '@/lib/rate-limit';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -19,10 +21,11 @@ const supabase = createClient(
  * GET /api/admin/professionals/[id]
  * Buscar dados de um profissional específico (apenas admin)
  */
-export async function GET(
-  req: NextRequest,
+export const GET = withAdmin(async (
+  userId: string,
+  req: Request,
   { params }: { params: { id: string } }
-) {
+) => {
   try {
     // ========== Rate Limiting ==========
     const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
@@ -37,19 +40,6 @@ export async function GET(
           'Retry-After': Math.ceil((rateLimitResult.reset - Date.now()) / 1000).toString(),
         }
       });
-    }
-
-    // ========== Autenticação ==========
-    const { userId } = await auth();
-    if (!userId) {
-      return unauthorizedResponse();
-    }
-
-    const user = await currentUser();
-    const userRole = user?.publicMetadata?.role;
-
-    if (userRole !== 'admin') {
-      return forbiddenResponse('Apenas administradores podem acessar esta rota');
     }
 
     const professionalId = params.id;
@@ -79,16 +69,17 @@ export async function GET(
     logger.error('Erro ao buscar profissional', error instanceof Error ? error : undefined);
     return internalErrorResponse('Erro ao buscar profissional');
   }
-}
+});
 
 /**
  * PATCH /api/admin/professionals/[id]
  * Atualizar dados de um profissional (apenas admin)
  */
-export async function PATCH(
-  req: NextRequest,
+export const PATCH = withAdmin(async (
+  userId: string,
+  req: Request,
   { params }: { params: { id: string } }
-) {
+) => {
   try {
     // ========== Rate Limiting ==========
     const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
@@ -103,19 +94,6 @@ export async function PATCH(
           'Retry-After': Math.ceil((rateLimitResult.reset - Date.now()) / 1000).toString(),
         }
       });
-    }
-
-    // ========== Autenticação ==========
-    const { userId } = await auth();
-    if (!userId) {
-      return unauthorizedResponse();
-    }
-
-    const user = await currentUser();
-    const userRole = user?.publicMetadata?.role;
-
-    if (userRole !== 'admin') {
-      return forbiddenResponse('Apenas administradores podem acessar esta rota');
     }
 
     const professionalId = params.id;
@@ -169,16 +147,17 @@ export async function PATCH(
     logger.error('Erro ao atualizar profissional', error instanceof Error ? error : undefined);
     return internalErrorResponse('Erro ao atualizar profissional');
   }
-}
+});
 
 /**
  * DELETE /api/admin/professionals/[id]
  * Deletar um profissional (apenas admin)
  */
-export async function DELETE(
-  req: NextRequest,
+export const DELETE = withAdmin(async (
+  userId: string,
+  req: Request,
   { params }: { params: { id: string } }
-) {
+) => {
   try {
     // ========== Rate Limiting ==========
     const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
@@ -193,19 +172,6 @@ export async function DELETE(
           'Retry-After': Math.ceil((rateLimitResult.reset - Date.now()) / 1000).toString(),
         }
       });
-    }
-
-    // ========== Autenticação ==========
-    const { userId } = await auth();
-    if (!userId) {
-      return unauthorizedResponse();
-    }
-
-    const user = await currentUser();
-    const userRole = user?.publicMetadata?.role;
-
-    if (userRole !== 'admin') {
-      return forbiddenResponse('Apenas administradores podem acessar esta rota');
     }
 
     const professionalId = params.id;
@@ -250,4 +216,4 @@ export async function DELETE(
     logger.error('Erro ao deletar profissional', error instanceof Error ? error : undefined);
     return internalErrorResponse('Erro ao deletar profissional');
   }
-}
+});

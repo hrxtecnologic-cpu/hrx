@@ -39,7 +39,6 @@ export async function POST(req: Request) {
       center: isochrone.center,
     });
   } catch (error: any) {
-    console.error('Erro na API de isochrone:', error);
     return NextResponse.json(
       { error: error.message || 'Erro interno' },
       { status: 500 }

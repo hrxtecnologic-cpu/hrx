@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { rateLimit, RateLimitPresets, createRateLimitError } from '@/lib/rate-limit';
+import { withAdmin } from '@/lib/api';
 
 interface SuggestedSupplier {
   id: string;
@@ -39,10 +40,11 @@ interface SuggestedSupplier {
   shipping_fee_per_km: number;
 }
 
-export async function GET(
+export const GET = withAdmin(async (
+  userId: string,
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
-) {
+) => {
   try {
     // Rate Limiting
     const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
@@ -169,4 +171,4 @@ export async function GET(
       { status: 500 }
     );
   }
-}
+});

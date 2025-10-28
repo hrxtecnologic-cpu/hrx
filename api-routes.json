@@ -1,0 +1,1121 @@
+[
+  {
+    "path": "/admin/categories",
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "description": "GET - List all categories",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [],
+    "category": "Admin",
+    "subcategory": "Categories",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/categories/route.ts"
+  },
+  {
+    "path": "/admin/categories/{id}",
+    "methods": [
+      "PUT",
+      "DELETE"
+    ],
+    "description": "PUT - Update category",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [
+      "Select otimizado"
+    ],
+    "category": "Admin",
+    "subcategory": "Categories",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/categories/[id]/route.ts"
+  },
+  {
+    "path": "/admin/counts",
+    "methods": [
+      "GET"
+    ],
+    "description": "GET /api/admin/counts",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [
+      "Select otimizado"
+    ],
+    "category": "Admin",
+    "subcategory": "Geral",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/counts/route.ts"
+  },
+  {
+    "path": "/admin/emails/config",
+    "methods": [
+      "GET",
+      "POST",
+      "PUT"
+    ],
+    "description": "GET /api/admin/emails/config",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [],
+    "category": "Admin",
+    "subcategory": "Email",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/emails/config/route.ts"
+  },
+  {
+    "path": "/admin/emails/import",
+    "methods": [
+      "POST"
+    ],
+    "description": "POST /api/admin/emails/import",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [],
+    "category": "Admin",
+    "subcategory": "Email",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/emails/import/route.ts"
+  },
+  {
+    "path": "/admin/emails/preview",
+    "methods": [
+      "GET"
+    ],
+    "description": "GET /api/admin/emails/preview",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [],
+    "category": "Admin",
+    "subcategory": "Email",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/emails/preview/route.ts"
+  },
+  {
+    "path": "/admin/emails",
+    "methods": [
+      "GET"
+    ],
+    "description": "GET /api/admin/emails",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [],
+    "category": "Admin",
+    "subcategory": "Email",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/emails/route.ts"
+  },
+  {
+    "path": "/admin/event-projects",
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "description": "Force dynamic route",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [
+      "Select otimizado"
+    ],
+    "category": "Admin",
+    "subcategory": "Event Projects",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/event-projects/route.ts"
+  },
+  {
+    "path": "/admin/event-projects/{id}/equipment",
+    "methods": [
+      "POST",
+      "PATCH",
+      "DELETE"
+    ],
+    "description": "Force dynamic route",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [
+      "Select otimizado"
+    ],
+    "category": "Admin",
+    "subcategory": "Event Projects",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/event-projects/[id]/equipment/route.ts"
+  },
+  {
+    "path": "/admin/event-projects/{id}/equipment/{equipmentId}/request-quotes",
+    "methods": [
+      "POST"
+    ],
+    "description": "POST /api/admin/event-projects/[id]/equipment/[equipmentId]/request-quotes",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [
+      "Select otimizado"
+    ],
+    "category": "Admin",
+    "subcategory": "Event Projects",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/event-projects/[id]/equipment/[equipmentId]/request-quotes/route.ts"
+  },
+  {
+    "path": "/admin/event-projects/{id}/equipment/{equipmentId}",
+    "methods": [
+      "PATCH",
+      "DELETE"
+    ],
+    "description": "API: Gerenciar Equipamento Individual do Projeto",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [],
+    "category": "Admin",
+    "subcategory": "Event Projects",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/event-projects/[id]/equipment/[equipmentId]/route.ts"
+  },
+  {
+    "path": "/admin/event-projects/{id}/nearby-professionals",
+    "methods": [
+      "GET"
+    ],
+    "description": "GET /api/admin/event-projects/[id]/nearby-professionals",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [
+      "Select otimizado"
+    ],
+    "category": "Admin",
+    "subcategory": "Event Projects",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/event-projects/[id]/nearby-professionals/route.ts"
+  },
+  {
+    "path": "/admin/event-projects/{id}/nearby-suppliers",
+    "methods": [
+      "GET"
+    ],
+    "description": "GET /api/admin/event-projects/[id]/nearby-suppliers",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [
+      "Select otimizado"
+    ],
+    "category": "Admin",
+    "subcategory": "Event Projects",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/event-projects/[id]/nearby-suppliers/route.ts"
+  },
+  {
+    "path": "/admin/event-projects/{id}/quotations",
+    "methods": [
+      "GET"
+    ],
+    "description": "GET /api/admin/event-projects/[id]/quotations",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [
+      "Select otimizado"
+    ],
+    "category": "Admin",
+    "subcategory": "Event Projects",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/event-projects/[id]/quotations/route.ts"
+  },
+  {
+    "path": "/admin/event-projects/{id}/quotations/{quotationId}/accept",
+    "methods": [
+      "POST"
+    ],
+    "description": "POST /api/admin/projects/[id]/quotations/[quotationId]/accept",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [],
+    "category": "Admin",
+    "subcategory": "Event Projects",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/event-projects/[id]/quotations/[quotationId]/accept/route.ts"
+  },
+  {
+    "path": "/admin/event-projects/{id}/quotations/{quotationId}",
+    "methods": [
+      "PATCH",
+      "DELETE"
+    ],
+    "description": "Force dynamic route",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [
+      "Select otimizado",
+      "Batch query"
+    ],
+    "category": "Admin",
+    "subcategory": "Event Projects",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/event-projects/[id]/quotations/[quotationId]/route.ts"
+  },
+  {
+    "path": "/admin/event-projects/{id}",
+    "methods": [
+      "GET",
+      "PATCH",
+      "DELETE"
+    ],
+    "description": "Force dynamic route",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [
+      "Queries paralelas"
+    ],
+    "category": "Admin",
+    "subcategory": "Event Projects",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/event-projects/[id]/route.ts"
+  },
+  {
+    "path": "/admin/event-projects/{id}/send-proposal",
+    "methods": [
+      "POST"
+    ],
+    "description": "Force dynamic route",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [
+      "Batch query"
+    ],
+    "category": "Admin",
+    "subcategory": "Event Projects",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/event-projects/[id]/send-proposal/route.ts"
+  },
+  {
+    "path": "/admin/event-projects/{id}/suggested-professionals",
+    "methods": [
+      "GET"
+    ],
+    "description": "=====================================================",
+    "requiresAuth": false,
+    "hasRateLimit": true,
+    "optimizations": [
+      "RPC otimizada",
+      "Select otimizado"
+    ],
+    "category": "Admin",
+    "subcategory": "Event Projects",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/event-projects/[id]/suggested-professionals/route.ts"
+  },
+  {
+    "path": "/admin/event-projects/{id}/suggested-suppliers",
+    "methods": [
+      "GET"
+    ],
+    "description": "=====================================================",
+    "requiresAuth": false,
+    "hasRateLimit": true,
+    "optimizations": [
+      "RPC otimizada",
+      "Select otimizado"
+    ],
+    "category": "Admin",
+    "subcategory": "Event Projects",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/event-projects/[id]/suggested-suppliers/route.ts"
+  },
+  {
+    "path": "/admin/event-projects/{id}/team",
+    "methods": [
+      "POST",
+      "DELETE"
+    ],
+    "description": "Force dynamic route",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [
+      "Select otimizado"
+    ],
+    "category": "Admin",
+    "subcategory": "Event Projects",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/event-projects/[id]/team/route.ts"
+  },
+  {
+    "path": "/admin/event-projects/{id}/team/{memberId}/invite",
+    "methods": [
+      "POST"
+    ],
+    "description": "===============================================",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [
+      "RPC otimizada",
+      "Select otimizado"
+    ],
+    "category": "Admin",
+    "subcategory": "Event Projects",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/event-projects/[id]/team/[memberId]/invite/route.ts"
+  },
+  {
+    "path": "/admin/event-projects/{id}/team/{memberId}",
+    "methods": [
+      "PATCH",
+      "DELETE"
+    ],
+    "description": "API: Gerenciar Membro Individual da Equipe",
+    "requiresAuth": false,
+    "hasRateLimit": true,
+    "optimizations": [],
+    "category": "Admin",
+    "subcategory": "Event Projects",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/event-projects/[id]/team/[memberId]/route.ts"
+  },
+  {
+    "path": "/admin/event-types",
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "description": "GET - List all event types",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [],
+    "category": "Admin",
+    "subcategory": "Geral",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/event-types/route.ts"
+  },
+  {
+    "path": "/admin/event-types/{id}",
+    "methods": [
+      "PUT",
+      "DELETE"
+    ],
+    "description": "PUT - Update event type",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [
+      "Select otimizado"
+    ],
+    "category": "Admin",
+    "subcategory": "Geral",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/event-types/[id]/route.ts"
+  },
+  {
+    "path": "/admin/geocode/batch",
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "description": "API: Geocodificação em Batch",
+    "requiresAuth": false,
+    "hasRateLimit": true,
+    "optimizations": [
+      "Select otimizado",
+      "Batch query"
+    ],
+    "category": "Admin",
+    "subcategory": "Geocoding",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/geocode/batch/route.ts"
+  },
+  {
+    "path": "/admin/map-data",
+    "methods": [
+      "GET"
+    ],
+    "description": "Rate Limiting",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [
+      "Queries paralelas",
+      "Select otimizado"
+    ],
+    "category": "Admin",
+    "subcategory": "Map Data",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/map-data/route.ts"
+  },
+  {
+    "path": "/admin/professionals",
+    "methods": [
+      "GET"
+    ],
+    "description": "GET - List professionals with filters",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [
+      "Select otimizado"
+    ],
+    "category": "Admin",
+    "subcategory": "Professionals",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/professionals/route.ts"
+  },
+  {
+    "path": "/admin/professionals/search",
+    "methods": [
+      "POST"
+    ],
+    "description": "Advanced Search API for Professionals",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [
+      "RPC otimizada",
+      "Select otimizado",
+      "Batch query"
+    ],
+    "category": "Admin",
+    "subcategory": "Professionals",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/professionals/search/route.ts"
+  },
+  {
+    "path": "/admin/professionals/unified",
+    "methods": [
+      "GET"
+    ],
+    "description": "API: Profissionais Unificados (Query Otimizada)",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [
+      "RPC otimizada"
+    ],
+    "category": "Admin",
+    "subcategory": "Professionals",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/professionals/unified/route.ts"
+  },
+  {
+    "path": "/admin/professionals/{id}/approve",
+    "methods": [
+      "POST"
+    ],
+    "description": "========== Rate Limiting ==========",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [
+      "Select otimizado"
+    ],
+    "category": "Admin",
+    "subcategory": "Professionals",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/professionals/[id]/approve/route.ts"
+  },
+  {
+    "path": "/admin/professionals/{id}/documents",
+    "methods": [
+      "GET",
+      "PATCH"
+    ],
+    "description": "GET: Buscar status de todos os documentos de um profissional",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [],
+    "category": "Admin",
+    "subcategory": "Professionals",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/professionals/[id]/documents/route.ts"
+  },
+  {
+    "path": "/admin/professionals/{id}/edit",
+    "methods": [
+      "PATCH"
+    ],
+    "description": "PATCH: Admin edita dados de um profissional",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [
+      "Select otimizado"
+    ],
+    "category": "Admin",
+    "subcategory": "Professionals",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/professionals/[id]/edit/route.ts"
+  },
+  {
+    "path": "/admin/professionals/{id}/history",
+    "methods": [
+      "GET"
+    ],
+    "description": "GET: Buscar histórico completo de um profissional",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [
+      "Select otimizado"
+    ],
+    "category": "Admin",
+    "subcategory": "Professionals",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/professionals/[id]/history/route.ts"
+  },
+  {
+    "path": "/admin/professionals/{id}/reject",
+    "methods": [
+      "POST"
+    ],
+    "description": "========== Rate Limiting ==========",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [
+      "Select otimizado"
+    ],
+    "category": "Admin",
+    "subcategory": "Professionals",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/professionals/[id]/reject/route.ts"
+  },
+  {
+    "path": "/admin/professionals/{id}",
+    "methods": [
+      "GET",
+      "PATCH",
+      "DELETE"
+    ],
+    "description": "GET /api/admin/professionals/[id]",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [],
+    "category": "Admin",
+    "subcategory": "Professionals",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/professionals/[id]/route.ts"
+  },
+  {
+    "path": "/admin/suppliers",
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "description": "GET - List all suppliers",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [
+      "Queries paralelas"
+    ],
+    "category": "Admin",
+    "subcategory": "Suppliers",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/suppliers/route.ts"
+  },
+  {
+    "path": "/admin/suppliers/search",
+    "methods": [
+      "POST"
+    ],
+    "description": "POST /api/admin/suppliers/search",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [
+      "Select otimizado",
+      "Batch query"
+    ],
+    "category": "Admin",
+    "subcategory": "Suppliers",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/suppliers/search/route.ts"
+  },
+  {
+    "path": "/admin/suppliers/{id}",
+    "methods": [
+      "GET",
+      "PUT",
+      "DELETE"
+    ],
+    "description": "GET - Get single supplier",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [],
+    "category": "Admin",
+    "subcategory": "Suppliers",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/suppliers/[id]/route.ts"
+  },
+  {
+    "path": "/admin/users/detailed",
+    "methods": [
+      "GET"
+    ],
+    "description": "API: Usuários detalhados (Clerk + Supabase)",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [
+      "Select otimizado",
+      "Batch query"
+    ],
+    "category": "Admin",
+    "subcategory": "Users",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/users/detailed/route.ts"
+  },
+  {
+    "path": "/admin/users",
+    "methods": [
+      "GET"
+    ],
+    "description": "========== Rate Limiting ==========",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [],
+    "category": "Admin",
+    "subcategory": "Users",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/users/route.ts"
+  },
+  {
+    "path": "/admin/users/{userId}/role",
+    "methods": [
+      "PUT"
+    ],
+    "description": "Emails com acesso admin",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [],
+    "category": "Admin",
+    "subcategory": "Users",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/users/[userId]/role/route.ts"
+  },
+  {
+    "path": "/admin/users/{userId}/send-reminder",
+    "methods": [
+      "POST"
+    ],
+    "description": "API: Enviar lembrete de cadastro incompleto",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [
+      "Queries paralelas"
+    ],
+    "category": "Admin",
+    "subcategory": "Users",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/admin/users/[userId]/send-reminder/route.ts"
+  },
+  {
+    "path": "/contact",
+    "methods": [
+      "POST"
+    ],
+    "description": "1. Rate Limiting - Proteção contra abuse (20 req/min)",
+    "requiresAuth": false,
+    "hasRateLimit": true,
+    "optimizations": [],
+    "category": "Outros",
+    "subcategory": "Geral",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/contact/route.ts"
+  },
+  {
+    "path": "/contratante/meus-projetos",
+    "methods": [
+      "GET"
+    ],
+    "description": "GET /api/contratante/meus-projetos",
+    "requiresAuth": true,
+    "hasRateLimit": false,
+    "optimizations": [
+      "Select otimizado"
+    ],
+    "category": "Outros",
+    "subcategory": "Geral",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/contratante/meus-projetos/route.ts"
+  },
+  {
+    "path": "/contratante/meus-projetos/{id}",
+    "methods": [
+      "GET",
+      "PATCH"
+    ],
+    "description": "GET /api/contratante/meus-projetos/[id]",
+    "requiresAuth": true,
+    "hasRateLimit": false,
+    "optimizations": [
+      "Select otimizado"
+    ],
+    "category": "Outros",
+    "subcategory": "Geral",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/contratante/meus-projetos/[id]/route.ts"
+  },
+  {
+    "path": "/deliveries",
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "description": "GET /api/deliveries",
+    "requiresAuth": true,
+    "hasRateLimit": false,
+    "optimizations": [
+      "Select otimizado"
+    ],
+    "category": "Outros",
+    "subcategory": "Deliveries",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/deliveries/route.ts"
+  },
+  {
+    "path": "/deliveries/{id}/location",
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "description": "POST /api/deliveries/[id]/location",
+    "requiresAuth": true,
+    "hasRateLimit": false,
+    "optimizations": [],
+    "category": "Outros",
+    "subcategory": "Deliveries",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/deliveries/[id]/location/route.ts"
+  },
+  {
+    "path": "/deliveries/{id}/status",
+    "methods": [
+      "PATCH"
+    ],
+    "description": "PATCH /api/deliveries/[id]/status",
+    "requiresAuth": true,
+    "hasRateLimit": false,
+    "optimizations": [
+      "Select otimizado"
+    ],
+    "category": "Outros",
+    "subcategory": "Deliveries",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/deliveries/[id]/status/route.ts"
+  },
+  {
+    "path": "/mapbox/directions",
+    "methods": [
+      "POST"
+    ],
+    "description": "R$ 2.50/km padrão",
+    "requiresAuth": false,
+    "hasRateLimit": true,
+    "optimizations": [],
+    "category": "Outros",
+    "subcategory": "Geral",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/mapbox/directions/route.ts"
+  },
+  {
+    "path": "/mapbox/isochrone",
+    "methods": [
+      "POST"
+    ],
+    "description": "Sem descrição",
+    "requiresAuth": false,
+    "hasRateLimit": true,
+    "optimizations": [],
+    "category": "Outros",
+    "subcategory": "Geral",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/mapbox/isochrone/route.ts"
+  },
+  {
+    "path": "/mapbox/matching",
+    "methods": [
+      "POST"
+    ],
+    "description": "POST /api/mapbox/matching",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [
+      "Select otimizado"
+    ],
+    "category": "Outros",
+    "subcategory": "Geral",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/mapbox/matching/route.ts"
+  },
+  {
+    "path": "/notifications/mark-all-read",
+    "methods": [
+      "POST"
+    ],
+    "description": "=====================================================",
+    "requiresAuth": true,
+    "hasRateLimit": false,
+    "optimizations": [
+      "RPC otimizada",
+      "Select otimizado"
+    ],
+    "category": "Outros",
+    "subcategory": "Notifications",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/notifications/mark-all-read/route.ts"
+  },
+  {
+    "path": "/notifications",
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "description": "=====================================================",
+    "requiresAuth": true,
+    "hasRateLimit": false,
+    "optimizations": [
+      "RPC otimizada"
+    ],
+    "category": "Outros",
+    "subcategory": "Notifications",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/notifications/route.ts"
+  },
+  {
+    "path": "/notifications/{id}/read",
+    "methods": [
+      "POST"
+    ],
+    "description": "=====================================================",
+    "requiresAuth": true,
+    "hasRateLimit": false,
+    "optimizations": [
+      "Select otimizado"
+    ],
+    "category": "Outros",
+    "subcategory": "Notifications",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/notifications/[id]/read/route.ts"
+  },
+  {
+    "path": "/professional/confirm/{token}",
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "description": "====================================",
+    "requiresAuth": false,
+    "hasRateLimit": true,
+    "optimizations": [
+      "Select otimizado"
+    ],
+    "category": "Professional",
+    "subcategory": "Geral",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/professional/confirm/[token]/route.ts"
+  },
+  {
+    "path": "/professional/dashboard",
+    "methods": [
+      "GET"
+    ],
+    "description": "====================================",
+    "requiresAuth": true,
+    "hasRateLimit": false,
+    "optimizations": [
+      "Select otimizado"
+    ],
+    "category": "Professional",
+    "subcategory": "Geral",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/professional/dashboard/route.ts"
+  },
+  {
+    "path": "/professional/document-validations",
+    "methods": [
+      "GET"
+    ],
+    "description": "GET: Buscar validações de documentos do profissional logado",
+    "requiresAuth": true,
+    "hasRateLimit": false,
+    "optimizations": [],
+    "category": "Professional",
+    "subcategory": "Geral",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/professional/document-validations/route.ts"
+  },
+  {
+    "path": "/professional/events/{id}/action",
+    "methods": [
+      "POST"
+    ],
+    "description": "====================================",
+    "requiresAuth": true,
+    "hasRateLimit": false,
+    "optimizations": [
+      "Select otimizado"
+    ],
+    "category": "Professional",
+    "subcategory": "Geral",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/professional/events/[id]/action/route.ts"
+  },
+  {
+    "path": "/professional/events/{id}",
+    "methods": [
+      "GET"
+    ],
+    "description": "====================================",
+    "requiresAuth": true,
+    "hasRateLimit": false,
+    "optimizations": [
+      "Select otimizado"
+    ],
+    "category": "Professional",
+    "subcategory": "Geral",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/professional/events/[id]/route.ts"
+  },
+  {
+    "path": "/professional/profile",
+    "methods": [
+      "GET",
+      "PATCH"
+    ],
+    "description": "GET: Buscar dados do profissional logado",
+    "requiresAuth": true,
+    "hasRateLimit": false,
+    "optimizations": [],
+    "category": "Professional",
+    "subcategory": "Geral",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/professional/profile/route.ts"
+  },
+  {
+    "path": "/professionals",
+    "methods": [
+      "POST"
+    ],
+    "description": "IMPORTANTE: Força Node.js runtime para usar Resend",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [
+      "Select otimizado"
+    ],
+    "category": "Outros",
+    "subcategory": "Professionals",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/professionals/route.ts"
+  },
+  {
+    "path": "/proposals/{id}/accept",
+    "methods": [
+      "GET"
+    ],
+    "description": "=============================================",
+    "requiresAuth": false,
+    "hasRateLimit": true,
+    "optimizations": [
+      "Select otimizado"
+    ],
+    "category": "Outros",
+    "subcategory": "Geral",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/proposals/[id]/accept/route.ts"
+  },
+  {
+    "path": "/proposals/{id}/reject",
+    "methods": [
+      "GET"
+    ],
+    "description": "=============================================",
+    "requiresAuth": false,
+    "hasRateLimit": true,
+    "optimizations": [
+      "Select otimizado"
+    ],
+    "category": "Outros",
+    "subcategory": "Geral",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/proposals/[id]/reject/route.ts"
+  },
+  {
+    "path": "/public/event-requests",
+    "methods": [
+      "POST"
+    ],
+    "description": "API PÚBLICA para receber:",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [
+      "Queries paralelas",
+      "Select otimizado"
+    ],
+    "category": "Public",
+    "subcategory": "Geral",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/public/event-requests/route.ts"
+  },
+  {
+    "path": "/public/quotations/{token}",
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "description": "GET /api/public/quotations/[token]",
+    "requiresAuth": false,
+    "hasRateLimit": true,
+    "optimizations": [
+      "Select otimizado"
+    ],
+    "category": "Public",
+    "subcategory": "Quotations",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/public/quotations/[token]/route.ts"
+  },
+  {
+    "path": "/quotations/{id}/respond",
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "description": "=============================================",
+    "requiresAuth": false,
+    "hasRateLimit": true,
+    "optimizations": [
+      "Select otimizado"
+    ],
+    "category": "Outros",
+    "subcategory": "Quotations",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/quotations/[id]/respond/route.ts"
+  },
+  {
+    "path": "/sentry-example-api",
+    "methods": [],
+    "description": "A faulty API route to test Sentry's error monitoring",
+    "requiresAuth": false,
+    "hasRateLimit": false,
+    "optimizations": [],
+    "category": "Outros",
+    "subcategory": "Geral",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/sentry-example-api/route.ts"
+  },
+  {
+    "path": "/supplier/dashboard",
+    "methods": [
+      "GET"
+    ],
+    "description": "====================================",
+    "requiresAuth": true,
+    "hasRateLimit": false,
+    "optimizations": [
+      "Select otimizado"
+    ],
+    "category": "Supplier",
+    "subcategory": "Geral",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/supplier/dashboard/route.ts"
+  },
+  {
+    "path": "/supplier/profile",
+    "methods": [
+      "GET",
+      "PATCH"
+    ],
+    "description": "GET: Buscar dados do fornecedor logado",
+    "requiresAuth": true,
+    "hasRateLimit": false,
+    "optimizations": [],
+    "category": "Supplier",
+    "subcategory": "Geral",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/supplier/profile/route.ts"
+  },
+  {
+    "path": "/supplier/quotations/{id}",
+    "methods": [
+      "GET"
+    ],
+    "description": "====================================",
+    "requiresAuth": true,
+    "hasRateLimit": false,
+    "optimizations": [
+      "Select otimizado"
+    ],
+    "category": "Supplier",
+    "subcategory": "Quotations",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/supplier/quotations/[id]/route.ts"
+  },
+  {
+    "path": "/upload",
+    "methods": [
+      "POST"
+    ],
+    "description": "Force dynamic route",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [],
+    "category": "Outros",
+    "subcategory": "Geral",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/upload/route.ts"
+  },
+  {
+    "path": "/user/check-registration",
+    "methods": [
+      "GET"
+    ],
+    "description": "Buscar user_id no Supabase",
+    "requiresAuth": true,
+    "hasRateLimit": false,
+    "optimizations": [
+      "Select otimizado"
+    ],
+    "category": "Outros",
+    "subcategory": "Geral",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/user/check-registration/route.ts"
+  },
+  {
+    "path": "/user/metadata",
+    "methods": [
+      "PATCH"
+    ],
+    "description": "Verificar autenticação com retry (timing issue após login)",
+    "requiresAuth": true,
+    "hasRateLimit": false,
+    "optimizations": [],
+    "category": "Outros",
+    "subcategory": "Geral",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/user/metadata/route.ts"
+  },
+  {
+    "path": "/webhooks/clerk",
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "description": "Para testes",
+    "requiresAuth": true,
+    "hasRateLimit": true,
+    "optimizations": [
+      "Select otimizado"
+    ],
+    "category": "Outros",
+    "subcategory": "Geral",
+    "filePath": "C:/Users/erick/HRX_OP/hrx/src/app/api/webhooks/clerk/route.ts"
+  }
+]

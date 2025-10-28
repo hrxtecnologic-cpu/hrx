@@ -176,7 +176,6 @@ export async function PATCH(
       .single();
 
     if (updateError) {
-      console.error('❌ Erro ao atualizar projeto:', updateError);
       return NextResponse.json(
         { error: 'Erro ao atualizar projeto', details: updateError.message },
         { status: 500 }
@@ -189,7 +188,6 @@ export async function PATCH(
       project: updatedProject,
     });
   } catch (error: any) {
-    console.error('❌ Erro ao atualizar projeto:', error);
     return NextResponse.json(
       { error: error?.message || 'Erro interno do servidor' },
       { status: 500 }

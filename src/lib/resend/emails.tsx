@@ -12,6 +12,7 @@ import { QuoteRejectedEmail } from './templates/QuoteRejectedEmail';
 import { ProfessionalInvitationEmail } from './templates/ProfessionalInvitationEmail';
 import { QuoteResponseAdminEmail } from './templates/QuoteResponseAdminEmail';
 import { IncompleteRegistrationReminderEmail } from './templates/IncompleteRegistrationReminderEmail';
+import { SupplierConfirmationEmail } from './templates/SupplierConfirmationEmail';
 import { logEmail } from './email-logger';
 import { HRX_CONTACT_INFO } from './templates/EmailFooterDark';
 
@@ -2694,6 +2695,71 @@ export async function sendIncompleteRegistrationReminder(params: {
       recipientType: params.userType || 'professional',
       subject,
       templateUsed: 'IncompleteRegistrationReminderEmail',
+      status: 'failed',
+      errorMessage: error instanceof Error ? error.message : 'Erro desconhecido',
+    });
+    return { success: false, error: error instanceof Error ? error.message : 'Erro desconhecido' };
+  }
+}
+
+/**
+ * Envia email de confirmação para fornecedor após cadastro
+ */
+export async function sendSupplierConfirmation(params: {
+  contactName: string;
+  companyName: string;
+  legalName?: string;
+  cnpj?: string;
+  email: string;
+  phone: string;
+  catalogItemsCount: number;
+  catalogPreview?: Array<{
+    name: string;
+    category: string;
+    subcategory?: string;
+  }>;
+}): Promise<{ success: boolean; error?: string }> {
+  const subject = `🎉 ${params.companyName}, seu cadastro foi recebido com sucesso!`;
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: `HRX Eventos <${FROM_EMAIL}>`,
+      to: [params.email],
+      subject,
+      react: <SupplierConfirmationEmail {...params} />,
+    });
+
+    if (error) {
+      console.error('❌ Erro ao enviar confirmação para fornecedor:', error);
+      await logEmail({
+        recipientEmail: params.email,
+        recipientType: 'supplier',
+        subject,
+        templateUsed: 'SupplierConfirmationEmail',
+        status: 'failed',
+        errorMessage: error.message,
+      });
+      return { success: false, error: error.message };
+    }
+
+    await logEmail({
+      recipientEmail: params.email,
+      recipientType: 'supplier',
+      subject,
+      templateUsed: 'SupplierConfirmationEmail',
+      status: 'sent',
+      externalId: data?.id,
+    });
+
+    console.log(`✅ Confirmação enviada para fornecedor: ${params.email} (ID: ${data?.id})`);
+    return { success: true };
+  } catch (error) {
+    console.error('❌ Erro ao enviar email de confirmação:', error);
+    await logEmail({
+      recipientEmail: params.email,
+      recipientType: 'supplier',
+      subject,
+      templateUsed: 'SupplierConfirmationEmail',
       status: 'failed',
       errorMessage: error instanceof Error ? error.message : 'Erro desconhecido',
     });

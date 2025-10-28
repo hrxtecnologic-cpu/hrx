@@ -128,7 +128,6 @@ export async function POST(
     });
 
   } catch (error: any) {
-    console.error('Erro ao enviar lembrete:', error);
     return NextResponse.json(
       { error: 'Erro ao enviar lembrete', details: error.message },
       { status: 500 }

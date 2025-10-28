@@ -1,10 +1,12 @@
-import { auth } from '@clerk/nextjs/server';
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { rateLimit, RateLimitPresets, createRateLimitError } from '@/lib/rate-limit';
+import { createCategorySchema } from '@/lib/validations/admin';
+import { withAdmin } from '@/lib/api';
+import { logger } from '@/lib/logger';
 
 // GET - List all categories
-export async function GET(req: NextRequest) {
+export const GET = withAdmin(async (userId: string, req: Request) => {
   try {
     // ========== Rate Limiting ==========
     const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
@@ -21,12 +23,6 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // ========== Autenticação ==========
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
-    }
-
     const supabase = await createClient();
 
     const { data: categories, error } = await supabase
@@ -35,20 +31,22 @@ export async function GET(req: NextRequest) {
       .order('name', { ascending: true });
 
     if (error) {
+      logger.error('Erro ao buscar categorias', error, { userId });
       throw error;
     }
 
     return NextResponse.json(categories || []);
   } catch (error) {
+    logger.error('Erro ao buscar categorias', error instanceof Error ? error : undefined, { userId });
     return NextResponse.json(
       { error: 'Erro ao buscar categorias' },
       { status: 500 }
     );
   }
-}
+});
 
 // POST - Create new category
-export async function POST(req: NextRequest) {
+export const POST = withAdmin(async (userId: string, req: Request) => {
   try {
     // ========== Rate Limiting ==========
     const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
@@ -65,20 +63,18 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // ========== Autenticação ==========
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
-    }
+    const body = await req.json();
 
-    const { name, description } = await req.json();
-
-    if (!name) {
+    // Validar com Zod
+    const validation = createCategorySchema.safeParse(body);
+    if (!validation.success) {
       return NextResponse.json(
-        { error: 'Nome é obrigatório' },
+        { error: 'Dados inválidos', details: validation.error.issues },
         { status: 400 }
       );
     }
+
+    const { name, description } = validation.data;
 
     const supabase = await createClient();
 
@@ -103,14 +99,17 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error) {
+      logger.error('Erro ao criar categoria', error, { userId, name });
       throw error;
     }
 
+    logger.info('Categoria criada com sucesso', { userId, categoryId: data.id, name });
     return NextResponse.json(data);
   } catch (error) {
+    logger.error('Erro ao criar categoria', error instanceof Error ? error : undefined, { userId });
     return NextResponse.json(
       { error: 'Erro ao criar categoria' },
       { status: 500 }
     );
   }
-}
+});

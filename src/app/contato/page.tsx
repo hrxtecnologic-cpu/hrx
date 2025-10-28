@@ -18,6 +18,25 @@ export default function ContatoPage() {
 
     try {
       const formData = new FormData(e.currentTarget);
+
+      // Anti-spam: Verificar honeypot
+      const honeypot = formData.get('website') as string;
+      if (honeypot) {
+        // Bot detectado (preencheu campo invisível)
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Anti-spam: Verificar timestamp (mínimo 3 segundos para preencher)
+      const timestamp = formData.get('timestamp') as string;
+      const submissionTime = Date.now() - parseInt(timestamp || '0');
+      if (submissionTime < 3000) {
+        // Preenchimento muito rápido (provável bot)
+        alert('Por favor, preencha o formulário com calma.');
+        setIsSubmitting(false);
+        return;
+      }
+
       const data = {
         name: formData.get('name') as string,
         email: formData.get('email') as string,
@@ -234,6 +253,30 @@ export default function ContatoPage() {
                       className="bg-zinc-800 border-zinc-700 text-white resize-none"
                     />
                   </div>
+
+                  {/* Anti-spam: Honeypot (campo invisível para detectar bots) */}
+                  <input
+                    type="text"
+                    name="website"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    style={{
+                      position: 'absolute',
+                      left: '-9999px',
+                      width: '1px',
+                      height: '1px',
+                      opacity: 0,
+                      pointerEvents: 'none'
+                    }}
+                    aria-hidden="true"
+                  />
+
+                  {/* Anti-spam: Timestamp (detecta preenchimento muito rápido) */}
+                  <input
+                    type="hidden"
+                    name="timestamp"
+                    defaultValue={Date.now().toString()}
+                  />
 
                   {/* Submit Button */}
                   <Button

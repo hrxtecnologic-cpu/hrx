@@ -166,15 +166,10 @@ CREATE TABLE public.equipment_suppliers (
   delivery_radius_km integer DEFAULT 50,
   shipping_fee_per_km numeric DEFAULT 0,
   clerk_id character varying UNIQUE,
+  equipment_catalog jsonb DEFAULT '[]'::jsonb,
+  legal_name text,
+  cnpj character varying,
   CONSTRAINT equipment_suppliers_pkey PRIMARY KEY (id)
-);
-CREATE TABLE public.event_allocations (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  request_id uuid NOT NULL,
-  allocations jsonb NOT NULL,
-  created_at timestamp with time zone DEFAULT now(),
-  updated_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT event_allocations_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.event_projects (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -202,8 +197,8 @@ CREATE TABLE public.event_projects (
   status character varying NOT NULL DEFAULT 'new'::character varying CHECK (status::text = ANY (ARRAY['new'::character varying, 'analyzing'::character varying, 'quoting'::character varying, 'quoted'::character varying, 'proposed'::character varying, 'approved'::character varying, 'in_execution'::character varying, 'completed'::character varying, 'cancelled'::character varying]::text[])),
   total_team_cost numeric DEFAULT 0,
   total_equipment_cost numeric DEFAULT 0,
-  total_cost numeric DEFAULT 0,
-  total_client_price numeric DEFAULT 0,
+  total_cost numeric DEFAULT 0 CHECK (total_cost >= 0::numeric),
+  total_client_price numeric DEFAULT 0 CHECK (total_client_price >= 0::numeric),
   total_profit numeric DEFAULT 0,
   additional_notes text,
   internal_notes text,
@@ -417,7 +412,7 @@ CREATE TABLE public.project_equipment (
   notes text,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
-  daily_rate numeric DEFAULT 0,
+  daily_rate numeric DEFAULT 0 CHECK (daily_rate IS NULL OR daily_rate >= 0::numeric),
   total_cost numeric DEFAULT 0,
   CONSTRAINT project_equipment_pkey PRIMARY KEY (id),
   CONSTRAINT project_equipment_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.event_projects(id),
@@ -433,7 +428,7 @@ CREATE TABLE public.project_team (
   subcategory character varying,
   quantity integer NOT NULL DEFAULT 1 CHECK (quantity > 0),
   duration_days integer NOT NULL DEFAULT 1 CHECK (duration_days > 0),
-  daily_rate numeric,
+  daily_rate numeric CHECK (daily_rate IS NULL OR daily_rate >= 0::numeric),
   total_cost numeric,
   status character varying NOT NULL DEFAULT 'planned'::character varying CHECK (status::text = ANY (ARRAY['planned'::character varying, 'invited'::character varying, 'confirmed'::character varying, 'rejected'::character varying, 'allocated'::character varying, 'working'::character varying, 'completed'::character varying, 'cancelled'::character varying]::text[])),
   notes text,
@@ -543,7 +538,6 @@ CREATE TABLE public.users (
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT users_pkey PRIMARY KEY (id)
 );
-
 -- =====================================================
 -- DELIVERY TRACKING TABLES (Migration 026)
 -- =====================================================

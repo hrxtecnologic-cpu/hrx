@@ -50,7 +50,6 @@ export async function POST(req: Request) {
       },
     });
   } catch (error: any) {
-    console.error('Erro na API de directions:', error);
     return NextResponse.json(
       { error: error.message || 'Erro interno' },
       { status: 500 }

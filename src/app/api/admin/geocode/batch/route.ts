@@ -10,6 +10,7 @@ import { createAdminClient } from '@/lib/supabase/server';
 import { geocodeAddress } from '@/lib/mapbox-geocoding';
 import { logger } from '@/lib/logger';
 import { rateLimit, RateLimitPresets, createRateLimitError } from '@/lib/rate-limit';
+import { withAdmin } from '@/lib/api';
 
 interface GeocodeResult {
   id: string;
@@ -20,7 +21,7 @@ interface GeocodeResult {
   error?: string;
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withAdmin(async (userId: string, request: NextRequest) => {
   try {
     // Rate Limiting
     const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
@@ -66,43 +67,53 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Processar cada ID
-    for (const id of ids) {
+    // OTIMIZAÇÃO: Buscar todos os registros de uma vez (evita N+1)
+    let recordsQuery;
+    if (type === 'professionals') {
+      recordsQuery = supabase
+        .from(table)
+        .select('id, street, number, neighborhood, city, state, cep')
+        .in('id', ids);
+    } else if (type === 'suppliers') {
+      recordsQuery = supabase
+        .from(table)
+        .select('id, address, city, state, zip_code')
+        .in('id', ids);
+    } else {
+      // events
+      recordsQuery = supabase
+        .from(table)
+        .select('id, venue_name, venue_address, venue_city, venue_state, venue_zip')
+        .in('id', ids);
+    }
+
+    const { data: records, error: fetchError } = await recordsQuery;
+
+    if (fetchError) {
+      logger.error('Erro ao buscar registros para geocodificação', { type, error: fetchError });
+      return NextResponse.json(
+        { success: false, error: 'Erro ao buscar registros' },
+        { status: 500 }
+      );
+    }
+
+    if (!records || records.length === 0) {
+      return NextResponse.json({
+        success: true,
+        data: {
+          results: [],
+          summary: {
+            total: 0,
+            successful: 0,
+            failed: 0,
+          },
+        },
+      });
+    }
+
+    // Processar cada registro
+    for (const record of records) {
       try {
-        // Buscar dados do registro
-        let query;
-        if (type === 'professionals') {
-          query = supabase
-            .from(table)
-            .select('id, street, number, neighborhood, city, state, cep')
-            .eq('id', id)
-            .single();
-        } else if (type === 'suppliers') {
-          query = supabase
-            .from(table)
-            .select('id, address, city, state, zip_code')
-            .eq('id', id)
-            .single();
-        } else {
-          // events
-          query = supabase
-            .from(table)
-            .select('id, venue_name, venue_address, venue_city, venue_state, venue_zip')
-            .eq('id', id)
-            .single();
-        }
-
-        const { data: record, error: fetchError } = await query;
-
-        if (fetchError || !record) {
-          results.push({
-            id,
-            success: false,
-            error: 'Registro não encontrado',
-          });
-          continue;
-        }
-
         // Montar endereço
         let address;
         if (type === 'events') {
@@ -137,7 +148,7 @@ export async function POST(request: NextRequest) {
         // Validar se tem cidade/estado
         if (!address.city || !address.state) {
           results.push({
-            id,
+            id: record.id,
             success: false,
             error: 'Cidade e estado são obrigatórios',
           });
@@ -149,7 +160,7 @@ export async function POST(request: NextRequest) {
 
         if (!geocoded) {
           results.push({
-            id,
+            id: record.id,
             success: false,
             error: 'Endereço não encontrado pelo Mapbox',
           });
@@ -163,11 +174,11 @@ export async function POST(request: NextRequest) {
             latitude: geocoded.latitude,
             longitude: geocoded.longitude,
           })
-          .eq('id', id);
+          .eq('id', record.id);
 
         if (updateError) {
           results.push({
-            id,
+            id: record.id,
             success: false,
             error: 'Erro ao atualizar coordenadas',
           });
@@ -175,7 +186,7 @@ export async function POST(request: NextRequest) {
         }
 
         results.push({
-          id,
+          id: record.id,
           success: true,
           latitude: geocoded.latitude,
           longitude: geocoded.longitude,
@@ -184,19 +195,31 @@ export async function POST(request: NextRequest) {
 
         logger.info('Geocodificação bem-sucedida', {
           type,
-          id,
+          id: record.id,
           latitude: geocoded.latitude,
           longitude: geocoded.longitude,
         });
 
-        // Rate limiting: aguardar 100ms entre requisições
+        // Rate limiting: aguardar 100ms entre requisições ao Mapbox
         await new Promise(resolve => setTimeout(resolve, 100));
       } catch (error) {
-        logger.error('Erro ao geocodificar registro', { type, id, error });
+        logger.error('Erro ao geocodificar registro', { type, id: record.id, error });
+        results.push({
+          id: record.id,
+          success: false,
+          error: 'Erro interno ao processar',
+        });
+      }
+    }
+
+    // Adicionar IDs não encontrados
+    const processedIds = new Set(results.map(r => r.id));
+    for (const id of ids) {
+      if (!processedIds.has(id)) {
         results.push({
           id,
           success: false,
-          error: 'Erro interno ao processar',
+          error: 'Registro não encontrado',
         });
       }
     }
@@ -222,12 +245,12 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
 /**
  * GET: Buscar registros sem coordenadas
  */
-export async function GET(request: NextRequest) {
+export const GET = withAdmin(async (userId: string, request: NextRequest) => {
   try {
     // Rate Limiting
     const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
@@ -307,4 +330,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

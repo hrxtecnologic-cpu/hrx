@@ -2,6 +2,7 @@ import { auth } from '@clerk/nextjs/server';
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { rateLimit, RateLimitPresets, createRateLimitError } from '@/lib/rate-limit';
+import { updateCategorySchema } from '@/lib/validations/admin';
 
 // PUT - Update category
 export async function PUT(
@@ -31,14 +32,18 @@ export async function PUT(
     }
 
     const { id } = await params;
-    const { name, description } = await req.json();
+    const body = await req.json();
 
-    if (!name) {
+    // Validar com Zod
+    const validation = updateCategorySchema.safeParse(body);
+    if (!validation.success) {
       return NextResponse.json(
-        { error: 'Nome é obrigatório' },
+        { error: 'Dados inválidos', details: validation.error.issues },
         { status: 400 }
       );
     }
+
+    const { name, description } = validation.data;
 
     const supabase = await createClient();
 
