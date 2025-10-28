@@ -9,6 +9,18 @@ CREATE TABLE public.categories (
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT categories_pkey PRIMARY KEY (id)
 );
+CREATE TABLE public.contract_audit_log (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  contract_id uuid NOT NULL,
+  action character varying NOT NULL CHECK (action::text = ANY (ARRAY['generated'::text, 'sent'::text, 'viewed'::text, 'signed'::text, 'downloaded'::text, 'cancelled'::text])),
+  performed_by character varying,
+  ip_address character varying,
+  user_agent text,
+  metadata jsonb DEFAULT '{}'::jsonb,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT contract_audit_log_pkey PRIMARY KEY (id),
+  CONSTRAINT contract_audit_log_contract_id_fkey FOREIGN KEY (contract_id) REFERENCES public.contracts(id)
+);
 CREATE TABLE public.contractors (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   company_name character varying NOT NULL,
@@ -26,6 +38,34 @@ CREATE TABLE public.contractors (
   clerk_id character varying UNIQUE,
   CONSTRAINT contractors_pkey PRIMARY KEY (id),
   CONSTRAINT contractors_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.contracts (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  project_id uuid NOT NULL,
+  contract_number character varying NOT NULL UNIQUE,
+  contract_type character varying NOT NULL DEFAULT 'service_agreement'::character varying CHECK (contract_type::text = ANY (ARRAY['service_agreement'::character varying::text, 'nda'::character varying::text, 'amendment'::character varying::text])),
+  pdf_url text,
+  pdf_generated_at timestamp with time zone,
+  status character varying NOT NULL DEFAULT 'draft'::character varying CHECK (status::text = ANY (ARRAY['draft'::character varying::text, 'sent'::character varying::text, 'signed'::character varying::text, 'expired'::character varying::text, 'cancelled'::character varying::text])),
+  signature_token character varying UNIQUE,
+  token_expires_at timestamp with time zone,
+  signature_hash text,
+  signed_at timestamp with time zone,
+  signed_by_name character varying,
+  signed_by_email character varying,
+  signed_by_ip character varying,
+  contract_data jsonb DEFAULT '{}'::jsonb,
+  total_value numeric,
+  payment_terms text,
+  special_clauses text,
+  created_by character varying,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  sent_at timestamp with time zone,
+  cancelled_at timestamp with time zone,
+  cancellation_reason text,
+  CONSTRAINT contracts_pkey PRIMARY KEY (id),
+  CONSTRAINT contracts_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.event_projects(id)
 );
 CREATE TABLE public.delivery_location_history (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -538,6 +578,12 @@ CREATE TABLE public.users (
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT users_pkey PRIMARY KEY (id)
 );
+
+
+
+
+
+
 -- =====================================================
 -- DELIVERY TRACKING TABLES (Migration 026)
 -- =====================================================

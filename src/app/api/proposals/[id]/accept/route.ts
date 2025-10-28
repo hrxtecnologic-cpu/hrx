@@ -20,7 +20,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
     const rateLimitResult = await rateLimit(ip, RateLimitPresets.PUBLIC_API);
     if (!rateLimitResult.success) return NextResponse.json(createRateLimitError(rateLimitResult), { status: 429 });
     const { id: projectId } = await params;
@@ -137,6 +137,64 @@ export async function GET(
     }
 
     logger.info('Proposta aceita pelo cliente', { projectId, clientEmail: token });
+
+    // =====================================================
+    // FLUXO AUTOMÁTICO: Gerar e Enviar Contrato
+    // =====================================================
+    // Import dynamically to avoid circular dependencies
+    const { generateContract } = await import('@/lib/services/contract-service');
+    const { sendContractForSignature } = await import('@/lib/services/contract-signature-service');
+
+    // Execute asynchronously without blocking the response
+    Promise.resolve().then(async () => {
+      try {
+        // 1. Gerar contrato
+        logger.info('Iniciando geração automática de contrato', { projectId });
+        const contractResult = await generateContract({ projectId, userId: 'system-auto' });
+
+        if (contractResult.success && contractResult.contract) {
+          const contractId = contractResult.contract.id;
+          logger.info('Contrato gerado automaticamente', { projectId, contractId });
+
+          // 2. Aguardar 5 segundos antes de enviar
+          await new Promise((resolve) => setTimeout(resolve, 5000));
+
+          // 3. Enviar contrato para assinatura
+          try {
+            const sendResult = await sendContractForSignature(contractId);
+
+            if (sendResult.success) {
+              logger.info('Contrato enviado automaticamente para assinatura', {
+                projectId,
+                contractId,
+              });
+            } else {
+              logger.error('Erro ao enviar contrato automaticamente', {
+                projectId,
+                contractId,
+                error: sendResult.message,
+              });
+            }
+          } catch (sendError: any) {
+            logger.error('Exceção ao enviar contrato automaticamente', {
+              projectId,
+              contractId,
+              error: sendError.message,
+            });
+          }
+        } else {
+          logger.error('Falha ao gerar contrato automaticamente', {
+            projectId,
+            error: contractResult.message,
+          });
+        }
+      } catch (error: any) {
+        logger.error('Erro no fluxo automático de contrato', {
+          projectId,
+          error: error.message,
+        });
+      }
+    });
 
     // Página de sucesso - Dark Theme HRX
     return new NextResponse(

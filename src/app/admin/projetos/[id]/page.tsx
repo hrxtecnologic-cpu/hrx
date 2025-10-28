@@ -456,6 +456,23 @@ export default async function ProjetoDetailPage({
                 </CardContent>
               </Card>
 
+              {/* Observações do Cliente */}
+              {project.additional_notes && (
+                <Card className="bg-zinc-900 border-zinc-800 lg:col-span-2">
+                  <CardContent className="p-6 space-y-4">
+                    <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                      <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                      Necessidades e Observações do Cliente
+                    </h3>
+                    <div className="p-4 bg-yellow-600/10 border border-yellow-600/30 rounded-lg">
+                      <p className="text-sm text-zinc-200 whitespace-pre-wrap">
+                        {project.additional_notes}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Demanda do Cliente */}
               {((project.professionals_needed && project.professionals_needed.length > 0) ||
                 (project.equipment_needed && project.equipment_needed.length > 0)) && (

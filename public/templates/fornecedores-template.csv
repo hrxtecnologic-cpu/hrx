@@ -1,0 +1,3 @@
+company_name,legal_name,contact_name,email,phone,cnpj,address,city,state,zip_code,equipment_types,delivery_radius_km,shipping_fee_per_km
+Som & Luz Pro,Som & Luz Pro Locações Ltda,Roberto Silva,contato@someproaudio.com,(11) 98765-4321,12.345.678/0001-90,Rua dos Equipamentos 100,São Paulo,SP,01234-000,"[""Som"",""Iluminação"",""Estrutura""]",50,2.50
+Equipamentos XYZ,XYZ Equipamentos para Eventos ME,Fernanda Costa,vendas@equipxyz.com,(11) 91234-5678,98.765.432/0001-01,Av Industrial 456,Campinas,SP,13050-000,"[""Geradores"",""Ar Condicionado"",""Mobiliário""]",100,3.00

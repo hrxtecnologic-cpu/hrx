@@ -63,10 +63,13 @@ export const GET = withAdmin(async (userId: string, req: Request) => {
         venue_state,
         status,
         is_urgent,
+        profit_margin,
+        client_budget,
         professionals_needed,
         equipment_needed,
         total_cost,
         total_client_price,
+        total_profit,
         created_at,
         updated_at
       `)
