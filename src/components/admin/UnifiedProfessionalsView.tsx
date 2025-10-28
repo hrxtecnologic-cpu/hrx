@@ -28,7 +28,8 @@ import {
   Search,
   Users,
   AlertCircle,
-  Loader2
+  Loader2,
+  Trash2
 } from 'lucide-react';
 import { UnifiedProfessional } from '@/app/api/admin/professionals/unified/route';
 import { useAuth } from '@clerk/nextjs';
@@ -159,6 +160,30 @@ export function UnifiedProfessionalsView({ initialStats }: UnifiedProfessionalsV
       alert(`❌ Erro ao enviar e-mail: ${err.message}`);
     } finally {
       setSendingEmail(null);
+    }
+  }
+
+  // Deletar profissional
+  async function handleDelete(prof: UnifiedProfessional) {
+    if (!confirm(`Tem certeza que deseja deletar o profissional ${prof.full_name}?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/admin/professionals/${prof.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Erro ao deletar profissional');
+      }
+
+      alert('✅ Profissional deletado com sucesso!');
+      loadProfessionals();
+    } catch (err: any) {
+      console.error('Erro ao deletar profissional:', err);
+      alert(`❌ Erro: ${err.message}`);
     }
   }
 
@@ -418,6 +443,17 @@ export function UnifiedProfessionalsView({ initialStats }: UnifiedProfessionalsV
                                 <Eye className="h-4 w-4" />
                               </Button>
                             </Link>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-red-400 hover:text-red-500"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(prof);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
                         </td>
                       </tr>

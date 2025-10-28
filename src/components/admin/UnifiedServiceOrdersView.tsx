@@ -224,67 +224,74 @@ export function UnifiedServiceOrdersView({ initialStats }: UnifiedServiceOrdersV
   return (
     <div className="space-y-6">
       {/* Tabs */}
-      <div className="flex gap-2 border-b border-zinc-800">
-        <button
-          onClick={() => setActiveTab('all')}
-          className={`px-4 py-2 font-medium transition ${
-            activeTab === 'all'
-              ? 'text-white border-b-2 border-red-500'
-              : 'text-zinc-400 hover:text-white'
-          }`}
-        >
-          Todos ({initialStats.total})
-        </button>
-        <button
-          onClick={() => setActiveTab('upcoming')}
-          className={`px-4 py-2 font-medium transition ${
-            activeTab === 'upcoming'
-              ? 'text-blue-500 border-b-2 border-blue-500'
-              : 'text-zinc-400 hover:text-white'
-          }`}
-        >
-          Próximos 7 Dias ({initialStats.upcoming})
-        </button>
-        <button
-          onClick={() => setActiveTab('pending')}
-          className={`px-4 py-2 font-medium transition ${
-            activeTab === 'pending'
-              ? 'text-yellow-500 border-b-2 border-yellow-500'
-              : 'text-zinc-400 hover:text-white'
-          }`}
-        >
-          Aguardando ({initialStats.pending})
-        </button>
-        <button
-          onClick={() => setActiveTab('in_progress')}
-          className={`px-4 py-2 font-medium transition ${
-            activeTab === 'in_progress'
-              ? 'text-purple-500 border-b-2 border-purple-500'
-              : 'text-zinc-400 hover:text-white'
-          }`}
-        >
-          Em Andamento ({initialStats.in_progress})
-        </button>
-        <button
-          onClick={() => setActiveTab('completed')}
-          className={`px-4 py-2 font-medium transition ${
-            activeTab === 'completed'
-              ? 'text-green-500 border-b-2 border-green-500'
-              : 'text-zinc-400 hover:text-white'
-          }`}
-        >
-          Concluídas ({initialStats.completed})
-        </button>
-        <button
-          onClick={() => setActiveTab('cancelled')}
-          className={`px-4 py-2 font-medium transition ${
-            activeTab === 'cancelled'
-              ? 'text-red-500 border-b-2 border-red-500'
-              : 'text-zinc-400 hover:text-white'
-          }`}
-        >
-          Canceladas ({initialStats.cancelled})
-        </button>
+      <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 border-b border-zinc-800">
+        <div className="flex gap-2 min-w-max">
+          <button
+            onClick={() => setActiveTab('all')}
+            className={`px-3 md:px-4 py-2 font-medium transition whitespace-nowrap text-sm ${
+              activeTab === 'all'
+                ? 'text-white border-b-2 border-red-500'
+                : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            Todos ({initialStats.total})
+          </button>
+          <button
+            onClick={() => setActiveTab('upcoming')}
+            className={`px-3 md:px-4 py-2 font-medium transition whitespace-nowrap text-sm ${
+              activeTab === 'upcoming'
+                ? 'text-blue-500 border-b-2 border-blue-500'
+                : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            <span className="hidden sm:inline">Próximos 7 Dias</span>
+            <span className="sm:hidden">Próx. 7d</span> ({initialStats.upcoming})
+          </button>
+          <button
+            onClick={() => setActiveTab('pending')}
+            className={`px-3 md:px-4 py-2 font-medium transition whitespace-nowrap text-sm ${
+              activeTab === 'pending'
+                ? 'text-yellow-500 border-b-2 border-yellow-500'
+                : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            <span className="hidden sm:inline">Aguardando</span>
+            <span className="sm:hidden">Aguard.</span> ({initialStats.pending})
+          </button>
+          <button
+            onClick={() => setActiveTab('in_progress')}
+            className={`px-3 md:px-4 py-2 font-medium transition whitespace-nowrap text-sm ${
+              activeTab === 'in_progress'
+                ? 'text-purple-500 border-b-2 border-purple-500'
+                : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            <span className="hidden sm:inline">Em Andamento</span>
+            <span className="sm:hidden">Andam.</span> ({initialStats.in_progress})
+          </button>
+          <button
+            onClick={() => setActiveTab('completed')}
+            className={`px-3 md:px-4 py-2 font-medium transition whitespace-nowrap text-sm ${
+              activeTab === 'completed'
+                ? 'text-green-500 border-b-2 border-green-500'
+                : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            <span className="hidden sm:inline">Concluídas</span>
+            <span className="sm:hidden">Concl.</span> ({initialStats.completed})
+          </button>
+          <button
+            onClick={() => setActiveTab('cancelled')}
+            className={`px-3 md:px-4 py-2 font-medium transition whitespace-nowrap text-sm ${
+              activeTab === 'cancelled'
+                ? 'text-red-500 border-b-2 border-red-500'
+                : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            <span className="hidden sm:inline">Canceladas</span>
+            <span className="sm:hidden">Cancel.</span> ({initialStats.cancelled})
+          </button>
+        </div>
       </div>
 
       {/* Busca */}
@@ -305,17 +312,17 @@ export function UnifiedServiceOrdersView({ initialStats }: UnifiedServiceOrdersV
       <Card className="bg-zinc-900 border-zinc-800">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full" style={{ minWidth: '800px' }}>
               <thead className="border-b border-zinc-800">
                 <tr>
                   <th className="text-left p-4 text-sm font-medium text-zinc-400 w-8"></th>
                   <th className="text-left p-4 text-sm font-medium text-zinc-400">OS</th>
                   <th className="text-left p-4 text-sm font-medium text-zinc-400">Evento</th>
-                  <th className="text-left p-4 text-sm font-medium text-zinc-400">Data</th>
-                  <th className="text-left p-4 text-sm font-medium text-zinc-400">Local</th>
+                  <th className="hidden md:table-cell text-left p-4 text-sm font-medium text-zinc-400">Data</th>
+                  <th className="hidden lg:table-cell text-left p-4 text-sm font-medium text-zinc-400">Local</th>
                   <th className="text-left p-4 text-sm font-medium text-zinc-400">Status</th>
-                  <th className="text-left p-4 text-sm font-medium text-zinc-400">Progresso</th>
-                  <th className="text-left p-4 text-sm font-medium text-zinc-400">Equipe</th>
+                  <th className="hidden lg:table-cell text-left p-4 text-sm font-medium text-zinc-400">Progresso</th>
+                  <th className="hidden xl:table-cell text-left p-4 text-sm font-medium text-zinc-400">Equipe</th>
                   <th className="text-right p-4 text-sm font-medium text-zinc-400">Ações</th>
                 </tr>
               </thead>
@@ -354,7 +361,7 @@ export function UnifiedServiceOrdersView({ initialStats }: UnifiedServiceOrdersV
                         </td>
 
                         {/* Data */}
-                        <td className="p-4">
+                        <td className="hidden md:table-cell p-4">
                           <div className="flex items-center gap-2">
                             <Calendar className="h-4 w-4 text-green-500" />
                             <div>
@@ -369,7 +376,7 @@ export function UnifiedServiceOrdersView({ initialStats }: UnifiedServiceOrdersV
                         </td>
 
                         {/* Local */}
-                        <td className="p-4">
+                        <td className="hidden lg:table-cell p-4">
                           <div className="flex items-center gap-1 text-sm text-zinc-400">
                             <MapPin className="h-3 w-3" />
                             <span>{os.venue_city}, {os.venue_state}</span>
@@ -407,7 +414,7 @@ export function UnifiedServiceOrdersView({ initialStats }: UnifiedServiceOrdersV
                         </td>
 
                         {/* Progresso */}
-                        <td className="p-4">
+                        <td className="hidden lg:table-cell p-4">
                           <div className="text-sm">
                             <p className="text-white">
                               {os.completed_tasks}/{os.total_tasks} tarefas
@@ -424,7 +431,7 @@ export function UnifiedServiceOrdersView({ initialStats }: UnifiedServiceOrdersV
                         </td>
 
                         {/* Equipe */}
-                        <td className="p-4">
+                        <td className="hidden xl:table-cell p-4">
                           <div className="text-sm text-zinc-400">
                             <div className="flex items-center gap-2">
                               <Users className="h-3 w-3" />

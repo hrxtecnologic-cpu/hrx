@@ -398,7 +398,7 @@ export function ManualClientForm() {
       </div>
 
       {/* Botões */}
-      <div className="flex gap-3 pt-4">
+      <div className="flex flex-col sm:flex-row gap-3 pt-4">
         <Button
           type="submit"
           disabled={isSubmitting || professionalItems.length === 0}
@@ -406,13 +406,14 @@ export function ManualClientForm() {
         >
           {isSubmitting ? (
             <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Cadastrando...
+              <Loader2 className="h-4 w-4 sm:mr-2 animate-spin" />
+              <span className="hidden sm:inline">Cadastrando...</span>
             </>
           ) : (
             <>
-              <CheckCircle className="h-4 w-4 mr-2" />
-              Cadastrar Cliente e Projeto
+              <CheckCircle className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Cadastrar Cliente e Projeto</span>
+              <span className="sm:hidden">Cadastrar</span>
             </>
           )}
         </Button>
@@ -427,7 +428,8 @@ export function ManualClientForm() {
           }}
           className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
         >
-          Limpar Formulário
+          <span className="hidden sm:inline">Limpar Formulário</span>
+          <span className="sm:hidden">Limpar</span>
         </Button>
       </div>
     </form>

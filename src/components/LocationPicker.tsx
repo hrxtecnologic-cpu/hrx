@@ -249,8 +249,8 @@ export function LocationPicker({
             size="sm"
             className="border-zinc-700 hover:bg-zinc-800 text-white"
           >
-            <MapPin className="h-4 w-4 mr-2" />
-            Usar minha localização
+            <MapPin className="h-4 w-4 md:mr-2" />
+            <span className="hidden md:inline">Usar minha localização</span>
           </Button>
         </div>
       </CardHeader>
