@@ -26,7 +26,6 @@ import {
   ChevronDown,
   ChevronUp,
   Search,
-  Filter,
   Users,
   AlertCircle,
   Loader2
@@ -57,7 +56,6 @@ export function UnifiedProfessionalsView({ initialStats }: UnifiedProfessionalsV
   // Filtros
   const [activeTab, setActiveTab] = useState<FilterStatus>('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
 
   // Row expansion
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
@@ -262,14 +260,6 @@ export function UnifiedProfessionalsView({ initialStats }: UnifiedProfessionalsV
             className="pl-10 bg-zinc-900 border-zinc-800 text-white"
           />
         </div>
-        <Button
-          variant="outline"
-          onClick={() => setShowFilters(!showFilters)}
-          className="bg-zinc-900 border-zinc-800 text-white hover:bg-zinc-800"
-        >
-          <Filter className="h-4 w-4 mr-2" />
-          Filtros Avançados
-        </Button>
       </div>
 
       {/* Tabela */}

@@ -531,27 +531,33 @@ export function DocumentValidation({
         )}
 
         {/* Ações */}
-        {documentUrl && currentStatus === 'pending' && (
+        {documentUrl && (
           <div className="flex flex-col sm:flex-row gap-2">
-            <Button
-              onClick={handleApprove}
-              disabled={loading}
-              size="sm"
-              className="flex-1 bg-green-600 hover:bg-green-500 text-xs sm:text-sm"
-            >
-              <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-              Aprovar
-            </Button>
-            <Button
-              onClick={() => setShowRejectForm(!showRejectForm)}
-              disabled={loading}
-              size="sm"
-              variant="destructive"
-              className="flex-1 text-xs sm:text-sm"
-            >
-              <XCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-              Rejeitar
-            </Button>
+            {/* Botão Aprovar - só mostra se estiver pending ou rejected */}
+            {(currentStatus === 'pending' || currentStatus === 'rejected') && (
+              <Button
+                onClick={handleApprove}
+                disabled={loading}
+                size="sm"
+                className="flex-1 bg-green-600 hover:bg-green-500 text-xs sm:text-sm"
+              >
+                <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                {currentStatus === 'rejected' ? 'Aprovar novamente' : 'Aprovar'}
+              </Button>
+            )}
+            {/* Botão Rejeitar - só mostra se estiver pending ou approved */}
+            {(currentStatus === 'pending' || currentStatus === 'approved') && (
+              <Button
+                onClick={() => setShowRejectForm(!showRejectForm)}
+                disabled={loading}
+                size="sm"
+                variant="destructive"
+                className="flex-1 text-xs sm:text-sm"
+              >
+                <XCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                {currentStatus === 'approved' ? 'Rejeitar novamente' : 'Rejeitar'}
+              </Button>
+            )}
           </div>
         )}
 

@@ -221,6 +221,7 @@ CREATE TABLE public.event_projects (
   equipment_needed jsonb DEFAULT '[]'::jsonb CHECK (equipment_needed IS NULL OR jsonb_typeof(equipment_needed) = 'array'::text),
   latitude numeric,
   longitude numeric,
+  client_budget numeric,
   CONSTRAINT event_projects_pkey PRIMARY KEY (id),
   CONSTRAINT event_projects_equipment_supplier_id_fkey FOREIGN KEY (equipment_supplier_id) REFERENCES public.equipment_suppliers(id)
 );
@@ -374,6 +375,7 @@ CREATE TABLE public.professionals (
   longitude numeric,
   subcategories jsonb DEFAULT '{}'::jsonb,
   certifications jsonb DEFAULT '{}'::jsonb,
+  service_radius_km integer DEFAULT 50 CHECK (service_radius_km >= 5 AND service_radius_km <= 500),
   CONSTRAINT professionals_pkey PRIMARY KEY (id),
   CONSTRAINT professionals_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
   CONSTRAINT professionals_approved_by_fkey FOREIGN KEY (approved_by) REFERENCES public.users(id)

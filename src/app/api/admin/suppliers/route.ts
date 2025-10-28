@@ -121,7 +121,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { company_name, contact_name, email, phone, equipment_types, pricing, notes } = body;
+    const { company_name, contact_name, email, phone, equipment_types, pricing, notes, equipment_catalog } = body;
 
     // Validations
     if (!company_name || !contact_name || !email || !phone || !equipment_types) {
@@ -162,6 +162,7 @@ export async function POST(req: NextRequest) {
         email,
         phone,
         equipment_types,
+        equipment_catalog: equipment_catalog || [],
         pricing: pricing || {},
         notes: notes || null,
         status: 'active',

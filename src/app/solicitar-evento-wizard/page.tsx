@@ -42,6 +42,7 @@ import { CATEGORIES_WITH_SUBCATEGORIES } from '@/lib/categories-subcategories';
 import { WizardContainer, WizardStep, useWizard } from '@/components/Wizard';
 import { LocationPicker, ParsedAddress } from '@/components/LocationPicker';
 import { MapboxAutocomplete } from '@/components/MapboxAutocomplete';
+import { SimpleCatalogItemsManager } from '@/components/admin/SimpleCatalogItemsManager';
 
 // ==========================================
 // Schemas de validação
@@ -128,6 +129,7 @@ const SUPPLIER_WIZARD_STEPS = [
   { id: 'company', title: 'Empresa', description: 'Dados da empresa' },
   { id: 'equipment', title: 'Equipamentos', description: 'O que você fornece' },
   { id: 'pricing', title: 'Preços', description: 'Valores (opcional)' },
+  { id: 'catalog', title: 'Catálogo', description: 'Itens detalhados (opcional)' },
   { id: 'review', title: 'Revisão', description: 'Confirme os dados' },
 ];
 
@@ -139,6 +141,7 @@ function SolicitarEventoWizardContent() {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [selectedEquipment, setSelectedEquipment] = useState<string[]>([]);
   const [selectedEquipmentTypes, setSelectedEquipmentTypes] = useState<string[]>([]);
+  const [catalogItems, setCatalogItems] = useState<any[]>([]);
   const [mapLatitude, setMapLatitude] = useState<number | undefined>();
   const [mapLongitude, setMapLongitude] = useState<number | undefined>();
   const [isEditMode, setIsEditMode] = useState(false);
@@ -487,12 +490,42 @@ function SolicitarEventoWizardContent() {
       if (isEditMode && requestType === 'supplier') {
         console.log('📤 [Wizard] Atualizando perfil do fornecedor...');
 
+        const supplierPayload = {
+          ...data,
+          ...(catalogItems.length > 0 && {
+            equipment_catalog: catalogItems.map(item => ({
+              id: item.id,
+              category: item.category,
+              subcategory: item.subcategory,
+              name: item.name,
+              description: item.description,
+              specifications: item.specifications.reduce((acc: Record<string, string>, spec: { key: string; value: string }) => {
+                if (spec.key && spec.value) acc[spec.key] = spec.value;
+                return acc;
+              }, {}),
+              pricing: {
+                daily: item.pricing_daily ? parseFloat(item.pricing_daily) : undefined,
+                weekly: item.pricing_weekly ? parseFloat(item.pricing_weekly) : undefined,
+                monthly: item.pricing_monthly ? parseFloat(item.pricing_monthly) : undefined,
+              },
+              availability: {
+                status: 'available',
+                quantity: parseInt(item.quantity) || 1,
+              },
+              is_active: true,
+              is_featured: false,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            }))
+          }),
+        };
+
         const response = await fetch('/api/supplier/profile', {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(data),
+          body: JSON.stringify(supplierPayload),
         });
 
         const result = await response.json();
@@ -543,6 +576,33 @@ function SolicitarEventoWizardContent() {
           type: equip.equipment_type || equip.type,
           quantity: equip.quantity,
         })) || [],
+        // Adicionar catálogo detalhado se for fornecedor
+        ...(requestType === 'supplier' && catalogItems.length > 0 && {
+          equipment_catalog: catalogItems.map(item => ({
+            id: item.id,
+            category: item.category,
+            subcategory: item.subcategory,
+            name: item.name,
+            description: item.description,
+            specifications: item.specifications.reduce((acc: Record<string, string>, spec: { key: string; value: string }) => {
+              if (spec.key && spec.value) acc[spec.key] = spec.value;
+              return acc;
+            }, {}),
+            pricing: {
+              daily: item.pricing_daily ? parseFloat(item.pricing_daily) : undefined,
+              weekly: item.pricing_weekly ? parseFloat(item.pricing_weekly) : undefined,
+              monthly: item.pricing_monthly ? parseFloat(item.pricing_monthly) : undefined,
+            },
+            availability: {
+              status: 'available',
+              quantity: parseInt(item.quantity) || 1,
+            },
+            is_active: true,
+            is_featured: false,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          }))
+        }),
       };
 
       console.log('📤 [Wizard] Enviando requisição para /api/public/event-requests...');
@@ -1644,8 +1704,26 @@ function SolicitarEventoWizardContent() {
                 </WizardStep>
               )}
 
-              {/* Step 3: Revisão */}
+              {/* Step 3: Catálogo Detalhado */}
               {wizard.currentStep === 3 && (
+                <WizardStep
+                  title="Catálogo de Equipamentos"
+                  description="Adicione itens detalhados com especificações técnicas (opcional)"
+                  icon={<FileText className="h-6 w-6" />}
+                >
+                  <p className="text-sm text-zinc-300 mb-4">
+                    Crie um catálogo detalhado dos seus equipamentos com especificações técnicas, preços individuais e quantidades disponíveis. Isso ajuda os clientes a entender melhor o que você oferece.
+                  </p>
+
+                  <SimpleCatalogItemsManager
+                    items={catalogItems}
+                    onChange={setCatalogItems}
+                  />
+                </WizardStep>
+              )}
+
+              {/* Step 4: Revisão */}
+              {wizard.currentStep === 4 && (
                 <WizardStep
                   title="Revise seu Cadastro"
                   description="Confira todos os dados antes de enviar"
