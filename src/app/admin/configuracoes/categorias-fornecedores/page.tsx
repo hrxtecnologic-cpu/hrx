@@ -7,14 +7,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Tag, Plus, Pencil, Trash2, ChevronDown, AlertCircle } from 'lucide-react';
+import { Truck, Plus, Pencil, Trash2, AlertCircle, ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCategories } from '@/hooks/useCategories';
 import type { Subcategory } from '@/hooks/useCategories';
 
-export default function CategoriasPage() {
+export default function CategoriasFornecedoresPage() {
   const router = useRouter();
-  const { categories, loading, error, refetch } = useCategories();
+  const { categories, loading, error, refetch } = useCategories('equipment');
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubDialogOpen, setIsSubDialogOpen] = useState(false);
@@ -26,7 +26,6 @@ export default function CategoriasPage() {
     name: '',
     slug: '',
     description: '',
-    required_documents: [] as string[],
   });
 
   const [submitting, setSubmitting] = useState(false);
@@ -40,7 +39,10 @@ export default function CategoriasPage() {
       const response = await fetch('/api/admin/categories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(categoryFormData),
+        body: JSON.stringify({
+          ...categoryFormData,
+          category_type: 'equipment'
+        }),
       });
 
       if (response.ok) {
@@ -82,7 +84,7 @@ export default function CategoriasPage() {
       if (response.ok) {
         await refetch();
         setIsSubDialogOpen(false);
-        setSubFormData({ name: '', slug: '', description: '', required_documents: [] });
+        setSubFormData({ name: '', slug: '', description: '' });
         setEditingSubcategory(null);
       } else {
         const data = await response.json();
@@ -120,7 +122,7 @@ export default function CategoriasPage() {
   const handleAddSubcategory = (categoryId: string) => {
     setSelectedCategoryId(categoryId);
     setEditingSubcategory(null);
-    setSubFormData({ name: '', slug: '', description: '', required_documents: [] });
+    setSubFormData({ name: '', slug: '', description: '' });
     setIsSubDialogOpen(true);
   };
 
@@ -132,7 +134,6 @@ export default function CategoriasPage() {
       name: sub.name,
       slug: sub.slug,
       description: sub.description || '',
-      required_documents: sub.required_documents || [],
     });
     setIsSubDialogOpen(true);
   };
@@ -169,17 +170,18 @@ export default function CategoriasPage() {
             onClick={() => router.push('/admin/configuracoes')}
             className="mb-4 text-zinc-400 hover:text-white -ml-2"
           >
-            ← Voltar para Configurações
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Voltar para Configurações
           </Button>
-          <h1 className="text-3xl font-bold text-white mb-2">Categorias de Profissionais</h1>
+          <h1 className="text-3xl font-bold text-white mb-2">Categorias de Fornecedores</h1>
           <p className="text-zinc-400">
-            Gerenciar categorias e subcategorias de profissionais
+            Gerenciar categorias e subcategorias de equipamentos
           </p>
         </div>
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-red-600 hover:bg-red-500 text-white">
+            <Button className="bg-blue-600 hover:bg-blue-500 text-white">
               <Plus className="h-4 w-4 mr-2" />
               Nova Categoria
             </Button>
@@ -195,7 +197,7 @@ export default function CategoriasPage() {
                   className="bg-zinc-800 border-zinc-700 text-white h-11"
                   value={categoryFormData.name}
                   onChange={(e) => setCategoryFormData({ ...categoryFormData, name: e.target.value })}
-                  placeholder="Ex: Limpeza e Conservação"
+                  placeholder="Ex: Som e Áudio"
                   required
                 />
               </div>
@@ -222,7 +224,7 @@ export default function CategoriasPage() {
                 </Button>
                 <Button
                   type="submit"
-                  className="flex-1 bg-red-600 hover:bg-red-500 text-white"
+                  className="flex-1 bg-blue-600 hover:bg-blue-500 text-white"
                   disabled={submitting}
                 >
                   {submitting ? 'Criando...' : 'Criar'}
@@ -243,12 +245,12 @@ export default function CategoriasPage() {
         <CardContent>
           {categories.length === 0 ? (
             <div className="text-center py-12">
-              <Tag className="h-12 w-12 text-zinc-700 mx-auto mb-4" />
+              <Truck className="h-12 w-12 text-zinc-700 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-white mb-2">
                 Nenhuma categoria cadastrada
               </h3>
               <p className="text-zinc-400 mb-6">
-                Comece criando sua primeira categoria de profissionais
+                Comece criando sua primeira categoria de equipamentos
               </p>
             </div>
           ) : (
@@ -299,10 +301,8 @@ export default function CategoriasPage() {
                           <div className="flex-1">
                             <p className="text-sm font-medium text-white">{sub.name}</p>
                             <p className="text-xs text-zinc-400">slug: {sub.slug}</p>
-                            {sub.required_documents.length > 0 && (
-                              <p className="text-xs text-zinc-500 mt-1">
-                                Docs: {sub.required_documents.join(', ')}
-                              </p>
+                            {sub.description && (
+                              <p className="text-xs text-zinc-500 mt-1">{sub.description}</p>
                             )}
                           </div>
                           <div className="flex items-center gap-2">
@@ -350,7 +350,7 @@ export default function CategoriasPage() {
                   className="bg-zinc-800 border-zinc-700 text-white h-11"
                   value={subFormData.name}
                   onChange={(e) => setSubFormData({ ...subFormData, name: e.target.value })}
-                  placeholder="Ex: Vigilante"
+                  placeholder="Ex: Telão LED"
                   required
                 />
               </div>
@@ -361,7 +361,7 @@ export default function CategoriasPage() {
                   className="bg-zinc-800 border-zinc-700 text-white h-11"
                   value={subFormData.slug}
                   onChange={(e) => setSubFormData({ ...subFormData, slug: e.target.value.toLowerCase().replace(/\s+/g, '_') })}
-                  placeholder="vigilante"
+                  placeholder="telao_led"
                   required
                 />
               </div>
@@ -377,24 +377,6 @@ export default function CategoriasPage() {
               />
             </div>
 
-            <div>
-              <Label className="text-zinc-300 mb-2 block">
-                Documentos Obrigatórios (separados por vírgula)
-              </Label>
-              <Input
-                className="bg-zinc-800 border-zinc-700 text-white h-11"
-                value={subFormData.required_documents.join(', ')}
-                onChange={(e) => setSubFormData({
-                  ...subFormData,
-                  required_documents: e.target.value.split(',').map(d => d.trim()).filter(Boolean)
-                })}
-                placeholder="cnh, cnv, nr10"
-              />
-              <p className="text-xs text-zinc-500 mt-1">
-                Ex: cnh, cnv, nr10, nr35, coren, crm, drt, portfolio
-              </p>
-            </div>
-
             <div className="flex gap-3 pt-4">
               <Button
                 type="button"
@@ -407,7 +389,7 @@ export default function CategoriasPage() {
               </Button>
               <Button
                 type="submit"
-                className="flex-1 bg-red-600 hover:bg-red-500 text-white"
+                className="flex-1 bg-blue-600 hover:bg-blue-500 text-white"
                 disabled={submitting}
               >
                 {submitting ? 'Salvando...' : editingSubcategory ? 'Atualizar' : 'Criar'}

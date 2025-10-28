@@ -7,8 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
-import { Plus, Trash2, Edit2, Check, X, Package, DollarSign } from 'lucide-react';
-import { EQUIPMENT_CATEGORIES } from '@/lib/equipment-types';
+import { Plus, Trash2, Edit2, Check, X, Package, DollarSign, Loader2 } from 'lucide-react';
+import { useCategories, convertToWizardFormat } from '@/hooks/useCategories';
 
 interface EquipmentItem {
   id: string;
@@ -25,6 +25,9 @@ interface SimpleEquipmentManagerProps {
 }
 
 export function SimpleEquipmentManager({ items, onChange }: SimpleEquipmentManagerProps) {
+  const { categories, loading } = useCategories('equipment');
+  const EQUIPMENT_CATEGORIES = convertToWizardFormat(categories);
+
   const [isAdding, setIsAdding] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [currentItem, setCurrentItem] = useState<EquipmentItem>({

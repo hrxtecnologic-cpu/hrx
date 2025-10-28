@@ -1,8 +1,9 @@
 'use client';
 
 import { UserButton, useUser } from '@clerk/nextjs';
-import { Bell, Menu } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { NotificationBell } from '@/components/NotificationBell';
 
 interface AdminHeaderProps {
   mobileMenuOpen?: boolean;
@@ -34,14 +35,7 @@ export function AdminHeader({ setMobileMenuOpen }: AdminHeaderProps) {
       {/* Actions */}
       <div className="flex items-center gap-4">
         {/* Notificações */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative text-zinc-400 hover:text-white"
-        >
-          <Bell className="h-5 w-5" />
-          <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full" />
-        </Button>
+        <NotificationBell />
 
         {/* User Avatar */}
         <UserButton

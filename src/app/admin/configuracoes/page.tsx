@@ -2,9 +2,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   Settings,
-  Users,
   Tag,
-  Calendar,
+  Truck,
   Shield,
   Database,
   Bell,
@@ -43,41 +42,21 @@ export default function ConfiguracoesPage() {
           </CardContent>
         </Card>
 
-        {/* Tipos de Evento */}
+        {/* Categorias de Fornecedores */}
         <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader>
             <CardTitle className="text-white text-base flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-blue-600" />
-              Tipos de Evento
+              <Truck className="h-4 w-4 text-blue-600" />
+              Categorias de Fornecedores
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-zinc-400 mb-4">
-              Configurar tipos de eventos disponíveis
+              Gerenciar categorias e subcategorias de equipamentos dos fornecedores
             </p>
-            <Link href="/admin/configuracoes/tipos-evento">
+            <Link href="/admin/configuracoes/categorias-fornecedores">
               <Button className="w-full bg-blue-600 hover:bg-blue-500 text-white">
-                Gerenciar Tipos
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-
-        {/* Permissões */}
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardHeader>
-            <CardTitle className="text-white text-base flex items-center gap-2">
-              <Shield className="h-4 w-4 text-yellow-600" />
-              Permissões de Usuários
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-zinc-400 mb-4">
-              Gerenciar roles e permissões de admin
-            </p>
-            <Link href="/admin/configuracoes/usuarios">
-              <Button className="w-full bg-yellow-600 hover:bg-yellow-500 text-white">
-                Gerenciar Usuários
+                Gerenciar Categorias
               </Button>
             </Link>
           </CardContent>

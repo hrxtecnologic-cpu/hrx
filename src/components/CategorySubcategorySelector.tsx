@@ -1,21 +1,20 @@
 /**
  * Componente de Seleção de Categorias e Subcategorias - COMPACTO
  * Padrão visual: Vermelho + Zinc (sem preto)
+ * Atualizado para usar categorias do banco de dados
  */
 
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ChevronDown, CheckCircle2, AlertCircle } from 'lucide-react';
+import { ChevronDown, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { CertificationUpload } from '@/components/CertificationUpload';
-import {
-  CATEGORIES_WITH_SUBCATEGORIES,
-  type SubcategoryConfig,
-} from '@/lib/categories-subcategories';
+import { useCategories, convertToWizardFormat } from '@/hooks/useCategories';
+import type { SubcategoryConfig } from '@/lib/categories-subcategories';
 import {
   getCertificationConfig,
   type Certifications,
@@ -40,7 +39,11 @@ export function CategorySubcategorySelector({
   onCertificationUpload,
   disabled = false,
 }: CategorySubcategorySelectorProps) {
+  const { categories, loading, error } = useCategories();
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+
+  // Converter categorias do banco para o formato do wizard
+  const categoriesData = convertToWizardFormat(categories);
 
   // Auto-expandir categorias com subcategorias selecionadas
   useEffect(() => {
@@ -107,6 +110,25 @@ export function CategorySubcategorySelector({
     });
   };
 
+  // Loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-red-600" />
+        <span className="ml-3 text-zinc-400">Carregando categorias...</span>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="p-4 bg-red-600/10 border border-red-600/20 rounded-lg">
+        <p className="text-red-500 text-sm">{error}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -119,7 +141,7 @@ export function CategorySubcategorySelector({
 
       {/* Grid de categorias - 2 colunas em desktop */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-        {CATEGORIES_WITH_SUBCATEGORIES.map((category) => {
+        {categoriesData.map((category) => {
           const isExpanded = expandedCategories.has(category.name);
           const selectedCount = getSelectedCount(category.name);
 

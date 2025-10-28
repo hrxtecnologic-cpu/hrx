@@ -23,15 +23,24 @@ export const GET = withAdmin(async (userId: string, req: Request) => {
       });
     }
 
+    // Get category type from query params (default: professional)
+    const { searchParams } = new URL(req.url);
+    const categoryType = searchParams.get('type') || 'professional';
+
     const supabase = await createClient();
 
+    // Buscar categorias com subcategorias usando a view apropriada
+    const viewName = categoryType === 'equipment'
+      ? 'equipment_categories_view'
+      : 'professional_categories_view';
+
     const { data: categories, error } = await supabase
-      .from('categories')
+      .from(viewName)
       .select('*')
-      .order('name', { ascending: true });
+      .order('category_order', { ascending: true });
 
     if (error) {
-      logger.error('Erro ao buscar categorias', error, { userId });
+      logger.error('Erro ao buscar categorias', error, { userId, categoryType });
       throw error;
     }
 
@@ -78,11 +87,12 @@ export const POST = withAdmin(async (userId: string, req: Request) => {
 
     const supabase = await createClient();
 
-    // Verificar se categoria já existe
+    // Verificar se categoria já existe (mesmo nome e tipo)
     const { data: existing } = await supabase
       .from('categories')
       .select('id')
       .eq('name', name)
+      .eq('category_type', 'professional')
       .single();
 
     if (existing) {
@@ -94,7 +104,13 @@ export const POST = withAdmin(async (userId: string, req: Request) => {
 
     const { data, error } = await supabase
       .from('categories')
-      .insert([{ name, description }])
+      .insert([{
+        name,
+        description,
+        category_type: 'professional',
+        active: true,
+        order_index: 999 // Novas categorias vão pro final
+      }])
       .select()
       .single();
 

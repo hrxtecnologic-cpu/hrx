@@ -37,8 +37,7 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { cn } from '@/lib/utils';
-import { EQUIPMENT_CATEGORIES } from '@/lib/equipment-types';
-import { CATEGORIES_WITH_SUBCATEGORIES } from '@/lib/categories-subcategories';
+import { useCategories, convertToWizardFormat } from '@/hooks/useCategories';
 import { WizardContainer, WizardStep, useWizard } from '@/components/Wizard';
 import { LocationPicker, ParsedAddress } from '@/components/LocationPicker';
 import { MapboxAutocomplete } from '@/components/MapboxAutocomplete';
@@ -141,6 +140,13 @@ const SUPPLIER_WIZARD_STEPS = [
 function SolicitarEventoWizardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // Buscar categorias do banco de dados
+  const { categories: professionalCategories } = useCategories('professional');
+  const { categories: equipmentCategories } = useCategories('equipment');
+  const CATEGORIES_WITH_SUBCATEGORIES = convertToWizardFormat(professionalCategories);
+  const EQUIPMENT_CATEGORIES = convertToWizardFormat(equipmentCategories);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [requestType, setRequestType] = useState<'client' | 'supplier' | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());

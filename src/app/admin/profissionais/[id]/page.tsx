@@ -12,14 +12,17 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
+  ArrowLeft,
 } from 'lucide-react';
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 import { ProfessionalActions } from '@/components/admin/ProfessionalActions';
 import { DocumentViewer } from '@/components/admin/DocumentViewer';
 import { DocumentValidation } from '@/components/admin/DocumentValidation';
 import { ProfessionalHistory } from '@/components/admin/ProfessionalHistory';
 import { EditProfessionalModal } from '@/components/admin/EditProfessionalModal';
 import { NotifyPendingDocsButton } from '@/components/admin/NotifyPendingDocsButton';
+import { formatDateBR, formatDateTimeBR } from '@/lib/utils';
 
 export default async function ProfessionalDetailPage({
   params,
@@ -42,6 +45,14 @@ export default async function ProfessionalDetailPage({
 
   return (
     <div className="space-y-4 sm:space-y-6 max-w-7xl p-4 sm:p-0">
+      {/* Botão Voltar */}
+      <Link href="/admin/profissionais">
+        <Button variant="ghost" className="text-zinc-400 hover:text-white -ml-2">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Voltar para Profissionais
+        </Button>
+      </Link>
+
       {/* Header com ações */}
       <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4">
         <div className="min-w-0 flex-1">
@@ -315,7 +326,7 @@ export default async function ProfessionalDetailPage({
                 <div>
                   <p className="text-xs text-zinc-500">Data de Nascimento</p>
                   <p className="text-sm text-white">
-                    {new Date(professional.birth_date).toLocaleDateString('pt-BR')}
+                    {formatDateBR(professional.birth_date)}
                   </p>
                 </div>
               </div>
@@ -448,14 +459,14 @@ export default async function ProfessionalDetailPage({
                 <div>
                   <span className="text-zinc-500">Cadastrado em:</span>
                   <p className="text-white">
-                    {new Date(professional.created_at).toLocaleString('pt-BR')}
+                    {formatDateTimeBR(professional.created_at)}
                   </p>
                 </div>
                 {professional.updated_at && (
                   <div>
                     <span className="text-zinc-500">Última atualização:</span>
                     <p className="text-white">
-                      {new Date(professional.updated_at).toLocaleString('pt-BR')}
+                      {formatDateTimeBR(professional.updated_at)}
                     </p>
                   </div>
                 )}

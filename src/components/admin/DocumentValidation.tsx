@@ -12,6 +12,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { formatDateBR } from '@/lib/utils';
 
 interface DocumentValidationProps {
   professionalId: string;
@@ -226,7 +227,7 @@ export function DocumentValidation({
           {
             label: 'Nascimento',
             value: professionalData.birth_date
-              ? new Date(professionalData.birth_date).toLocaleDateString('pt-BR')
+              ? formatDateBR(professionalData.birth_date)
               : undefined,
           },
         ];
@@ -259,7 +260,7 @@ export function DocumentValidation({
           {
             label: 'Validade da CNH',
             value: professionalData.cnh_validity
-              ? new Date(professionalData.cnh_validity).toLocaleDateString('pt-BR')
+              ? formatDateBR(professionalData.cnh_validity)
               : undefined,
           },
         ];
@@ -269,7 +270,7 @@ export function DocumentValidation({
           {
             label: 'Validade da CNV',
             value: professionalData.cnv_validity
-              ? new Date(professionalData.cnv_validity).toLocaleDateString('pt-BR')
+              ? formatDateBR(professionalData.cnv_validity)
               : undefined,
           },
         ];
@@ -279,7 +280,7 @@ export function DocumentValidation({
           {
             label: 'Validade do NR-10',
             value: professionalData.nr10_validity
-              ? new Date(professionalData.nr10_validity).toLocaleDateString('pt-BR')
+              ? formatDateBR(professionalData.nr10_validity)
               : undefined,
           },
         ];
@@ -289,7 +290,7 @@ export function DocumentValidation({
           {
             label: 'Validade do NR-35',
             value: professionalData.nr35_validity
-              ? new Date(professionalData.nr35_validity).toLocaleDateString('pt-BR')
+              ? formatDateBR(professionalData.nr35_validity)
               : undefined,
           },
         ];
@@ -299,7 +300,7 @@ export function DocumentValidation({
           {
             label: 'Validade do DRT',
             value: professionalData.drt_validity
-              ? new Date(professionalData.drt_validity).toLocaleDateString('pt-BR')
+              ? formatDateBR(professionalData.drt_validity)
               : undefined,
           },
         ];

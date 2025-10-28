@@ -245,10 +245,10 @@ export const EQUIPMENT_CATEGORIES: EquipmentCategory[] = [
     ],
   },
 
-  // ===== TRANSPORTE E LOGÍSTICA =====
+  // ===== TRANSPORTE DE EQUIPAMENTOS =====
   {
     name: 'transporte',
-    label: 'Transporte e Logística',
+    label: 'Transporte de Equipamentos',
     subtypes: [
       { name: 'onibus', label: 'Ônibus/Van' },
       { name: 'caminhao_mudanca', label: 'Caminhão de Mudança' },

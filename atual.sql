@@ -7,7 +7,29 @@ CREATE TABLE public.categories (
   description text,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
+  category_type character varying DEFAULT 'professional'::character varying CHECK (category_type::text = ANY (ARRAY['professional'::character varying, 'equipment'::character varying]::text[])),
+  icon character varying,
+  color character varying,
+  order_index integer DEFAULT 0,
+  active boolean DEFAULT true,
   CONSTRAINT categories_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.category_subcategories (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  category_id uuid NOT NULL,
+  name character varying NOT NULL,
+  slug character varying NOT NULL,
+  description text,
+  required_documents jsonb DEFAULT '[]'::jsonb,
+  optional_documents jsonb DEFAULT '[]'::jsonb,
+  unit character varying,
+  suggested_price numeric,
+  order_index integer DEFAULT 0,
+  active boolean DEFAULT true,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT category_subcategories_pkey PRIMARY KEY (id),
+  CONSTRAINT category_subcategories_category_id_fkey FOREIGN KEY (category_id) REFERENCES public.categories(id)
 );
 CREATE TABLE public.contract_audit_log (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -522,6 +544,113 @@ CREATE TABLE public.requests (
   CONSTRAINT requests_pkey PRIMARY KEY (id),
   CONSTRAINT requests_contractor_id_fkey FOREIGN KEY (contractor_id) REFERENCES public.contractors(id)
 );
+CREATE TABLE public.service_order_logs (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  service_order_id uuid NOT NULL,
+  action_type character varying NOT NULL CHECK (action_type::text = ANY (ARRAY['created'::character varying, 'status_changed'::character varying, 'task_completed'::character varying, 'email_sent'::character varying, 'updated'::character varying, 'cancelled'::character varying, 'comment_added'::character varying]::text[])),
+  description text NOT NULL,
+  old_value text,
+  new_value text,
+  performed_by character varying,
+  performed_by_type character varying CHECK (performed_by_type::text = ANY (ARRAY['admin'::character varying, 'professional'::character varying, 'supplier'::character varying, 'system'::character varying, 'ai'::character varying]::text[])),
+  metadata jsonb DEFAULT '{}'::jsonb,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT service_order_logs_pkey PRIMARY KEY (id),
+  CONSTRAINT service_order_logs_service_order_id_fkey FOREIGN KEY (service_order_id) REFERENCES public.service_orders(id)
+);
+CREATE TABLE public.service_order_tasks (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  service_order_id uuid NOT NULL,
+  title character varying NOT NULL,
+  description text,
+  category character varying NOT NULL CHECK (category::text = ANY (ARRAY['setup'::character varying, 'operation'::character varying, 'monitoring'::character varying, 'teardown'::character varying, 'logistics'::character varying, 'other'::character varying]::text[])),
+  assigned_to_type character varying CHECK (assigned_to_type::text = ANY (ARRAY['professional'::character varying, 'supplier'::character varying, 'hrx_team'::character varying, 'all'::character varying]::text[])),
+  assigned_to_id uuid,
+  assigned_to_name character varying,
+  status character varying NOT NULL DEFAULT 'pending'::character varying CHECK (status::text = ANY (ARRAY['pending'::character varying, 'in_progress'::character varying, 'completed'::character varying, 'skipped'::character varying]::text[])),
+  estimated_duration_minutes integer,
+  scheduled_time time without time zone,
+  started_at timestamp with time zone,
+  completed_at timestamp with time zone,
+  priority character varying DEFAULT 'normal'::character varying CHECK (priority::text = ANY (ARRAY['low'::character varying, 'normal'::character varying, 'high'::character varying, 'critical'::character varying]::text[])),
+  sequence_order integer NOT NULL DEFAULT 0,
+  depends_on_task_ids ARRAY DEFAULT ARRAY[]::uuid[],
+  notes text,
+  completion_notes text,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT service_order_tasks_pkey PRIMARY KEY (id),
+  CONSTRAINT service_order_tasks_service_order_id_fkey FOREIGN KEY (service_order_id) REFERENCES public.service_orders(id)
+);
+CREATE TABLE public.service_order_timeline (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  service_order_id uuid NOT NULL,
+  title character varying NOT NULL,
+  description text,
+  event_type character varying NOT NULL CHECK (event_type::text = ANY (ARRAY['arrival'::character varying, 'setup_start'::character varying, 'setup_complete'::character varying, 'event_start'::character varying, 'event_end'::character varying, 'teardown_start'::character varying, 'teardown_complete'::character varying, 'departure'::character varying, 'delivery'::character varying, 'pickup'::character varying, 'checkpoint'::character varying, 'other'::character varying]::text[])),
+  scheduled_time time without time zone NOT NULL,
+  estimated_duration_minutes integer,
+  involved_roles ARRAY DEFAULT ARRAY[]::character varying[],
+  status character varying DEFAULT 'scheduled'::character varying CHECK (status::text = ANY (ARRAY['scheduled'::character varying, 'in_progress'::character varying, 'completed'::character varying, 'delayed'::character varying, 'cancelled'::character varying]::text[])),
+  actual_time timestamp with time zone,
+  delay_minutes integer,
+  sequence_order integer NOT NULL,
+  notes text,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT service_order_timeline_pkey PRIMARY KEY (id),
+  CONSTRAINT service_order_timeline_service_order_id_fkey FOREIGN KEY (service_order_id) REFERENCES public.service_orders(id)
+);
+CREATE TABLE public.service_orders (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  project_id uuid NOT NULL,
+  contract_id uuid NOT NULL,
+  os_number character varying NOT NULL UNIQUE,
+  title character varying NOT NULL,
+  status character varying NOT NULL DEFAULT 'pending'::character varying CHECK (status::text = ANY (ARRAY['pending'::character varying, 'in_progress'::character varying, 'completed'::character varying, 'cancelled'::character varying]::text[])),
+  event_date date NOT NULL,
+  event_start_time time without time zone,
+  event_end_time time without time zone,
+  ai_briefing text NOT NULL,
+  ai_recommendations text,
+  ai_alerts text,
+  venue_name character varying,
+  venue_address text NOT NULL,
+  venue_city character varying NOT NULL,
+  venue_state character varying NOT NULL,
+  venue_latitude numeric,
+  venue_longitude numeric,
+  estimated_setup_duration_minutes integer,
+  estimated_teardown_duration_minutes integer,
+  recommended_arrival_time time without time zone,
+  distance_from_base_km numeric,
+  estimated_travel_time_minutes integer,
+  traffic_analysis jsonb DEFAULT '{}'::jsonb,
+  route_details jsonb DEFAULT '{}'::jsonb,
+  client_name character varying NOT NULL,
+  client_email character varying,
+  client_phone character varying,
+  venue_contact_name character varying,
+  venue_contact_phone character varying,
+  team_assignments jsonb DEFAULT '[]'::jsonb,
+  equipment_list jsonb DEFAULT '[]'::jsonb,
+  supplier_assignments jsonb DEFAULT '[]'::jsonb,
+  checklist jsonb DEFAULT '[]'::jsonb,
+  timeline jsonb DEFAULT '[]'::jsonb,
+  special_instructions text,
+  internal_notes text,
+  generated_by character varying DEFAULT 'ai_system'::character varying,
+  generated_at timestamp with time zone DEFAULT now(),
+  started_at timestamp with time zone,
+  completed_at timestamp with time zone,
+  cancelled_at timestamp with time zone,
+  cancellation_reason text,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT service_orders_pkey PRIMARY KEY (id),
+  CONSTRAINT service_orders_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.event_projects(id),
+  CONSTRAINT service_orders_contract_id_fkey FOREIGN KEY (contract_id) REFERENCES public.contracts(id)
+);
 CREATE TABLE public.supplier_quotations (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   project_id uuid NOT NULL,
@@ -578,9 +707,6 @@ CREATE TABLE public.users (
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT users_pkey PRIMARY KEY (id)
 );
-
-
-
 
 
 

@@ -24,12 +24,9 @@ import { Plus, ChevronDown, Package, Users, Search, Send, Building2, Mail, Phone
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
-import { CATEGORIES_WITH_SUBCATEGORIES } from '@/lib/categories-subcategories';
+import { useCategories, convertToWizardFormat } from '@/hooks/useCategories';
 import { EQUIPMENT_CATEGORIES } from '@/lib/equipment-types';
 import { TeamBatchSelection } from './TeamBatchSelection';
-
-// NOTA: Categorias de profissionais devem vir do arquivo central
-// Vamos importar CATEGORIES_WITH_SUBCATEGORIES no topo do arquivo
 
 interface ProjectInfo {
   event_name: string;
@@ -51,6 +48,9 @@ interface AddTeamMemberButtonProps {
 
 export function AddTeamMemberButton({ projectId, project, onSuccess }: AddTeamMemberButtonProps) {
   const router = useRouter();
+  const { categories } = useCategories();
+  const categoriesData = convertToWizardFormat(categories);
+
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [geolocationEnabled, setGeolocationEnabled] = useState(true);
@@ -270,7 +270,7 @@ export function AddTeamMemberButton({ projectId, project, onSuccess }: AddTeamMe
                       <SelectValue placeholder="Selecione a categoria" />
                     </SelectTrigger>
                     <SelectContent className="bg-zinc-900 border-zinc-800 text-white max-h-[300px]">
-                      {CATEGORIES_WITH_SUBCATEGORIES.map((cat) => (
+                      {categoriesData.map((cat) => (
                         <SelectItem key={cat.name} value={cat.name} className="text-white">
                           {cat.label}
                         </SelectItem>
@@ -299,7 +299,7 @@ export function AddTeamMemberButton({ projectId, project, onSuccess }: AddTeamMe
                     </SelectTrigger>
                     <SelectContent className="bg-zinc-900 border-zinc-800 text-white max-h-[300px]">
                       {formData.category &&
-                        CATEGORIES_WITH_SUBCATEGORIES.find((cat) => cat.name === formData.category)?.subcategories.map((subcat) => (
+                        categoriesData.find((cat) => cat.name === formData.category)?.subcategories.map((subcat) => (
                           <SelectItem key={subcat.name} value={subcat.label} className="text-white">
                             {subcat.label}
                           </SelectItem>

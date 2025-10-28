@@ -10,7 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
 import { sendServiceOrderEmails } from '@/lib/services/service-order-email';
-import { auth } from '@clerk/nextjs/server';
+import { auth, clerkClient } from '@clerk/nextjs/server';
 
 export async function POST(
   request: NextRequest,
@@ -18,7 +18,7 @@ export async function POST(
 ) {
   try {
     // 🔒 Verificar autenticação
-    const { userId } = await auth();
+    const { userId, sessionClaims } = await auth();
 
     if (!userId) {
       logger.warn('Tentativa de acesso não autenticado ao reenvio de emails');
@@ -28,22 +28,55 @@ export async function POST(
       );
     }
 
-    // 🔒 Verificar se é admin
-    const supabase = await createClient();
+    // 🔒 Verificar se é admin (mesma lógica do middleware)
+    const metadata = sessionClaims?.metadata;
+    let isAdmin = metadata?.isAdmin === true || metadata?.role === 'admin';
 
-    const { data: user, error: userError } = await supabase
-      .from('users')
-      .select('role')
-      .eq('clerk_id', userId)
-      .single();
+    if (!isAdmin) {
+      // Fallback 1: verificar por email
+      const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '')
+        .split(',')
+        .map(e => e.trim().toLowerCase())
+        .filter(e => e.length > 0);
 
-    if (userError || !user || user.role !== 'admin') {
-      logger.warn('Tentativa de acesso não autorizado ao reenvio de emails', { userId });
-      return NextResponse.json(
-        { success: false, error: 'Acesso negado - apenas admins' },
-        { status: 403 }
-      );
+      const client = await clerkClient();
+      const clerkUser = await client.users.getUser(userId);
+      const userEmail = clerkUser.emailAddresses[0]?.emailAddress?.toLowerCase() || '';
+
+      const isAdminByEmail = ADMIN_EMAILS.includes(userEmail);
+
+      if (isAdminByEmail) {
+        isAdmin = true;
+        logger.info('Admin verificado por email para reenvio', { email: userEmail });
+      } else {
+        // Fallback 2: verificar role no banco
+        const supabase = await createClient();
+
+        const { data: user } = await supabase
+          .from('users')
+          .select('role')
+          .eq('clerk_id', userId)
+          .single();
+
+        const isAdminByRole = user?.role === 'admin';
+
+        if (!isAdminByRole) {
+          logger.warn('Tentativa de acesso não autorizado ao reenvio de emails', {
+            userId,
+            email: userEmail
+          });
+          return NextResponse.json(
+            { success: false, error: 'Acesso negado - apenas admins' },
+            { status: 403 }
+          );
+        }
+
+        isAdmin = true;
+        logger.info('Admin verificado por role no banco para reenvio', { userId });
+      }
     }
+
+    const supabase = await createClient();
 
     const { id: serviceOrderId } = params;
 

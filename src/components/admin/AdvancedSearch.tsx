@@ -30,7 +30,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { useAdvancedSearch, SearchFilters } from '@/hooks/useAdvancedSearch';
 import { RADIUS_PRESETS, formatDistance } from '@/lib/geo-utils';
-import { getAllCategoryNames } from '@/lib/categories-subcategories';
+import { useCategories } from '@/hooks/useCategories';
 import { cn } from '@/lib/utils';
 
 // =====================================================
@@ -55,9 +55,6 @@ const STATUS_OPTIONS = [
   { value: 'incomplete', label: 'Incompleto', color: 'bg-gray-500' },
 ] as const;
 
-// Category options - importadas do sistema completo
-const CATEGORY_OPTIONS = getAllCategoryNames();
-
 // Brazilian states
 const STATES = [
   'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
@@ -78,6 +75,10 @@ export function AdvancedSearch<T = any>({
   showExperienceFilter = true,
   className,
 }: AdvancedSearchProps<T>) {
+  // ========== Fetch Categories ==========
+  const { categories } = useCategories();
+  const CATEGORY_OPTIONS = categories.map(cat => cat.category_name);
+
   // ========== State ==========
   const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');

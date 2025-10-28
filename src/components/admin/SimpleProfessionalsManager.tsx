@@ -7,8 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
-import { Plus, Trash2, Edit2, Check, X, Users } from 'lucide-react';
-import { CATEGORIES_WITH_SUBCATEGORIES } from '@/lib/categories-subcategories';
+import { Plus, Trash2, Edit2, Check, X, Users, Loader2 } from 'lucide-react';
+import { useCategories, convertToWizardFormat } from '@/hooks/useCategories';
 
 interface ProfessionalItem {
   id: string;
@@ -24,6 +24,9 @@ interface SimpleProfessionalsManagerProps {
 }
 
 export function SimpleProfessionalsManager({ items, onChange }: SimpleProfessionalsManagerProps) {
+  const { categories, loading } = useCategories();
+  const categoriesData = convertToWizardFormat(categories);
+
   const [isAdding, setIsAdding] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [currentItem, setCurrentItem] = useState<ProfessionalItem>({
@@ -78,7 +81,7 @@ export function SimpleProfessionalsManager({ items, onChange }: SimpleProfession
   };
 
   const availableSubcategories = currentItem.category_group
-    ? CATEGORIES_WITH_SUBCATEGORIES.find(c => c.name === currentItem.category_group)?.subcategories || []
+    ? categoriesData.find(c => c.name === currentItem.category_group)?.subcategories || []
     : [];
 
   return (
@@ -195,11 +198,17 @@ export function SimpleProfessionalsManager({ items, onChange }: SimpleProfession
                     <SelectValue placeholder="Selecione a categoria" />
                   </SelectTrigger>
                   <SelectContent className="bg-zinc-900 border-zinc-800 text-white">
-                    {CATEGORIES_WITH_SUBCATEGORIES.map((cat) => (
-                      <SelectItem key={cat.name} value={cat.name}>
-                        {cat.label}
-                      </SelectItem>
-                    ))}
+                    {loading ? (
+                      <div className="flex items-center justify-center py-2">
+                        <Loader2 className="h-4 w-4 animate-spin text-red-600" />
+                      </div>
+                    ) : (
+                      categoriesData.map((cat) => (
+                        <SelectItem key={cat.name} value={cat.name}>
+                          {cat.label}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>

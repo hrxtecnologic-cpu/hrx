@@ -18,6 +18,7 @@ import {
   Trash2,
   ExternalLink,
   AlertCircle,
+  Settings,
 } from 'lucide-react';
 import Link from 'next/link';
 import {
@@ -142,8 +143,15 @@ export default function NotificationsPage() {
               </Button>
             )}
 
+            <Link href="/notifications/preferences">
+              <Button variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white">
+                <Settings className="h-4 w-4 mr-2" />
+                Preferências
+              </Button>
+            </Link>
+
             <Link href="/admin">
-              <Button variant="outline" className="border-zinc-700 text-zinc-300">
+              <Button variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white">
                 Voltar
               </Button>
             </Link>
