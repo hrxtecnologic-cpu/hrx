@@ -79,17 +79,12 @@ export const publicEventRequestSchema = z.discriminatedUnion('request_type', [
   z.object({
     request_type: z.literal('supplier'),
     company_name: z.string().min(2, 'Nome da empresa é obrigatório'),
+    legal_name: z.string().optional(),
+    cnpj: z.string().optional(),
     contact_name: z.string().min(2, 'Nome do contato é obrigatório'),
     email: z.string().email('Email inválido'),
     phone: z.string().min(10, 'Telefone inválido'),
-    equipment_types: z.array(z.string()).min(1, 'Selecione pelo menos um tipo de equipamento'),
-    equipment_catalog: z.array(z.any()).optional(),
-    pricing: z.object({
-      daily: z.number().optional(),
-      weekly: z.number().optional(),
-      monthly: z.number().optional(),
-      discount_notes: z.string().optional(),
-    }).optional(),
+    equipment_catalog: z.array(z.any()).min(1, 'Adicione pelo menos um item ao catálogo'),
     notes: z.string().optional(),
   }),
 ]);

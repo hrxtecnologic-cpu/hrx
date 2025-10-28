@@ -93,16 +93,11 @@ const clientRequestSchema = z.object({
 const supplierRequestSchema = z.object({
   request_type: z.literal('supplier'),
   company_name: z.string().min(2, 'Nome da empresa é obrigatório'),
+  legal_name: z.string().optional(),
+  cnpj: z.string().optional(),
   contact_name: z.string().min(2, 'Nome do contato é obrigatório'),
   email: z.string().email('Email inválido'),
   phone: z.string().min(10, 'Telefone é obrigatório'),
-  equipment_types: z.array(z.string()).min(1, 'Selecione pelo menos um tipo de equipamento'),
-  pricing: z.object({
-    daily: z.string().optional(),
-    three_days: z.string().optional(),
-    weekly: z.string().optional(),
-    discount_notes: z.string().optional(),
-  }).optional(),
   notes: z.string().optional(),
 });
 
@@ -127,9 +122,7 @@ const CLIENT_WIZARD_STEPS = [
 
 const SUPPLIER_WIZARD_STEPS = [
   { id: 'company', title: 'Empresa', description: 'Dados da empresa' },
-  { id: 'equipment', title: 'Equipamentos', description: 'O que você fornece' },
-  { id: 'pricing', title: 'Preços', description: 'Valores (opcional)' },
-  { id: 'catalog', title: 'Catálogo', description: 'Itens detalhados (opcional)' },
+  { id: 'catalog', title: 'Catálogo', description: 'Equipamentos detalhados' },
   { id: 'review', title: 'Revisão', description: 'Confirme os dados' },
 ];
 
@@ -1480,14 +1473,14 @@ function SolicitarEventoWizardContent() {
                 >
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="md:col-span-2">
-                      <Label htmlFor="company_name" className="text-sm font-medium text-zinc-200">
-                        Nome da Empresa *
+                      <Label htmlFor="company_name" className="text-sm font-medium text-white">
+                        Nome Fantasia *
                       </Label>
                       <Input
                         id="company_name"
                         {...register('company_name')}
-                        className="bg-zinc-800 border-zinc-700 text-white mt-2"
-                        placeholder="Ex: Equipamentos XYZ Ltda"
+                        className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 mt-2"
+                        placeholder="Ex: Equipamentos XYZ"
                       />
                       {errors.company_name && (
                         <p className="text-xs text-red-400 mt-1.5">{errors.company_name.message}</p>
@@ -1495,13 +1488,37 @@ function SolicitarEventoWizardContent() {
                     </div>
 
                     <div>
-                      <Label htmlFor="contact_name" className="text-sm font-medium text-zinc-200">
+                      <Label htmlFor="legal_name" className="text-sm font-medium text-white">
+                        Razão Social
+                      </Label>
+                      <Input
+                        id="legal_name"
+                        {...register('legal_name')}
+                        className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 mt-2"
+                        placeholder="Ex: Equipamentos XYZ Ltda"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="cnpj" className="text-sm font-medium text-white">
+                        CNPJ
+                      </Label>
+                      <Input
+                        id="cnpj"
+                        {...register('cnpj')}
+                        className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 mt-2"
+                        placeholder="00.000.000/0000-00"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="contact_name" className="text-sm font-medium text-white">
                         Nome do Contato *
                       </Label>
                       <Input
                         id="contact_name"
                         {...register('contact_name')}
-                        className="bg-zinc-800 border-zinc-700 text-white mt-2"
+                        className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 mt-2"
                         placeholder="Seu nome"
                       />
                       {errors.contact_name && (
@@ -1510,14 +1527,14 @@ function SolicitarEventoWizardContent() {
                     </div>
 
                     <div>
-                      <Label htmlFor="phone" className="text-sm font-medium text-zinc-200">
+                      <Label htmlFor="phone" className="text-sm font-medium text-white">
                         <Phone className="h-4 w-4 inline mr-1" />
                         Telefone/WhatsApp *
                       </Label>
                       <Input
                         id="phone"
                         {...register('phone')}
-                        className="bg-zinc-800 border-zinc-700 text-white mt-2"
+                        className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 mt-2"
                         placeholder="(00) 00000-0000"
                       />
                       {errors.phone && (
@@ -1526,7 +1543,7 @@ function SolicitarEventoWizardContent() {
                     </div>
 
                     <div className="md:col-span-2">
-                      <Label htmlFor="email" className="text-sm font-medium text-zinc-200">
+                      <Label htmlFor="email" className="text-sm font-medium text-white">
                         <Mail className="h-4 w-4 inline mr-1" />
                         Email *
                       </Label>
@@ -1534,7 +1551,7 @@ function SolicitarEventoWizardContent() {
                         id="email"
                         type="email"
                         {...register('email')}
-                        className="bg-zinc-800 border-zinc-700 text-white mt-2"
+                        className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 mt-2"
                         placeholder="contato@empresa.com"
                       />
                       {errors.email && (
@@ -1545,167 +1562,8 @@ function SolicitarEventoWizardContent() {
                 </WizardStep>
               )}
 
-              {/* Step 1: Tipos de Equipamentos */}
+              {/* Step 1: Catálogo Detalhado */}
               {wizard.currentStep === 1 && (
-                <WizardStep
-                  title="Equipamentos que Fornece"
-                  description="Selecione os tipos de equipamento"
-                  icon={<Package className="h-6 w-6" />}
-                >
-                  <p className="text-sm text-zinc-300 mb-4">
-                    Selecione todos os tipos de equipamento que sua empresa pode fornecer
-                  </p>
-
-                  <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2">
-                    {EQUIPMENT_CATEGORIES.map((category) => {
-                      const isExpanded = expandedCategories.has(category.name);
-                      const selectedCount = getSelectedTypesCountByCategory(category.name);
-
-                      return (
-                        <div
-                          key={category.name}
-                          className="border border-zinc-800 bg-zinc-800/50 rounded-md overflow-hidden"
-                        >
-                          <button
-                            type="button"
-                            onClick={() => toggleCategory(category.name)}
-                            className="w-full px-3 py-2 flex items-center justify-between hover:bg-zinc-700/50 transition-colors"
-                          >
-                            <div className="flex items-center gap-2 flex-1">
-                              <ChevronDown
-                                className={cn(
-                                  'h-4 w-4 text-zinc-400 transition-transform',
-                                  isExpanded && 'rotate-180'
-                                )}
-                              />
-                              <span className="text-sm font-medium text-zinc-200">
-                                {category.label}
-                              </span>
-                            </div>
-                            {selectedCount > 0 && (
-                              <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded-full">
-                                {selectedCount} selecionado(s)
-                              </span>
-                            )}
-                          </button>
-
-                          {isExpanded && (
-                            <div className="px-3 py-2 space-y-2 bg-zinc-900/50 border-t border-zinc-800">
-                              {category.subtypes.map((subtype) => (
-                                <div key={subtype.label} className="flex items-center gap-2">
-                                  <Checkbox
-                                    id={`supplier-equipment-${subtype.label}`}
-                                    checked={selectedEquipmentTypes.includes(subtype.label)}
-                                    onCheckedChange={() => toggleEquipmentType(subtype.label)}
-                                    className="border-zinc-700 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
-                                  />
-                                  <Label
-                                    htmlFor={`supplier-equipment-${subtype.label}`}
-                                    className="text-sm font-medium text-zinc-200 cursor-pointer flex-1"
-                                  >
-                                    {subtype.label}
-                                  </Label>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {errors.equipment_types && (
-                    <p className="text-xs text-red-400 mt-4">{errors.equipment_types.message}</p>
-                  )}
-
-                  {selectedEquipmentTypes.length > 0 && (
-                    <div className="mt-4 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
-                      <p className="text-sm text-green-400">
-                        ✓ {selectedEquipmentTypes.length} tipo(s) de equipamento selecionado(s)
-                      </p>
-                    </div>
-                  )}
-                </WizardStep>
-              )}
-
-              {/* Step 2: Preços (Opcional) */}
-              {wizard.currentStep === 2 && (
-                <WizardStep
-                  title="Valores por Período"
-                  description="Defina seus preços (opcional)"
-                  icon={<DollarSign className="h-6 w-6" />}
-                >
-                  <p className="text-sm text-zinc-300 mb-4">
-                    Defina os valores médios de locação/serviço por período (opcional)
-                  </p>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div>
-                      <Label htmlFor="pricing.daily" className="text-sm font-medium text-zinc-200">
-                        Diária
-                      </Label>
-                      <Input
-                        id="pricing.daily"
-                        {...register('pricing.daily')}
-                        placeholder="Ex: R$ 500,00"
-                        className="bg-zinc-800 border-zinc-700 text-white mt-2"
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="pricing.three_days" className="text-sm font-medium text-zinc-200">
-                        3 Dias
-                      </Label>
-                      <Input
-                        id="pricing.three_days"
-                        {...register('pricing.three_days')}
-                        placeholder="Ex: R$ 1.200,00"
-                        className="bg-zinc-800 border-zinc-700 text-white mt-2"
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="pricing.weekly" className="text-sm font-medium text-zinc-200">
-                        Semanal (7 dias)
-                      </Label>
-                      <Input
-                        id="pricing.weekly"
-                        {...register('pricing.weekly')}
-                        placeholder="Ex: R$ 2.000,00"
-                        className="bg-zinc-800 border-zinc-700 text-white mt-2"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="mt-4">
-                    <Label htmlFor="pricing.discount_notes" className="text-sm font-medium text-zinc-200">
-                      Observações sobre Descontos
-                    </Label>
-                    <Input
-                      id="pricing.discount_notes"
-                      {...register('pricing.discount_notes')}
-                      placeholder="Ex: 10% de desconto para períodos acima de 7 dias"
-                      className="bg-zinc-800 border-zinc-700 text-white mt-2"
-                    />
-                  </div>
-
-                  <div className="mt-4">
-                    <Label htmlFor="notes" className="text-sm font-medium text-zinc-200">
-                      Informações Adicionais
-                    </Label>
-                    <Textarea
-                      id="notes"
-                      {...register('notes')}
-                      className="bg-zinc-800 border-zinc-700 text-white mt-2"
-                      placeholder="Conte mais sobre sua empresa: horários de atendimento, área de atuação, diferenciais, etc."
-                      rows={4}
-                    />
-                  </div>
-                </WizardStep>
-              )}
-
-              {/* Step 3: Catálogo Detalhado */}
-              {wizard.currentStep === 3 && (
                 <WizardStep
                   title="Catálogo de Equipamentos"
                   description="Adicione itens detalhados com especificações técnicas (opcional)"
@@ -1722,8 +1580,8 @@ function SolicitarEventoWizardContent() {
                 </WizardStep>
               )}
 
-              {/* Step 4: Revisão */}
-              {wizard.currentStep === 4 && (
+              {/* Step 2: Revisão */}
+              {wizard.currentStep === 2 && (
                 <WizardStep
                   title="Revise seu Cadastro"
                   description="Confira todos os dados antes de enviar"
@@ -1733,7 +1591,9 @@ function SolicitarEventoWizardContent() {
                     <div className="p-4 bg-zinc-800/50 border border-zinc-700 rounded-lg">
                       <h3 className="text-sm font-semibold text-red-500 mb-2">Dados da Empresa</h3>
                       <p className="text-sm text-zinc-300">
-                        <strong>Empresa:</strong> {watch('company_name') || '-'}<br />
+                        <strong>Nome Fantasia:</strong> {watch('company_name') || '-'}<br />
+                        {watch('legal_name') && <><strong>Razão Social:</strong> {watch('legal_name')}<br /></>}
+                        {watch('cnpj') && <><strong>CNPJ:</strong> {watch('cnpj')}<br /></>}
                         <strong>Contato:</strong> {watch('contact_name') || '-'}<br />
                         <strong>Email:</strong> {watch('email') || '-'}<br />
                         <strong>Telefone:</strong> {watch('phone') || '-'}
@@ -1741,9 +1601,9 @@ function SolicitarEventoWizardContent() {
                     </div>
 
                     <div className="p-4 bg-zinc-800/50 border border-zinc-700 rounded-lg">
-                      <h3 className="text-sm font-semibold text-red-500 mb-2">Equipamentos</h3>
+                      <h3 className="text-sm font-semibold text-red-500 mb-2">Catálogo de Equipamentos</h3>
                       <p className="text-sm text-zinc-300">
-                        {selectedEquipmentTypes.length} tipo(s) de equipamento selecionado(s)
+                        {catalogItems.length} item(ns) cadastrado(s) no catálogo
                       </p>
                     </div>
 

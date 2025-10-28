@@ -61,11 +61,12 @@ export async function POST(req: Request) {
     if (request_type === 'supplier') {
       const {
         company_name,
+        legal_name,
+        cnpj,
         contact_name,
         email,
         phone,
-        equipment_types,
-        pricing,
+        equipment_catalog,
         notes,
       } = body;
 
@@ -77,12 +78,15 @@ export async function POST(req: Request) {
         );
       }
 
-      if (!equipment_types || equipment_types.length === 0) {
+      if (!equipment_catalog || equipment_catalog.length === 0) {
         return NextResponse.json(
-          { error: 'Selecione pelo menos um tipo de equipamento que fornece' },
+          { error: 'Adicione pelo menos um item ao catálogo de equipamentos' },
           { status: 400 }
         );
       }
+
+      // Extrair equipment_types automaticamente do catálogo
+      const equipment_types = [...new Set(equipment_catalog.map((item: any) => item.category))];
 
       const supabase = await createClient();
 
@@ -118,11 +122,13 @@ export async function POST(req: Request) {
           {
             clerk_id: userId,
             company_name,
+            legal_name: legal_name || null,
+            cnpj: cnpj || null,
             contact_name,
             email,
             phone,
             equipment_types,
-            pricing: pricing || {},
+            equipment_catalog: equipment_catalog || [],
             notes: notes || null,
             status: 'active',
           },
