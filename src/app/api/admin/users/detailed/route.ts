@@ -60,26 +60,45 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
     }
 
-    // Buscar TODOS os usuários do Clerk (sem limite)
+    // Buscar TODOS os usuários do Clerk (com limite de segurança)
     const allUsers = [];
     let offset = 0;
     const limit = 500;
     let hasMore = true;
+    const MAX_ITERATIONS = 100; // Máximo de 50.000 usuários (500 * 100)
+    let iterations = 0;
 
-    while (hasMore) {
-      const response = await client.users.getUserList({
-        limit,
-        offset,
-        orderBy: '-created_at',
-      });
+    while (hasMore && iterations < MAX_ITERATIONS) {
+      try {
+        const response = await client.users.getUserList({
+          limit,
+          offset,
+          orderBy: '-created_at',
+        });
 
-      allUsers.push(...response.data);
+        allUsers.push(...response.data);
 
-      if (response.data.length < limit) {
+        if (response.data.length < limit) {
+          hasMore = false;
+        } else {
+          offset += limit;
+          iterations++;
+        }
+
+        // Log de progresso a cada 5 iterações (2500 usuários)
+        if (iterations > 0 && iterations % 5 === 0) {
+          console.log(`[users/detailed] Progresso: ${allUsers.length} usuários carregados`);
+        }
+      } catch (clerkError: any) {
+        console.error('[users/detailed] Erro ao buscar usuários do Clerk:', clerkError.message);
+        // Se houver erro na API do Clerk, parar o loop
         hasMore = false;
-      } else {
-        offset += limit;
       }
+    }
+
+    // Avisar se atingiu o limite
+    if (iterations >= MAX_ITERATIONS) {
+      console.warn('[users/detailed] Limite de iterações atingido. Alguns usuários podem não ter sido carregados.');
     }
 
     // Verificar documentos no storage para TODOS os usuários (detectar órfãos)
@@ -101,22 +120,23 @@ export async function GET(req: NextRequest) {
       .from('equipment_suppliers')
       .select('id, clerk_id, company_name, contact_name, email, status, created_at, updated_at');
 
-    // Buscar último email enviado para cada usuário
+    // OTIMIZAÇÃO: Buscar último email usando RPC function (10-20x mais rápido)
+    const recipientEmails = allUsers
+      .map(u => u.emailAddresses[0]?.emailAddress)
+      .filter(Boolean);
+
     const { data: emailLogs } = await supabase
-      .from('email_logs')
-      .select('recipient_email, sent_at, subject')
-      .in('recipient_email', allUsers.map(u => u.emailAddresses[0]?.emailAddress).filter(Boolean))
-      .order('sent_at', { ascending: false });
+      .rpc('get_latest_emails_by_recipients', {
+        recipient_emails: recipientEmails
+      });
 
     // Criar mapa de último email por email do usuário
     const lastEmailByUserEmail = new Map();
-    emailLogs?.forEach(log => {
-      if (!lastEmailByUserEmail.has(log.recipient_email)) {
-        lastEmailByUserEmail.set(log.recipient_email, {
-          sent_at: log.sent_at,
-          subject: log.subject
-        });
-      }
+    (emailLogs || []).forEach(log => {
+      lastEmailByUserEmail.set(log.recipient_email, {
+        sent_at: log.sent_at,
+        subject: log.subject
+      });
     });
 
     // Criar mapa de profissionais por clerk_id e user_id

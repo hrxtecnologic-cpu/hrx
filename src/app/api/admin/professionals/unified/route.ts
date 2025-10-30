@@ -143,7 +143,8 @@ export async function GET(req: NextRequest) {
             userId: batch,
           });
 
-          usersData.data.forEach(user => {
+          // Null check para segurança
+          (usersData?.data || []).forEach(user => {
             clerkDataMap.set(user.id, {
               role: (user.publicMetadata as any)?.role || null,
               clerk_created_at: user.createdAt,
@@ -151,7 +152,8 @@ export async function GET(req: NextRequest) {
             });
           });
         } catch (clerkError) {
-          // Erro silencioso ao buscar Clerk
+          // Erro silencioso ao buscar Clerk (continua com próximo batch)
+          console.error('[unified] Erro ao buscar lote do Clerk:', clerkError);
         }
       }
     }

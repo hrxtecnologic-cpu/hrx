@@ -728,18 +728,21 @@ function SolicitarEventoWizardContent() {
       }
 
       console.log('✅ [Wizard] Solicitação enviada com sucesso!');
-      toast.success(requestType === 'supplier' ? 'Cadastro enviado com sucesso!' : 'Solicitação enviada com sucesso!');
+      toast.success(requestType === 'supplier' ? 'Cadastro enviado com sucesso! Redirecionando...' : 'Solicitação enviada com sucesso! Redirecionando...');
 
       // Limpar rascunho após sucesso
       clearDraft();
 
-      if (requestType === 'supplier') {
-        console.log('🔀 [Wizard] Redirecionando para /solicitar-evento/sucesso-fornecedor');
-        router.push('/solicitar-evento/sucesso-fornecedor');
-      } else {
-        console.log('🔀 [Wizard] Redirecionando para /solicitar-evento/sucesso');
-        router.push('/solicitar-evento/sucesso');
-      }
+      // Delay curto para o usuário ver o toast antes do redirect
+      setTimeout(() => {
+        if (requestType === 'supplier') {
+          console.log('🔀 [Wizard] Redirecionando para /supplier/dashboard');
+          router.push('/supplier/dashboard');
+        } else {
+          console.log('🔀 [Wizard] Redirecionando para /dashboard/contratante');
+          router.push('/dashboard/contratante');
+        }
+      }, 1500);
     } catch (error: any) {
       console.error('❌ [Wizard] Erro ao enviar:', error);
       toast.error(error.message || 'Erro ao enviar solicitação');

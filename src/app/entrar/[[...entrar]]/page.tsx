@@ -19,6 +19,8 @@ export default function SignInPage() {
 
         {/* Card de Login */}
         <SignIn
+          forceRedirectUrl="/onboarding"
+          fallbackRedirectUrl="/onboarding"
           appearance={{
             baseTheme: dark,
             variables: {

@@ -101,10 +101,10 @@ export const GET = withAdmin(async (userId: string, request: NextRequest) => {
     // Executar todas as queries em paralelo
     const results = await Promise.all(queries);
 
-    // Processar resultados
+    // Processar resultados (com null checks para segurança)
     results.forEach(result => {
       if (result.type === 'professionals' && result.data) {
-        result.data.forEach((prof: any) => {
+        (result.data || []).forEach((prof: any) => {
           // Montar endereço completo
           const addressParts = [
             prof.street,
@@ -133,7 +133,7 @@ export const GET = withAdmin(async (userId: string, request: NextRequest) => {
           });
         });
       } else if (result.type === 'suppliers' && result.data) {
-        result.data.forEach((sup: any) => {
+        (result.data || []).forEach((sup: any) => {
           markers.push({
             id: sup.id,
             type: 'supplier',
@@ -150,7 +150,7 @@ export const GET = withAdmin(async (userId: string, request: NextRequest) => {
           });
         });
       } else if (result.type === 'events' && result.data) {
-        result.data.forEach((event: any) => {
+        (result.data || []).forEach((event: any) => {
           markers.push({
             id: event.id,
             type: 'event',

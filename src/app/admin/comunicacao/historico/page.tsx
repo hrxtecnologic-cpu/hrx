@@ -137,38 +137,41 @@ export default function HistoricoEmailsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-full overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <Link href="/admin/comunicacao">
-              <Button variant="ghost" size="sm" className="text-zinc-400 hover:text-white">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Voltar
-              </Button>
-            </Link>
-          </div>
-          <h1 className="text-3xl font-bold text-white">Histórico de Emails</h1>
-          <p className="text-zinc-400">Todos os emails enviados pelo sistema</p>
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center gap-3">
+          <Link href="/admin/comunicacao">
+            <Button variant="ghost" size="sm" className="text-zinc-400 hover:text-white">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Voltar
+            </Button>
+          </Link>
         </div>
-        <Button
-          onClick={handleImport}
-          disabled={importing}
-          className="bg-blue-600 hover:bg-blue-500 text-white"
-        >
-          {importing ? (
-            <>
-              <Clock className="h-4 w-4 mr-2 animate-spin" />
-              Importando...
-            </>
-          ) : (
-            <>
-              <Download className="h-4 w-4 mr-2" />
-              Importar Histórico
-            </>
-          )}
-        </Button>
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-2xl sm:text-3xl font-bold text-white">Histórico de Emails</h1>
+            <p className="text-sm sm:text-base text-zinc-400">Todos os emails enviados pelo sistema</p>
+          </div>
+          <Button
+            onClick={handleImport}
+            disabled={importing}
+            className="bg-blue-600 hover:bg-blue-500 text-white w-full sm:w-auto shrink-0"
+          >
+            {importing ? (
+              <>
+                <Clock className="h-4 w-4 mr-2 animate-spin" />
+                Importando...
+              </>
+            ) : (
+              <>
+                <Download className="h-4 w-4 mr-2" />
+                <span className="hidden xs:inline">Importar Histórico</span>
+                <span className="xs:hidden">Importar</span>
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
       {/* Import Info */}
@@ -250,42 +253,44 @@ export default function HistoricoEmailsPage() {
       {/* Filters */}
       <Card className="bg-zinc-900 border-zinc-800">
         <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1 relative">
+          <div className="flex flex-col gap-4">
+            <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-zinc-400" />
               <Input
                 type="text"
                 placeholder="Buscar por email, assunto ou template..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-zinc-800 border-zinc-700 text-white"
+                className="pl-10 bg-zinc-800 border-zinc-700 text-white w-full"
               />
             </div>
 
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-[180px] bg-zinc-800 border-zinc-700 text-white">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os Status</SelectItem>
-                <SelectItem value="sent">Enviados</SelectItem>
-                <SelectItem value="failed">Falharam</SelectItem>
-                <SelectItem value="pending">Pendentes</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full sm:w-[180px] bg-zinc-800 border-zinc-700 text-white">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os Status</SelectItem>
+                  <SelectItem value="sent">Enviados</SelectItem>
+                  <SelectItem value="failed">Falharam</SelectItem>
+                  <SelectItem value="pending">Pendentes</SelectItem>
+                </SelectContent>
+              </Select>
 
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-full sm:w-[180px] bg-zinc-800 border-zinc-700 text-white">
-                <SelectValue placeholder="Tipo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os Tipos</SelectItem>
-                <SelectItem value="professional">Profissionais</SelectItem>
-                <SelectItem value="contractor">Contratantes</SelectItem>
-                <SelectItem value="supplier">Fornecedores</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
-              </SelectContent>
-            </Select>
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger className="w-full sm:w-[180px] bg-zinc-800 border-zinc-700 text-white">
+                  <SelectValue placeholder="Tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os Tipos</SelectItem>
+                  <SelectItem value="professional">Profissionais</SelectItem>
+                  <SelectItem value="contractor">Contratantes</SelectItem>
+                  <SelectItem value="supplier">Fornecedores</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -308,11 +313,11 @@ export default function HistoricoEmailsPage() {
               {filteredEmails.map((email) => (
                 <div
                   key={email.id}
-                  className="p-4 bg-zinc-800/50 rounded-lg hover:bg-zinc-800 transition"
+                  className="p-3 sm:p-4 bg-zinc-800/50 rounded-lg hover:bg-zinc-800 transition"
                 >
-                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                  <div className="flex flex-col gap-3">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
                         <Badge className={getStatusBadge(email.status).color}>
                           {getStatusBadge(email.status).label}
                         </Badge>
@@ -321,34 +326,33 @@ export default function HistoricoEmailsPage() {
                         </Badge>
                       </div>
 
-                      <h4 className="font-medium text-white mb-1 truncate">
+                      <h4 className="font-medium text-white mb-1 truncate text-sm sm:text-base">
                         {email.subject}
                       </h4>
 
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm text-zinc-400">
-                        <span className="flex items-center gap-1">
-                          <Mail className="h-3 w-3" />
-                          {email.recipient_email}
+                      <div className="flex flex-col gap-1 text-xs sm:text-sm text-zinc-400">
+                        <span className="flex items-center gap-1 truncate">
+                          <Mail className="h-3 w-3 shrink-0" />
+                          <span className="truncate">{email.recipient_email}</span>
                         </span>
-                        <span className="hidden sm:inline text-zinc-600">•</span>
-                        <span className="font-mono text-xs">{email.template_used}</span>
+                        <span className="font-mono text-xs truncate">{email.template_used}</span>
                       </div>
 
                       {email.error_message && (
-                        <p className="text-xs text-red-400 mt-2">
+                        <p className="text-xs text-red-400 mt-2 break-words">
                           Erro: {email.error_message}
                         </p>
                       )}
                     </div>
 
-                    <div className="flex flex-col items-end gap-1 text-xs text-zinc-500">
+                    <div className="flex items-center justify-between text-xs text-zinc-500 pt-2 border-t border-zinc-700/50">
                       <span className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
                         {new Date(email.sent_at).toLocaleDateString('pt-BR')}
                       </span>
                       <span>{new Date(email.sent_at).toLocaleTimeString('pt-BR')}</span>
                       {email.external_id && (
-                        <span className="font-mono text-xs text-zinc-600">
+                        <span className="font-mono text-xs text-zinc-600 hidden sm:inline">
                           ID: {email.external_id.slice(0, 8)}...
                         </span>
                       )}

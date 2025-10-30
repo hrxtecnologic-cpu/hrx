@@ -37,6 +37,16 @@ export default function OnboardingPage() {
         return;
       }
 
+      // VERIFICAR SE É ADMIN PRIMEIRO!
+      const isAdmin = user.publicMetadata?.isAdmin === true || user.publicMetadata?.role === 'admin';
+
+      if (isAdmin) {
+        console.log('👑 Usuário é ADMIN - redirecionando para /admin');
+        clearTimeout(timeoutId);
+        router.push('/admin');
+        return;
+      }
+
       const userType = user.publicMetadata?.userType as string | undefined;
       const onboardingCompleted = user.publicMetadata?.onboardingCompleted as boolean | undefined;
 

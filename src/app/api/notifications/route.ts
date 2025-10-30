@@ -21,12 +21,20 @@ export async function GET(request: NextRequest) {
 
     const supabase = await createClient();
 
-    // Buscar user do Supabase
-    const { data: user } = await supabase
+    // Buscar user do Supabase usando maybeSingle() para evitar erro com RLS
+    const { data: user, error: userError } = await supabase
       .from('users')
       .select('id, user_type')
       .eq('clerk_id', userId)
-      .single();
+      .maybeSingle();
+
+    if (userError) {
+      console.error('Erro ao buscar usuário:', userError);
+      return NextResponse.json(
+        { success: false, error: 'Erro ao buscar usuário' },
+        { status: 500 }
+      );
+    }
 
     if (!user) {
       return NextResponse.json({ success: false, error: 'Usuário não encontrado' }, { status: 404 });
@@ -115,12 +123,20 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient();
 
-    // Verificar se é admin
-    const { data: user } = await supabase
+    // Verificar se é admin usando maybeSingle() para evitar erro com RLS
+    const { data: user, error: userError } = await supabase
       .from('users')
       .select('id, user_type')
       .eq('clerk_id', userId)
-      .single();
+      .maybeSingle();
+
+    if (userError) {
+      console.error('Erro ao buscar usuário:', userError);
+      return NextResponse.json(
+        { success: false, error: 'Erro ao buscar usuário' },
+        { status: 500 }
+      );
+    }
 
     if (!user || user.user_type !== 'admin') {
       return NextResponse.json({ success: false, error: 'Sem permissão' }, { status: 403 });

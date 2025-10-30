@@ -314,47 +314,50 @@ export function UnifiedSuppliersView({ initialStats }: UnifiedSuppliersViewProps
   return (
     <div className="space-y-6">
       {/* Tabs */}
-      <div className="flex gap-2 border-b border-zinc-800">
-        <button
-          onClick={() => setActiveTab('all')}
-          className={`px-4 py-2 font-medium transition ${
-            activeTab === 'all'
-              ? 'text-white border-b-2 border-red-500'
-              : 'text-zinc-400 hover:text-white'
-          }`}
-        >
-          Todos ({initialStats.total})
-        </button>
-        <button
-          onClick={() => setActiveTab('pending')}
-          className={`px-4 py-2 font-medium transition ${
-            activeTab === 'pending'
-              ? 'text-yellow-500 border-b-2 border-yellow-500'
-              : 'text-zinc-400 hover:text-white'
-          }`}
-        >
-          Com Orçamentos Pendentes ({initialStats.pending})
-        </button>
-        <button
-          onClick={() => setActiveTab('active')}
-          className={`px-4 py-2 font-medium transition ${
-            activeTab === 'active'
-              ? 'text-green-500 border-b-2 border-green-500'
-              : 'text-zinc-400 hover:text-white'
-          }`}
-        >
-          Ativos ({initialStats.active})
-        </button>
-        <button
-          onClick={() => setActiveTab('inactive')}
-          className={`px-4 py-2 font-medium transition ${
-            activeTab === 'inactive'
-              ? 'text-red-500 border-b-2 border-red-500'
-              : 'text-zinc-400 hover:text-white'
-          }`}
-        >
-          Inativos ({initialStats.inactive})
-        </button>
+      <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 border-b border-zinc-800">
+        <div className="flex gap-2 min-w-max">
+          <button
+            onClick={() => setActiveTab('all')}
+            className={`px-3 md:px-4 py-2 font-medium transition whitespace-nowrap text-sm ${
+              activeTab === 'all'
+                ? 'text-white border-b-2 border-red-500'
+                : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            Todos ({initialStats.total})
+          </button>
+          <button
+            onClick={() => setActiveTab('pending')}
+            className={`px-3 md:px-4 py-2 font-medium transition whitespace-nowrap text-sm ${
+              activeTab === 'pending'
+                ? 'text-yellow-500 border-b-2 border-yellow-500'
+                : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            <span className="hidden sm:inline">Com Orçamentos Pendentes</span>
+            <span className="sm:hidden">Pend.</span> ({initialStats.pending})
+          </button>
+          <button
+            onClick={() => setActiveTab('active')}
+            className={`px-3 md:px-4 py-2 font-medium transition whitespace-nowrap text-sm ${
+              activeTab === 'active'
+                ? 'text-green-500 border-b-2 border-green-500'
+                : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            Ativos ({initialStats.active})
+          </button>
+          <button
+            onClick={() => setActiveTab('inactive')}
+            className={`px-3 md:px-4 py-2 font-medium transition whitespace-nowrap text-sm ${
+              activeTab === 'inactive'
+                ? 'text-red-500 border-b-2 border-red-500'
+                : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            Inativos ({initialStats.inactive})
+          </button>
+        </div>
       </div>
 
       {/* Busca e Ações */}
@@ -379,7 +382,7 @@ export function UnifiedSuppliersView({ initialStats }: UnifiedSuppliersViewProps
       <Card className="bg-zinc-900 border-zinc-800">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full" style={{ minWidth: '800px' }}>
               <thead className="border-b border-zinc-800">
                 <tr>
                   <th className="text-left p-4 text-sm font-medium text-zinc-400 w-8"></th>

@@ -1,5 +1,5 @@
 import { auth } from '@clerk/nextjs/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { rateLimit, RateLimitPresets, createRateLimitError } from '@/lib/rate-limit';
 import { isAdmin } from '@/lib/auth';
@@ -99,6 +99,10 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Declarar fora do try para serem acessíveis no catch
+  let professionalId: string | undefined;
+  let documentType: string | undefined;
+
   try {
     // ========== Rate Limiting ==========
     const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
@@ -127,7 +131,10 @@ export async function PATCH(
     }
 
     const { id } = await params;
+    professionalId = id; // Atribuir para ser acessível no catch
+
     const { document_type, status, rejection_reason } = await req.json();
+    documentType = document_type; // Atribuir para ser acessível no catch
 
     logger.info('Iniciando validação de documento', {
       professionalId: id,
@@ -140,9 +147,10 @@ export async function PATCH(
       return badRequestResponse('Tipo de documento e status são obrigatórios');
     }
 
-    const supabase = await createClient();
+    // Usar createAdminClient() para operações admin (bypassa RLS)
+    const supabase = await createAdminClient();
 
-    // Buscar user_id do admin
+    // Buscar user_id do admin (com service_role, RLS não se aplica)
     const { data: adminUser, error: adminError } = await supabase
       .from('users')
       .select('id')
@@ -154,7 +162,7 @@ export async function PATCH(
       throw adminError;
     }
 
-    // Buscar profissional para pegar URL do documento
+    // Buscar profissional para pegar URL do documento (com service_role, RLS não se aplica)
     const { data: professional, error: professionalError } = await supabase
       .from('professionals')
       .select('documents')
@@ -329,8 +337,8 @@ export async function PATCH(
     return successResponse(undefined, 'Documento validado com sucesso');
   } catch (error) {
     logger.error('Erro ao validar documento', error instanceof Error ? error : undefined, {
-      professionalId: id,
-      documentType: document_type
+      professionalId,
+      documentType
     });
     return handleError(error, 'Erro ao validar documento');
   }

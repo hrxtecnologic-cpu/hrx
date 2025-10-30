@@ -220,57 +220,63 @@ export function UnifiedProfessionalsView({ initialStats }: UnifiedProfessionalsV
   return (
     <div className="space-y-6">
       {/* Tabs */}
-      <div className="flex gap-2 border-b border-zinc-800">
-        <button
-          onClick={() => setActiveTab('all')}
-          className={`px-4 py-2 font-medium transition ${
-            activeTab === 'all'
-              ? 'text-white border-b-2 border-red-500'
-              : 'text-zinc-400 hover:text-white'
-          }`}
-        >
-          Todos ({initialStats.total})
-        </button>
-        <button
-          onClick={() => setActiveTab('pending')}
-          className={`px-4 py-2 font-medium transition ${
-            activeTab === 'pending'
-              ? 'text-yellow-500 border-b-2 border-yellow-500'
-              : 'text-zinc-400 hover:text-white'
-          }`}
-        >
-          Pendentes ({initialStats.pending})
-        </button>
-        <button
-          onClick={() => setActiveTab('approved')}
-          className={`px-4 py-2 font-medium transition ${
-            activeTab === 'approved'
-              ? 'text-green-500 border-b-2 border-green-500'
-              : 'text-zinc-400 hover:text-white'
-          }`}
-        >
-          Aprovados ({initialStats.approved})
-        </button>
-        <button
-          onClick={() => setActiveTab('rejected')}
-          className={`px-4 py-2 font-medium transition ${
-            activeTab === 'rejected'
-              ? 'text-red-500 border-b-2 border-red-500'
-              : 'text-zinc-400 hover:text-white'
-          }`}
-        >
-          Rejeitados ({initialStats.rejected})
-        </button>
-        <button
-          onClick={() => setActiveTab('orphan')}
-          className={`px-4 py-2 font-medium transition ${
-            activeTab === 'orphan'
-              ? 'text-orange-500 border-b-2 border-orange-500'
-              : 'text-zinc-400 hover:text-white'
-          }`}
-        >
-          Docs Órfãos ({initialStats.orphan})
-        </button>
+      <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 border-b border-zinc-800">
+        <div className="flex gap-2 min-w-max">
+          <button
+            onClick={() => setActiveTab('all')}
+            className={`px-3 md:px-4 py-2 font-medium transition whitespace-nowrap text-sm ${
+              activeTab === 'all'
+                ? 'text-white border-b-2 border-red-500'
+                : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            Todos ({initialStats.total})
+          </button>
+          <button
+            onClick={() => setActiveTab('pending')}
+            className={`px-3 md:px-4 py-2 font-medium transition whitespace-nowrap text-sm ${
+              activeTab === 'pending'
+                ? 'text-yellow-500 border-b-2 border-yellow-500'
+                : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            <span className="hidden sm:inline">Pendentes</span>
+            <span className="sm:hidden">Pend.</span> ({initialStats.pending})
+          </button>
+          <button
+            onClick={() => setActiveTab('approved')}
+            className={`px-3 md:px-4 py-2 font-medium transition whitespace-nowrap text-sm ${
+              activeTab === 'approved'
+                ? 'text-green-500 border-b-2 border-green-500'
+                : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            <span className="hidden sm:inline">Aprovados</span>
+            <span className="sm:hidden">Aprov.</span> ({initialStats.approved})
+          </button>
+          <button
+            onClick={() => setActiveTab('rejected')}
+            className={`px-3 md:px-4 py-2 font-medium transition whitespace-nowrap text-sm ${
+              activeTab === 'rejected'
+                ? 'text-red-500 border-b-2 border-red-500'
+                : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            <span className="hidden sm:inline">Rejeitados</span>
+            <span className="sm:hidden">Rejeit.</span> ({initialStats.rejected})
+          </button>
+          <button
+            onClick={() => setActiveTab('orphan')}
+            className={`px-3 md:px-4 py-2 font-medium transition whitespace-nowrap text-sm ${
+              activeTab === 'orphan'
+                ? 'text-orange-500 border-b-2 border-orange-500'
+                : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            <span className="hidden sm:inline">Docs Órfãos</span>
+            <span className="sm:hidden">Órfãos</span> ({initialStats.orphan})
+          </button>
+        </div>
       </div>
 
       {/* Busca */}
@@ -541,18 +547,6 @@ export function UnifiedProfessionalsView({ initialStats }: UnifiedProfessionalsV
 
                             {/* Ações Rápidas */}
                             <div className="mt-6 flex gap-3">
-                              {prof.status === 'pending' && (
-                                <>
-                                  <Button size="sm" className="bg-green-500 hover:bg-green-600">
-                                    <CheckCircle className="h-4 w-4 mr-2" />
-                                    Aprovar
-                                  </Button>
-                                  <Button size="sm" variant="outline" className="border-red-500 text-red-500 hover:bg-red-500/10">
-                                    <XCircle className="h-4 w-4 mr-2" />
-                                    Rejeitar
-                                  </Button>
-                                </>
-                              )}
                               <Button
                                 size="sm"
                                 variant="outline"

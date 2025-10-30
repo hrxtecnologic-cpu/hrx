@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
+import { toast } from 'sonner';
 import { professionalSchema, type ProfessionalFormData } from '@/lib/validations/professional';
 import { formatCPF, formatPhone, formatCEP, fetchAddressByCEP } from '@/lib/format';
 import { uploadDocument, uploadPortfolioPhotos } from '@/lib/supabase/storage';
@@ -391,13 +392,17 @@ export default function CadastroProfissionalWizardPage() {
         throw new Error(errorData.error || 'Erro ao salvar cadastro');
       }
 
-      // Se foi atualização bem-sucedida, redirecionar para o dashboard
-      if (isUpdating) {
-        alert('✅ Cadastro atualizado com sucesso!');
+      // Sucesso - redirecionar para o dashboard
+      toast.success(
+        isUpdating
+          ? 'Cadastro atualizado com sucesso!'
+          : 'Cadastro realizado com sucesso! Bem-vindo à HRX!'
+      );
+
+      // Delay curto para o usuário ver o toast antes do redirect
+      setTimeout(() => {
         router.push('/professional/dashboard');
-      } else {
-        router.push('/cadastro-profissional/sucesso');
-      }
+      }, 1500);
     } catch (error) {
       console.error('Erro:', error);
       alert(error instanceof Error ? error.message : 'Erro ao salvar cadastro');

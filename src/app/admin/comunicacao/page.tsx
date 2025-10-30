@@ -147,24 +147,24 @@ export default function ComunicacaoPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-full overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Comunicação</h1>
-          <p className="text-zinc-400">Gerenciar templates de email e comunicação</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">Comunicação</h1>
+          <p className="text-sm sm:text-base text-zinc-400">Gerenciar templates de email e comunicação</p>
         </div>
-        <div className="flex gap-2">
-          <Link href="/admin/comunicacao/configuracoes">
-            <Button className="bg-blue-600 hover:bg-blue-500 text-white">
+        <div className="flex flex-col xs:flex-row gap-2 w-full">
+          <Link href="/admin/comunicacao/configuracoes" className="flex-1 xs:flex-none">
+            <Button className="bg-blue-600 hover:bg-blue-500 text-white w-full xs:w-auto">
               <Settings className="h-4 w-4 mr-2" />
-              Configurações
+              <span>Configurações</span>
             </Button>
           </Link>
-          <Link href="/admin/comunicacao/historico">
-            <Button className="bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700">
+          <Link href="/admin/comunicacao/historico" className="flex-1 xs:flex-none">
+            <Button className="bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700 w-full xs:w-auto">
               <Clock className="h-4 w-4 mr-2" />
-              Ver Histórico
+              <span>Histórico</span>
             </Button>
           </Link>
         </div>

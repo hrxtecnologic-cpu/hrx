@@ -52,10 +52,10 @@ export async function GET(
     const maxDistance = parseInt(searchParams.get('maxDistance') || '100');
 
 
-    // 1. Buscar dados do projeto (para pegar localização do evento)
+    // 1. Buscar dados do projeto (incluindo geolocalização)
     const { data: project, error: projectError } = await supabase
       .from('event_projects')
-      .select('venue_city, venue_state, venue_address')
+      .select('venue_city, venue_state, venue_address, latitude, longitude')
       .eq('id', id)
       .single();
 
@@ -63,61 +63,41 @@ export async function GET(
       return NextResponse.json({ error: 'Projeto não encontrado' }, { status: 404 });
     }
 
-    // 2. Buscar geocodificação do local do evento (se ainda não tem lat/lon)
-    // Por enquanto, vamos buscar TODOS os profissionais próximos baseado em cidade/estado
-    // TODO: Implementar geocodificação real usando Google Maps API ou similar
+    let professionals: any[] = [];
 
-    // 3. Buscar profissionais
-    let query = supabase
-      .from('professionals')
-      .select(`
-        id,
-        full_name,
-        email,
-        phone,
-        categories,
-        city,
-        state,
-        latitude,
-        longitude,
-        status
-      `)
-      .eq('status', 'approved');
-
-    // Filtrar por cidade/estado do evento como fallback
-    if (project.venue_city) {
-      query = query.eq('city', project.venue_city);
-    }
-    if (project.venue_state) {
-      query = query.eq('state', project.venue_state);
-    }
-
-    const { data: professionals, error: profError } = await query;
-
-    if (profError) {
-      return NextResponse.json({ error: profError.message }, { status: 500 });
-    }
-
-    // Filtrar por categoria em JavaScript (evita problemas com caracteres especiais no SQL)
-    let filteredProfessionals = professionals || [];
-    if (category && filteredProfessionals.length > 0) {
-      filteredProfessionals = filteredProfessionals.filter(prof => {
-        if (!prof.categories || !Array.isArray(prof.categories)) {
-          return false;
-        }
-        return prof.categories.includes(category);
+    // 2. Se o projeto tem coordenadas, usar busca por proximidade
+    if (project.latitude && project.longitude) {
+      // Usar função RPC otimizada para busca por distância
+      const { data, error: rpcError } = await supabase.rpc('get_nearby_professionals', {
+        event_lat: project.latitude,
+        event_lon: project.longitude,
+        max_distance_km: maxDistance,
+        filter_category: category || null,
+        filter_status: 'approved'
       });
-    }
 
-    // 4. Calcular distância para profissionais com geolocalização
-    // TODO: Usar função calculate_distance quando tivermos lat/lon do evento
+      if (rpcError) {
+        console.error('[nearby-professionals] Erro na RPC:', rpcError);
+        // Fallback para busca por cidade/estado
+        professionals = await fallbackCitySearch(project, category);
+      } else {
+        professionals = data || [];
+      }
+    } else {
+      // Fallback: buscar por cidade/estado
+      professionals = await fallbackCitySearch(project, category);
+    }
 
 
     return NextResponse.json({
-      professionals: filteredProfessionals,
+      professionals: professionals,
+      total: professionals.length,
       eventLocation: {
         city: project.venue_city,
         state: project.venue_state,
+        latitude: project.latitude,
+        longitude: project.longitude,
+        hasCoordinates: !!(project.latitude && project.longitude),
       },
       filters: {
         category,
@@ -131,4 +111,55 @@ export async function GET(
       { status: 500 }
     );
   }
+}
+
+/**
+ * Fallback: busca por cidade/estado quando não há coordenadas
+ */
+async function fallbackCitySearch(project: any, category: string | null) {
+  let query = supabase
+    .from('professionals')
+    .select(`
+      id,
+      full_name,
+      email,
+      phone,
+      categories,
+      subcategories,
+      city,
+      state,
+      latitude,
+      longitude,
+      status,
+      service_radius_km
+    `)
+    .eq('status', 'approved');
+
+  // Filtrar por cidade/estado do evento
+  if (project.venue_city) {
+    query = query.eq('city', project.venue_city);
+  }
+  if (project.venue_state) {
+    query = query.eq('state', project.venue_state);
+  }
+
+  const { data: professionals } = await query;
+
+  // Filtrar por categoria em JavaScript
+  let filteredProfessionals = professionals || [];
+  if (category && filteredProfessionals.length > 0) {
+    filteredProfessionals = filteredProfessionals.filter(prof => {
+      if (!prof.categories || !Array.isArray(prof.categories)) {
+        return false;
+      }
+      return prof.categories.includes(category);
+    });
+  }
+
+  // Adicionar flag indicando que é fallback
+  return filteredProfessionals.map(prof => ({
+    ...prof,
+    distance_km: null,
+    search_method: 'city_state_fallback'
+  }));
 }

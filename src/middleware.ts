@@ -48,7 +48,10 @@ const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '')
   .map(e => e.trim().toLowerCase())
   .filter(e => e.length > 0);
 
-console.log('[Middleware] Admin emails configurados:', ADMIN_EMAILS);
+// Log apenas em desenvolvimento
+if (process.env.NODE_ENV === 'development') {
+  console.log('[Middleware] Admin emails configurados:', ADMIN_EMAILS);
+}
 
 export default clerkMiddleware(async (auth, req) => {
   // Protege rotas admin
@@ -70,23 +73,15 @@ export default clerkMiddleware(async (auth, req) => {
       const user = await client.users.getUser(userId);
       const userEmail = user.emailAddresses[0]?.emailAddress?.toLowerCase() || '';
 
-      console.log('[Middleware] 🔍 Verificando admin (fallback email):', {
-        userId: userId.substring(0, 10),
-        email: userEmail,
-        metadata: metadata,
-        adminEmails: ADMIN_EMAILS,
-      });
-
       const isAdminByEmail = ADMIN_EMAILS.includes(userEmail);
 
       if (!isAdminByEmail) {
-        console.log('[Middleware] ❌ Acesso negado - não é admin:', userEmail);
+        // Log apenas em desenvolvimento para debug
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[Middleware] ❌ Acesso negado:', userEmail);
+        }
         return NextResponse.redirect(new URL('/403', req.url));
       }
-
-      console.log('[Middleware] ✅ Acesso admin permitido (via email):', userEmail);
-    } else {
-      console.log('[Middleware] ✅ Acesso admin permitido (via metadata)');
     }
   }
 
@@ -98,16 +93,11 @@ export default clerkMiddleware(async (auth, req) => {
       // Não autenticado - redireciona para login
       return NextResponse.redirect(new URL('/entrar', req.url));
     }
-
-    console.log('[Middleware] ✅ Acesso ao dashboard permitido');
   }
 
   // Protege todas as outras rotas não-públicas
   if (!isPublicRoute(req)) {
-    console.log('[Middleware] 🔒 Protegendo rota:', req.url);
     await auth.protect();
-  } else {
-    console.log('[Middleware] 🌍 Rota pública:', req.url);
   }
 });
 

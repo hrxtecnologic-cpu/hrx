@@ -50,10 +50,10 @@ export async function GET(
     const maxDistance = parseInt(searchParams.get('maxDistance') || '100');
 
 
-    // 1. Buscar dados do projeto (para pegar localização do evento)
+    // 1. Buscar dados do projeto (incluindo geolocalização)
     const { data: project, error: projectError } = await supabase
       .from('event_projects')
-      .select('venue_city, venue_state, venue_address')
+      .select('venue_city, venue_state, venue_address, latitude, longitude')
       .eq('id', id)
       .single();
 
@@ -61,71 +61,73 @@ export async function GET(
       return NextResponse.json({ error: 'Projeto não encontrado' }, { status: 404 });
     }
 
-    // 2. Buscar fornecedores
-    let query = supabase
-      .from('equipment_suppliers')
-      .select(`
-        id,
-        company_name,
-        contact_name,
-        email,
-        phone,
-        equipment_types,
-        city,
-        state,
-        latitude,
-        longitude,
-        delivery_radius_km,
-        shipping_fee_per_km,
-        status
-      `)
-      .eq('status', 'active');
+    let suppliers: any[] = [];
 
-    // Filtrar por tipo de equipamento se fornecido
-    if (equipmentType) {
-      query = query.contains('equipment_types', [equipmentType]);
+    // 2. Se o projeto tem coordenadas, usar busca por proximidade
+    if (project.latitude && project.longitude) {
+      // Usar função RPC otimizada para busca por distância
+      const { data, error: rpcError } = await supabase.rpc('get_nearby_suppliers', {
+        event_lat: project.latitude,
+        event_lon: project.longitude,
+        max_distance_km: maxDistance,
+        filter_equipment_type: equipmentType || null
+      });
+
+      if (rpcError) {
+        console.error('[nearby-suppliers] Erro na RPC:', rpcError);
+        // Fallback para busca por cidade/estado
+        suppliers = await fallbackCitySearchSuppliers(project, equipmentType);
+      } else {
+        suppliers = data || [];
+      }
+    } else {
+      // Fallback: buscar por cidade/estado
+      suppliers = await fallbackCitySearchSuppliers(project, equipmentType);
     }
 
-    // Filtrar por cidade/estado do evento como fallback
-    if (project.venue_city) {
-      query = query.eq('city', project.venue_city);
-    }
-    if (project.venue_state) {
-      query = query.eq('state', project.venue_state);
-    }
+    // 3. Adicionar cálculo de frete para fornecedores com distância
+    const suppliersWithShipping = suppliers.map(supplier => {
+      const distance = supplier.distance_km || 0;
+      const deliveryRadius = supplier.delivery_radius_km || 50;
+      const shippingFeePerKm = supplier.shipping_fee_per_km || 0;
 
-    const { data: suppliers, error: suppliersError } = await query;
+      const requiresShipping = distance > deliveryRadius;
+      const estimatedShippingFee = requiresShipping
+        ? (distance - deliveryRadius) * shippingFeePerKm
+        : 0;
 
-    if (suppliersError) {
-      return NextResponse.json({ error: suppliersError.message }, { status: 500 });
-    }
+      let note = '';
+      if (distance === 0 || distance === null) {
+        note = 'Distância não calculada - configure coordenadas';
+      } else if (!requiresShipping) {
+        note = `Dentro do raio de entrega (${deliveryRadius}km) - sem frete adicional`;
+      } else {
+        note = `Fora do raio de entrega - frete estimado: R$ ${estimatedShippingFee.toFixed(2)}`;
+      }
 
-    // 3. Calcular distância e frete para fornecedores com geolocalização
-    // TODO: Usar função get_nearby_suppliers() quando tivermos lat/lon do evento
-
-    // 4. Adicionar informação de frete para cada fornecedor
-    const suppliersWithShipping = suppliers?.map(supplier => ({
-      ...supplier,
-      requiresShipping: false, // Será true se distância > delivery_radius_km
-      estimatedShippingFee: 0, // Será calculado baseado na distância
-      distance_km: null, // Será calculado quando tivermos geolocalização
-      note: supplier.city === project.venue_city
-        ? 'Mesmo município - sem frete adicional'
-        : 'Frete a combinar conforme distância',
-    })) || [];
+      return {
+        ...supplier,
+        requiresShipping,
+        estimatedShippingFee: estimatedShippingFee.toFixed(2),
+        note,
+      };
+    });
 
 
     return NextResponse.json({
       suppliers: suppliersWithShipping,
+      total: suppliersWithShipping.length,
       eventLocation: {
         city: project.venue_city,
         state: project.venue_state,
+        latitude: project.latitude,
+        longitude: project.longitude,
+        hasCoordinates: !!(project.latitude && project.longitude),
       },
       filters: {
         equipmentType,
         maxDistance,
       },
-      note: 'Configure latitude/longitude dos fornecedores para cálculo automático de frete',
     });
   } catch (error: any) {
     return NextResponse.json(
@@ -133,4 +135,51 @@ export async function GET(
       { status: 500 }
     );
   }
+}
+
+/**
+ * Fallback: busca por cidade/estado quando não há coordenadas
+ */
+async function fallbackCitySearchSuppliers(project: any, equipmentType: string | null) {
+  let query = supabase
+    .from('equipment_suppliers')
+    .select(`
+      id,
+      company_name,
+      contact_name,
+      email,
+      phone,
+      equipment_types,
+      equipment_catalog,
+      city,
+      state,
+      latitude,
+      longitude,
+      delivery_radius_km,
+      shipping_fee_per_km,
+      status
+    `)
+    .eq('status', 'active');
+
+  // Filtrar por tipo de equipamento se fornecido
+  if (equipmentType) {
+    query = query.contains('equipment_types', [equipmentType]);
+  }
+
+  // Filtrar por cidade/estado do evento
+  if (project.venue_city) {
+    query = query.eq('city', project.venue_city);
+  }
+  if (project.venue_state) {
+    query = query.eq('state', project.venue_state);
+  }
+
+  const { data: suppliers } = await query;
+
+  // Adicionar flag indicando que é fallback
+  return (suppliers || []).map(supp => ({
+    ...supp,
+    distance_km: null,
+    search_method: 'city_state_fallback'
+  }));
 }
