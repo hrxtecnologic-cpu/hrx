@@ -8,7 +8,7 @@
 // Generic API Response
 // =====================================================
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   message?: string;
@@ -26,7 +26,7 @@ export interface ValidationError {
 // Paginated Response
 // =====================================================
 
-export interface PaginatedResponse<T = any> {
+export interface PaginatedResponse<T = unknown> {
   success: boolean;
   data: T[];
   pagination: {
@@ -56,7 +56,7 @@ export type ApiErrorCode =
 export interface ApiError {
   code: ApiErrorCode;
   message: string;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
   timestamp: string;
 }
 
@@ -119,7 +119,7 @@ export interface MultiUploadResponse {
 // Batch Operation Response
 // =====================================================
 
-export interface BatchOperationResponse<T = any> {
+export interface BatchOperationResponse<T = unknown> {
   success: boolean;
   results: {
     successful: T[];

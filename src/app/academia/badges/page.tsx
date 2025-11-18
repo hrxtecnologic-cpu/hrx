@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Trophy, Star, Award, Target, Zap, Crown, Lock } from 'lucide-react';
 
@@ -67,7 +67,7 @@ export default function BadgesPage() {
   }, [user, isLoaded, router]);
 
   const getBadgeIcon = (iconName: string) => {
-    const icons: any = {
+    const icons: Record<string, string> = {
       trophy: Trophy,
       star: Star,
       award: Award,
@@ -79,7 +79,7 @@ export default function BadgesPage() {
   };
 
   const getCategoryColor = (category: string) => {
-    const colors: any = {
+    const colors: Record<string, string> = {
       completion: 'bg-green-500/10 text-green-500 border-green-500/20',
       streak: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
       milestone: 'bg-purple-500/10 text-purple-500 border-purple-500/20',

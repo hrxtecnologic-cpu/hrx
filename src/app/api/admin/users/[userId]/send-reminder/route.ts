@@ -127,9 +127,9 @@ export async function POST(
       message: 'Lembrete enviado com sucesso',
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { error: 'Erro ao enviar lembrete', details: error.message },
+      { error: 'Erro ao enviar lembrete', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }

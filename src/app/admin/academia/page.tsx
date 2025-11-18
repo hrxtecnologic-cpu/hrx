@@ -5,7 +5,6 @@ import {
   Users,
   Award,
   TrendingUp,
-  Clock,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -150,7 +149,7 @@ export default async function AcademiaAdminPage() {
           <CardContent>
             <div className="space-y-4">
               {popularCourses.length > 0 ? (
-                popularCourses.map((course: any) => (
+                popularCourses.map((course: Record<string, unknown>) => (
                   <Link
                     key={course.id}
                     href={`/admin/academia/cursos/${course.id}`}
@@ -190,7 +189,7 @@ export default async function AcademiaAdminPage() {
           <CardContent>
             <div className="space-y-4">
               {recentEnrollments.length > 0 ? (
-                recentEnrollments.slice(0, 5).map((enrollment: any) => (
+                recentEnrollments.slice(0, 5).map((enrollment: Record<string, unknown>) => (
                   <div
                     key={enrollment.id}
                     className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg"

@@ -104,7 +104,6 @@ const TEMPLATE_NAMES: Record<string, string> = {
 
 export default function EditarTemplatePage() {
   const params = useParams();
-  const router = useRouter();
   const templateId = params.templateId as string;
 
   const [config, setConfig] = useState<EmailTemplateConfig | null>(null);

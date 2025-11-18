@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Tag, Plus, Pencil, Trash2, ChevronDown, AlertCircle } from 'lucide-react';
+import { Tag, Plus, Pencil, Trash2, AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCategories } from '@/hooks/useCategories';
 import type { Subcategory } from '@/hooks/useCategories';

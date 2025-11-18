@@ -76,7 +76,7 @@ export async function GET(req: NextRequest) {
     if (error) throw error;
 
     // ========== Formatar Certificados ==========
-    const certificates: Certificate[] = (enrollments || []).map((enrollment: any) => ({
+    const certificates: Certificate[] = (enrollments || []).map((enrollment: Record<string, unknown>) => ({
       id: enrollment.id,
       course_id: enrollment.courses.id,
       course_title: enrollment.courses.title,

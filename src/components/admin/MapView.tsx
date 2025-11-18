@@ -49,6 +49,9 @@ export function MapView({
   initialZoom = 10,
   onMarkerClick,
 }: MapViewProps) {
+  // IMPORTANT: All hooks must be called before any conditional returns
+  const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+
   const [viewState, setViewState] = useState({
     longitude: initialCenter[0],
     latitude: initialCenter[1],
@@ -59,38 +62,20 @@ export function MapView({
   const [filter, setFilter] = useState<'all' | 'professional' | 'supplier' | 'event'>('all');
   const [showIsochrone, setShowIsochrone] = useState(false);
   const [isochroneMinutes, setIsochroneMinutes] = useState(30);
-  const [isochroneData, setIsochroneData] = useState<any>(null);
+  const [isochroneData, setIsochroneData] = useState<unknown>(null);
   const [selectedEventForIsochrone, setSelectedEventForIsochrone] = useState<MapMarker | null>(null);
   const [isLoadingIsochrone, setIsLoadingIsochrone] = useState(false);
-  const [isochroneCache, setIsochroneCache] = useState<Record<string, any>>({});
+  const [isochroneCache, setIsochroneCache] = useState<Record<string, unknown>>({});
   const [filterByIsochrone, setFilterByIsochrone] = useState(false);
 
   // Estados para rotas
   const [showRoute, setShowRoute] = useState(false);
   const [routeOrigin, setRouteOrigin] = useState<MapMarker | null>(null);
   const [routeDestination, setRouteDestination] = useState<MapMarker | null>(null);
-  const [routeData, setRouteData] = useState<any>(null);
+  const [routeData, setRouteData] = useState<unknown>(null);
   const [isLoadingRoute, setIsLoadingRoute] = useState(false);
-  const [routeCache, setRouteCache] = useState<Record<string, any>>({});
+  const [routeCache, setRouteCache] = useState<Record<string, unknown>>({});
   const [isFullscreen, setIsFullscreen] = useState(false);
-
-  const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-
-  if (!mapboxToken) {
-    return (
-      <div className="flex items-center justify-center h-96 bg-zinc-900 rounded-lg border-2 border-dashed border-zinc-700">
-        <div className="text-center">
-          <MapPin className="w-12 h-12 mx-auto text-zinc-500 mb-2" />
-          <p className="text-zinc-300 font-medium">
-            Mapbox não configurado
-          </p>
-          <p className="text-sm text-zinc-400 mt-1">
-            Adicione NEXT_PUBLIC_MAPBOX_TOKEN no .env
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   // Verificar se ponto está dentro do isochrone (ray casting)
   const isPointInIsochrone = useCallback((lat: number, lon: number) => {
@@ -340,6 +325,23 @@ export function MapView({
   const eventMarkers = useMemo(() => {
     return markers.filter(m => m.type === 'event');
   }, [markers]);
+
+  // Check for Mapbox token after all hooks
+  if (!mapboxToken) {
+    return (
+      <div className="flex items-center justify-center h-96 bg-zinc-900 rounded-lg border-2 border-dashed border-zinc-700">
+        <div className="text-center">
+          <MapPin className="w-12 h-12 mx-auto text-zinc-500 mb-2" />
+          <p className="text-zinc-300 font-medium">
+            Mapbox não configurado
+          </p>
+          <p className="text-sm text-zinc-400 mt-1">
+            Adicione NEXT_PUBLIC_MAPBOX_TOKEN no .env
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -674,13 +676,13 @@ export function MapView({
               const source = event.target.getSource('markers');
 
               if (source && 'getClusterExpansionZoom' in source) {
-                (source as any).getClusterExpansionZoom(clusterId, (err: any, zoom: number) => {
+                (source as mapboxgl.GeoJSONSource).getClusterExpansionZoom(clusterId, (err: Error | null, zoom: number) => {
                   if (err) return;
 
                   setViewState({
                     ...viewState,
-                    longitude: (feature.geometry as any).coordinates[0],
-                    latitude: (feature.geometry as any).coordinates[1],
+                    longitude: (feature.geometry as GeoJSON.Point).coordinates[0],
+                    latitude: (feature.geometry as GeoJSON.Point).coordinates[1],
                     zoom: zoom,
                   });
                 });

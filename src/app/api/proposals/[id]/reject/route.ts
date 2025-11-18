@@ -300,8 +300,8 @@ export async function GET(
       `,
       { status: 200, headers: { 'Content-Type': 'text/html' } }
     );
-  } catch (error: any) {
-    logger.error('Erro ao processar rejeição de proposta', { error: error.message });
+  } catch (error: unknown) {
+    logger.error('Erro ao processar rejeição de proposta', { error: error instanceof Error ? error.message : String(error) });
     return new NextResponse(
       `
       <!DOCTYPE html>

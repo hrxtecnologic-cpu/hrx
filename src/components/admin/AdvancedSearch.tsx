@@ -37,7 +37,7 @@ import { cn } from '@/lib/utils';
 // Types
 // =====================================================
 
-interface AdvancedSearchProps<T = any> {
+interface AdvancedSearchProps<T = unknown> {
   onResultsChange?: (results: T[]) => void;
   initialFilters?: SearchFilters;
   showProximitySearch?: boolean;
@@ -66,7 +66,7 @@ const STATES = [
 // Main Component
 // =====================================================
 
-export function AdvancedSearch<T = any>({
+export function AdvancedSearch<T = unknown>({
   onResultsChange,
   initialFilters = {},
   showProximitySearch = true,

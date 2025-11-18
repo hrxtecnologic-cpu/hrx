@@ -62,7 +62,7 @@ export async function PATCH(
     }
 
     // Preparar update
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       status,
     };
 
@@ -91,9 +91,9 @@ export async function PATCH(
       success: true,
       message: 'Status atualizado',
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { error: error.message || 'Erro ao atualizar status' },
+      { error: error instanceof Error ? error.message : 'Erro ao atualizar status' },
       { status: 500 }
     );
   }

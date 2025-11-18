@@ -50,7 +50,7 @@ export function BasicDocumentsUpload({
   disabled = false,
 }: BasicDocumentsUploadProps) {
   const handleUpload = async (docType: string, file: File) => {
-    const { url, error } = await uploadDocument(file, userId, docType as any);
+    const { url, error } = await uploadDocument(file, userId, docType as string);
 
     if (error) {
       throw new Error(error);

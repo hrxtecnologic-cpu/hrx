@@ -156,7 +156,7 @@ export async function PATCH(
     ];
 
     // Filtrar apenas campos permitidos
-    const updates: any = {};
+    const updates: Record<string, unknown> = {};
     for (const field of allowedFields) {
       if (body[field] !== undefined) {
         updates[field] = body[field];

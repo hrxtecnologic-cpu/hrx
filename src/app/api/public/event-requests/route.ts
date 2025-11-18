@@ -94,7 +94,7 @@ export async function POST(req: Request) {
       }
 
       // Extrair equipment_types automaticamente do catálogo
-      const equipment_types = [...new Set(equipment_catalog.map((item: any) => item.category))];
+      const equipment_types = [...new Set(equipment_catalog.map((item) => item.category))];
 
       const supabase = await createClient();
 
@@ -156,7 +156,7 @@ export async function POST(req: Request) {
       }
 
       // Enviar email de confirmação para fornecedor
-      const catalogPreview = equipment_catalog.slice(0, 5).map((item: any) => ({
+      const catalogPreview = equipment_catalog.slice(0, 5).map((item) => ({
         name: item.name,
         category: item.category,
         subcategory: item.subcategory,
@@ -364,9 +364,9 @@ export async function POST(req: Request) {
       },
       { status: 201 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Se for erro de tabela não existir, retornar mensagem amigável
-    if (error.message?.includes('relation') && error.message?.includes('does not exist')) {
+    if (error instanceof Error && error.message?.includes('relation') && error.message?.includes('does not exist')) {
       return NextResponse.json(
         {
           error:
@@ -377,7 +377,7 @@ export async function POST(req: Request) {
     }
 
     // Se for erro de coluna não existir, retornar mensagem específica
-    if (error.message?.includes('column') && error.message?.includes('does not exist')) {
+    if (error instanceof Error && error.message?.includes('column') && error.message?.includes('does not exist')) {
       return NextResponse.json(
         {
           error: 'Estrutura do banco de dados desatualizada. Execute a migration 036.',

@@ -160,8 +160,8 @@ export async function GET(
     });
 
     return NextResponse.json({ project: result });
-  } catch (error: any) {
-    logger.error('Erro ao buscar projeto', { error: error.message });
+  } catch (error: unknown) {
+    logger.error('Erro ao buscar projeto', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }
@@ -221,7 +221,7 @@ export async function PATCH(
       'internal_notes',
     ];
 
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     for (const field of allowedFields) {
       if (body[field as keyof UpdateEventProjectData] !== undefined) {
         updateData[field] = body[field as keyof UpdateEventProjectData];
@@ -268,7 +268,7 @@ export async function PATCH(
 
     if (error) {
       logger.error('Erro ao atualizar projeto', {
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         projectId,
         userId,
       });
@@ -282,8 +282,8 @@ export async function PATCH(
     });
 
     return NextResponse.json({ success: true, project: data });
-  } catch (error: any) {
-    logger.error('Erro ao atualizar projeto', { error: error.message });
+  } catch (error: unknown) {
+    logger.error('Erro ao atualizar projeto', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }
@@ -340,7 +340,7 @@ export async function DELETE(
 
     if (error) {
       logger.error('Erro ao deletar projeto', {
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         projectId,
         userId,
       });
@@ -357,7 +357,7 @@ export async function DELETE(
       success: true,
       message: 'Projeto deletado com sucesso',
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
 
     logger.error('Erro ao cancelar projeto', {
       error: error?.message || 'Unknown error',

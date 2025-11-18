@@ -4,7 +4,7 @@ import { withAdmin } from '@/lib/api';
 import { logger } from '@/lib/logger';
 
 // PUT - Atualizar subcategoria
-export const PUT = withAdmin(async (userId: string, req: Request, context: any) => {
+export const PUT = withAdmin(async (userId: string, req: Request, context: { params: Promise<Record<string, string>> }) => {
   try {
     const { id } = await context.params;
     const body = await req.json();
@@ -12,7 +12,7 @@ export const PUT = withAdmin(async (userId: string, req: Request, context: any) 
 
     const supabase = await createClient();
 
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (name !== undefined) updateData.name = name;
     if (slug !== undefined) updateData.slug = slug;
     if (description !== undefined) updateData.description = description;
@@ -45,7 +45,7 @@ export const PUT = withAdmin(async (userId: string, req: Request, context: any) 
 });
 
 // DELETE - Deletar subcategoria (soft delete)
-export const DELETE = withAdmin(async (userId: string, req: Request, context: any) => {
+export const DELETE = withAdmin(async (userId: string, req: Request, context: { params: Promise<Record<string, string>> }) => {
   try {
     const { id } = await context.params;
     const supabase = await createClient();

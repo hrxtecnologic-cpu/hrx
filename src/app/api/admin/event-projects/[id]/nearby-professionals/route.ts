@@ -63,7 +63,7 @@ export async function GET(
       return NextResponse.json({ error: 'Projeto não encontrado' }, { status: 404 });
     }
 
-    let professionals: any[] = [];
+    let professionals: Array<Record<string, unknown>> = [];
 
     // 2. Se o projeto tem coordenadas, usar busca por proximidade
     if (project.latitude && project.longitude) {
@@ -105,7 +105,7 @@ export async function GET(
         maxDistance,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
       { error: error?.message || 'Erro interno do servidor' },
       { status: 500 }
@@ -116,7 +116,7 @@ export async function GET(
 /**
  * Fallback: busca por cidade/estado quando não há coordenadas
  */
-async function fallbackCitySearch(project: any, category: string | null) {
+async function fallbackCitySearch(project: Record<string, unknown>, category: string | null) {
   let query = supabase
     .from('professionals')
     .select(`

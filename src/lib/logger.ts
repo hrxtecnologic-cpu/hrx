@@ -12,7 +12,7 @@ interface LogContext {
   requestId?: string;
   ip?: string;
   userAgent?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface LogEntry {
@@ -223,7 +223,7 @@ export function createRequestContext(
 export function logAuthEvent(
   event: 'login' | 'logout' | 'signup' | 'unauthorized' | 'forbidden',
   userId?: string,
-  details?: Record<string, any>
+  details?: Record<string, unknown>
 ) {
   logger.security(`Auth event: ${event}`, {
     event,
@@ -239,7 +239,7 @@ export function logDocumentOperation(
   operation: 'upload' | 'view' | 'approve' | 'reject' | 'delete',
   userId: string,
   documentType: string,
-  details?: Record<string, any>
+  details?: Record<string, unknown>
 ) {
   logger.info(`Document ${operation}: ${documentType}`, {
     operation,
@@ -256,7 +256,7 @@ export function logDataChange(
   entity: string,
   entityId: string,
   changedBy: string,
-  changes: Record<string, any>
+  changes: Record<string, unknown>
 ) {
   logger.warn(`Data changed: ${entity} ${entityId}`, {
     entity,

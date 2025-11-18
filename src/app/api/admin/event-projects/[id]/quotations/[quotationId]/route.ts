@@ -80,7 +80,7 @@ export async function PATCH(
       );
     }
 
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       status: body.status,
       reviewed_at: new Date().toISOString(),
       reviewed_by: userId,
@@ -171,8 +171,8 @@ export async function PATCH(
       success: true,
       quotation: updatedQuotation,
     });
-  } catch (error: any) {
-    logger.error('Erro ao atualizar cotação', { error: error.message });
+  } catch (error: unknown) {
+    logger.error('Erro ao atualizar cotação', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }
@@ -240,7 +240,7 @@ export async function DELETE(
 
     if (error) {
       logger.error('Erro ao cancelar cotação', {
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         quotationId,
         userId,
       });
@@ -254,8 +254,8 @@ export async function DELETE(
     });
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    logger.error('Erro ao cancelar cotação', { error: error.message });
+  } catch (error: unknown) {
+    logger.error('Erro ao cancelar cotação', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }

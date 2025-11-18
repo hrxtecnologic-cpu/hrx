@@ -42,7 +42,7 @@ export default function OrcamentoPage({
   const { token } = use(params);
   const router = useRouter();
 
-  const [quotation, setQuotation] = useState<any>(null);
+  const [quotation, setQuotation] = useState<unknown>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -79,7 +79,7 @@ export default function OrcamentoPage({
       }
 
       setQuotation(data.quotation);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('❌ Erro ao carregar:', err);
       setError('Erro ao carregar solicitação de orçamento');
     } finally {
@@ -105,7 +105,7 @@ export default function OrcamentoPage({
 
       toast.success('Orçamento enviado com sucesso!');
       setSubmitted(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('❌ Erro ao enviar:', err);
       toast.error(err.message || 'Erro ao enviar orçamento');
     } finally {
@@ -231,7 +231,7 @@ export default function OrcamentoPage({
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {items.map((item: any, index: number) => (
+              {items.map((item, index: number) => (
                 <div
                   key={index}
                   className="p-4 bg-zinc-800/50 rounded-lg border border-zinc-700"

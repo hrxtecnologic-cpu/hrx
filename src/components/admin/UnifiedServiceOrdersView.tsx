@@ -93,7 +93,7 @@ export function UnifiedServiceOrdersView({ initialStats }: UnifiedServiceOrdersV
       } else {
         throw new Error(data.error || 'Erro desconhecido');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('❌ Erro ao carregar ordens de serviço:', err);
       setError(err.message);
     } finally {
@@ -164,7 +164,7 @@ export function UnifiedServiceOrdersView({ initialStats }: UnifiedServiceOrdersV
         const error = await response.json();
         alert(`❌ Erro ao reenviar emails: ${error.error || 'Erro desconhecido'}`);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Erro ao reenviar emails:', err);
       alert(`❌ Erro ao reenviar emails: ${err.message}`);
     } finally {

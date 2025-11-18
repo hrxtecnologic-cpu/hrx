@@ -333,7 +333,7 @@ export interface ActiveCourse {
 // ============================================================================
 
 // Response padrão
-export interface AcademyAPIResponse<T = any> {
+export interface AcademyAPIResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;

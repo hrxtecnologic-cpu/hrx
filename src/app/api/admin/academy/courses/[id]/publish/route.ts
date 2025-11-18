@@ -119,7 +119,7 @@ export async function PATCH(
 
     // ========== Atualizar Status ==========
     const newStatus = action === 'publish' ? 'published' : action === 'archive' ? 'archived' : 'draft';
-    const updateData: any = { status: newStatus };
+    const updateData: Record<string, unknown> = { status: newStatus };
 
     // Se publicar pela primeira vez, registrar published_at
     if (action === 'publish' && !course.published_at) {

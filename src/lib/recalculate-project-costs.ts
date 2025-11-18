@@ -101,7 +101,7 @@ export async function recalculateProjectCosts(projectId: string) {
         totalProfit,
       },
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Erro ao recalcular custos:', error);
     return { success: false, error: error.message };
   }

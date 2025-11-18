@@ -241,7 +241,7 @@ export async function PATCH(
 
     if (error) {
       logger.error('Erro ao atualizar equipamento', {
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         equipmentId,
         userId,
       });
@@ -338,7 +338,7 @@ export async function DELETE(
 
     if (error) {
       logger.error('Erro ao remover equipamento', {
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         equipmentId,
         userId,
       });

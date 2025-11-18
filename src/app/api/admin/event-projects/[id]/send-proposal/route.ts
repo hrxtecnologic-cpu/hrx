@@ -89,7 +89,7 @@ export async function POST(
     }
 
     // 3. Buscar equipamentos (sem JOIN para evitar erro)
-    let equipment: any[] = [];
+    let equipment: Array<Record<string, unknown>> = [];
     try {
       const { data: equipmentData, error: equipmentError } = await supabase
         .from('project_equipment')
@@ -123,10 +123,10 @@ export async function POST(
           }
         }
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('Erro ao buscar equipamentos', {
         projectId,
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         stack: error.stack,
       });
       return NextResponse.json(
@@ -144,7 +144,7 @@ export async function POST(
     }
 
     // 4. Preparar dados da equipe para o email
-    const teamMembers = (team || []).map((member: any) => ({
+    const teamMembers = (team || []).map((member) => ({
       category: member.category || member.professional?.categories?.[0] || 'Profissional',
       quantity: member.quantity || 1,
       unit_price: member.daily_rate || 0,
@@ -152,7 +152,7 @@ export async function POST(
     }));
 
     // 5. Preparar dados dos equipamentos para o email
-    const equipmentItems = (equipment || []).map((item: any) => {
+    const equipmentItems = (equipment || []).map((item) => {
       // Pegar preço da cotação selecionada, se houver
       const quotationPrice = item.selected_quotation?.total_price || 0;
       const deliveryFee = item.selected_quotation?.delivery_fee || 0;
@@ -242,11 +242,11 @@ export async function POST(
           recipient: project.client_email,
         });
       }
-    } catch (error: any) {
-      emailError = error.message || 'Erro desconhecido';
+    } catch (error: unknown) {
+      emailError = error instanceof Error ? error.message : 'Erro desconhecido';
       logger.error('Exceção ao enviar email', {
         projectId,
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         stack: error.stack,
         errorObject: JSON.stringify(error, Object.getOwnPropertyNames(error)),
       });
@@ -300,14 +300,14 @@ export async function POST(
       recipient: project.client_email,
       totalValue: total,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('Erro ao enviar proposta', {
-      error: error.message,
+      error: error instanceof Error ? error.message : String(error),
       stack: error.stack,
       errorObject: JSON.stringify(error, Object.getOwnPropertyNames(error)),
     });
     return NextResponse.json(
-      { error: error.message || 'Erro interno do servidor' },
+      { error: error instanceof Error ? error.message : 'Erro interno do servidor' },
       { status: 500 }
     );
   }

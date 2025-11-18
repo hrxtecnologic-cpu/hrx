@@ -142,9 +142,9 @@ export function ManualProfessionalForm() {
       setCertifications({});
       setMapLatitude(undefined);
       setMapLongitude(undefined);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro:', error);
-      toast.error(error.message || 'Erro ao cadastrar profissional');
+      toast.error(error instanceof Error ? error.message : 'Erro ao cadastrar profissional');
     } finally {
       setIsSubmitting(false);
     }
@@ -436,7 +436,7 @@ export function ManualProfessionalForm() {
               <Label htmlFor="yearsOfExperience" className="text-sm font-medium text-zinc-200">
                 Anos de experiência
               </Label>
-              <Select onValueChange={(value) => setValue('yearsOfExperience', value as any)}>
+              <Select onValueChange={(value) => setValue('yearsOfExperience', value as 'availability.monday' | 'availability.tuesday' | 'availability.wednesday' | 'availability.thursday' | 'availability.friday' | 'availability.saturday' | 'availability.sunday')}>
                 <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white mt-1.5">
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
@@ -480,7 +480,7 @@ export function ManualProfessionalForm() {
               <div key={key} className="flex items-center space-x-3 p-3 bg-zinc-800/50 rounded-lg">
                 <Checkbox
                   checked={availability?.[key as keyof typeof availability] || false}
-                  onCheckedChange={(checked) => setValue(`availability.${key}` as any, checked as boolean)}
+                  onCheckedChange={(checked) => setValue(`availability.${key}` as 'availability.monday' | 'availability.tuesday' | 'availability.wednesday' | 'availability.thursday' | 'availability.friday' | 'availability.saturday' | 'availability.sunday', checked as boolean)}
                   className="border-zinc-700 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
                 />
                 <label className="text-sm text-zinc-200 flex-1 cursor-pointer">{label}</label>

@@ -89,7 +89,7 @@ export async function GET(req: NextRequest) {
         if (iterations > 0 && iterations % 5 === 0) {
           console.log(`[users/detailed] Progresso: ${allUsers.length} usuários carregados`);
         }
-      } catch (clerkError: any) {
+      } catch (clerkError: unknown) {
         console.error('[users/detailed] Erro ao buscar usuários do Clerk:', clerkError.message);
         // Se houver erro na API do Clerk, parar o loop
         hasMore = false;
@@ -232,7 +232,7 @@ export async function GET(req: NextRequest) {
         firstName: user.firstName,
         lastName: user.lastName,
         fullName: user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : null,
-        role: (user.publicMetadata as any)?.role || null,
+        role: (user.publicMetadata as Record<string, unknown>)?.role || null,
         clerkCreatedAt: user.createdAt,
 
         // Tipo de cadastro (professional/contractor/supplier)
@@ -281,9 +281,9 @@ export async function GET(req: NextRequest) {
       users: enrichedUsers,
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { error: 'Erro ao buscar usuários', details: error.message },
+      { error: 'Erro ao buscar usuários', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }
@@ -292,7 +292,7 @@ export async function GET(req: NextRequest) {
 /**
  * Determina o estado do usuário baseado nos dados disponíveis
  */
-function getUserState(clerkUser: any, professional: any, hasDocuments: boolean, hasOrphanDocuments: boolean): string {
+function getUserState(clerkUser: Record<string, unknown>, professional: Record<string, unknown>, hasDocuments: boolean, hasOrphanDocuments: boolean): string {
   // Se não tem perfil profissional
   if (!professional) {
     // Mas tem documentos no storage (órfãos)

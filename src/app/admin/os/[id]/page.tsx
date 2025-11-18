@@ -14,7 +14,6 @@ import {
   TrendingUp,
   AlertTriangle,
   Lightbulb,
-  FileText,
   Navigation,
   CheckCircle2,
   Circle,
@@ -108,7 +107,7 @@ export default async function ServiceOrderDetailsPage({
   const currentStatus = statusConfig[serviceOrder.status as keyof typeof statusConfig] || statusConfig.pending;
 
   const totalTasks = tasks?.length || 0;
-  const completedTasks = tasks?.filter((t: any) => t.status === 'completed').length || 0;
+  const completedTasks = tasks?.filter((t: Record<string, unknown>) => t.status === 'completed').length || 0;
   const totalProfessionals = professionals?.length || 0;
   const totalEquipment = equipment?.length || 0;
 
@@ -431,7 +430,7 @@ export default async function ServiceOrderDetailsPage({
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {professionals.map((member: any) => (
+                  {professionals.map((member: Record<string, unknown>) => (
                     <div
                       key={member.id}
                       className="border border-zinc-800 rounded-lg p-4 hover:border-purple-500/50 transition-colors bg-zinc-800/30"
@@ -482,7 +481,7 @@ export default async function ServiceOrderDetailsPage({
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {equipment.map((item: any) => (
+                  {equipment.map((item: Record<string, unknown>) => (
                     <div
                       key={item.id}
                       className="border border-zinc-800 rounded-lg p-4 hover:border-red-500/50 transition-colors bg-zinc-800/30"
@@ -535,7 +534,7 @@ export default async function ServiceOrderDetailsPage({
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {tasks.map((task: any, index: number) => (
+                  {tasks.map((task) => (
                     <div
                       key={task.id}
                       className="border border-zinc-800 rounded-lg p-3 hover:border-green-500/50 transition-colors bg-zinc-800/30"
@@ -593,7 +592,7 @@ export default async function ServiceOrderDetailsPage({
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {timeline.map((event: any, index: number) => (
+                  {timeline.map((event) => (
                     <div
                       key={event.id}
                       className="border border-zinc-800 rounded-lg p-3 hover:border-purple-500/50 transition-colors bg-zinc-800/30"

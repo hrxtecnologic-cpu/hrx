@@ -78,7 +78,7 @@ export default function NewLessonPage({ params }: NewLessonPageProps) {
     setSubmitting(true);
 
     try {
-      const payload: any = { ...data };
+      const payload: Record<string, unknown> = { ...data };
 
       // Add quiz data if content type is quiz
       if (data.content_type === 'quiz') {
@@ -128,7 +128,7 @@ export default function NewLessonPage({ params }: NewLessonPageProps) {
     setQuizQuestions(quizQuestions.filter((_, i) => i !== index));
   };
 
-  const updateQuestion = (index: number, field: keyof QuizQuestion, value: any) => {
+  const updateQuestion = (index: number, field: keyof QuizQuestion, value: string | number | string[]) => {
     const updated = [...quizQuestions];
     updated[index] = { ...updated[index], [field]: value };
     setQuizQuestions(updated);
@@ -196,7 +196,7 @@ export default function NewLessonPage({ params }: NewLessonPageProps) {
                       Tipo de Conteúdo *
                     </Label>
                     <Select
-                      onValueChange={(value: any) => setValue('content_type', value)}
+                      onValueChange={(value: string | number | boolean) => setValue('content_type', value)}
                       defaultValue="video"
                     >
                       <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
@@ -241,7 +241,7 @@ export default function NewLessonPage({ params }: NewLessonPageProps) {
                       Provedor do Vídeo *
                     </Label>
                     <Select
-                      onValueChange={(value: any) => setValue('video_provider', value)}
+                      onValueChange={(value: string | number | boolean) => setValue('video_provider', value)}
                       defaultValue="youtube"
                     >
                       <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">

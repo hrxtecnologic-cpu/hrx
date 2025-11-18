@@ -34,10 +34,10 @@ export const POST = withAdmin(
       }
 
       return NextResponse.json(result);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro ao enviar contrato:', error);
       return NextResponse.json(
-        { error: error.message || 'Erro interno do servidor' },
+        { error: error instanceof Error ? error.message : 'Erro interno do servidor' },
         { status: 500 }
       );
     }

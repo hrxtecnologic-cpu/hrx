@@ -31,7 +31,7 @@ type FormData = z.infer<typeof manualSupplierSchema>;
 
 export function ManualSupplierForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [catalogItems, setCatalogItems] = useState<any[]>([]);
+  const [catalogItems, setCatalogItems] = useState<Array<{ id: string; [key: string]: unknown }>>([]);
 
   const {
     register,
@@ -96,9 +96,9 @@ export function ManualSupplierForm() {
       toast.success('✅ Fornecedor cadastrado com sucesso!');
       reset();
       setCatalogItems([]);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro ao cadastrar fornecedor:', error);
-      toast.error(error.message || 'Erro ao cadastrar fornecedor');
+      toast.error(error instanceof Error ? error.message : 'Erro ao cadastrar fornecedor');
     } finally {
       setIsSubmitting(false);
     }

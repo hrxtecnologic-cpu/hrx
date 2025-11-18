@@ -140,7 +140,7 @@ export const GET = withAdmin(async (
     }
 
     // Formatar resposta
-    const formattedSuggestions: SuggestedProfessional[] = (suggestions || []).map((prof: any) => ({
+    const formattedSuggestions: SuggestedProfessional[] = (suggestions || []).map((prof) => ({
       id: prof.id,
       full_name: prof.full_name,
       email: prof.email,

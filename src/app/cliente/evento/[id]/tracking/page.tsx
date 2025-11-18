@@ -43,7 +43,7 @@ export default function EventTrackingPage() {
         const data = await response.json();
         setDeliveries(data.deliveries || []);
         setError(null);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Erro ao carregar entregas:', err);
         setError(err.message);
       } finally {

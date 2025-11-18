@@ -123,10 +123,10 @@ export const POST = withAdmin(async (userId: string, request: NextRequest) => {
         status: professional.status,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[manual-professional] Erro:', error);
     return NextResponse.json(
-      { error: 'Erro interno do servidor', details: error.message },
+      { error: 'Erro interno do servidor', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }

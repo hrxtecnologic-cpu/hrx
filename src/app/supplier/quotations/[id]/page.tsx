@@ -41,7 +41,7 @@ interface QuotationDetails {
   project_id: string;
   supplier_id: string;
   token: string;
-  requested_items: any[];
+  requested_items: Array<Record<string, unknown>>;
   status: 'pending' | 'submitted' | 'accepted' | 'rejected' | 'expired';
   total_price?: number;
   daily_rate?: number;
@@ -117,7 +117,7 @@ export default function SupplierQuotationPage() {
           setValue('delivery_details', data.quotation.delivery_details || '');
           setValue('notes', data.quotation.notes || '');
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Erro ao carregar cotação:', err);
         setError(err.message);
       } finally {
@@ -154,7 +154,7 @@ export default function SupplierQuotationPage() {
 
       alert('Cotação enviada com sucesso!');
       router.push('/supplier/dashboard');
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err.message);
     } finally {
       setSubmitting(false);
@@ -297,7 +297,7 @@ export default function SupplierQuotationPage() {
           <CardContent>
             {quotation.requested_items && quotation.requested_items.length > 0 ? (
               <div className="space-y-4">
-                {quotation.requested_items.map((item: any, index: number) => (
+                {quotation.requested_items.map((item, index: number) => (
                   <div key={index} className="p-4 bg-zinc-800 rounded-lg">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>

@@ -64,7 +64,7 @@ interface ProfessionalData {
   status: 'pending' | 'approved' | 'rejected';
   categories: string[];
   subcategories?: Record<string, string[]>;
-  documents?: any;
+  documents?: Record<string, unknown>;
   city?: string;
   state?: string;
   rejection_reason?: string;

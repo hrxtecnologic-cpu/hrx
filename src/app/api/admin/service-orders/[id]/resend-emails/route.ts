@@ -126,13 +126,13 @@ export async function POST(
         { status: 500 }
       );
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('Erro ao reenviar emails de OS', error);
 
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'Erro ao reenviar emails',
+        error: error instanceof Error ? error.message : 'Erro ao reenviar emails',
       },
       { status: 500 }
     );

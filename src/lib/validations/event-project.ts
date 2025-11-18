@@ -84,7 +84,13 @@ export const publicEventRequestSchema = z.discriminatedUnion('request_type', [
     contact_name: z.string().min(2, 'Nome do contato é obrigatório'),
     email: z.string().email('Email inválido'),
     phone: z.string().min(10, 'Telefone inválido'),
-    equipment_catalog: z.array(z.any()).min(1, 'Adicione pelo menos um item ao catálogo'),
+    equipment_catalog: z.array(z.object({
+      equipment_type: z.string(),
+      category: z.string(),
+      name: z.string(),
+      quantity: z.number(),
+      daily_rate: z.number().optional(),
+    })).min(1, 'Adicione pelo menos um item ao catálogo'),
     notes: z.string().optional(),
   }),
 ]);

@@ -47,7 +47,7 @@ interface UnifiedSupplier {
 
   // Equipment
   equipment_types: string[] | null;
-  equipment_catalog: any | null;
+  equipment_catalog: Array<Record<string, unknown>> | null;
 
   // Status
   status: 'active' | 'inactive';
@@ -113,7 +113,7 @@ export function UnifiedSuppliersView({ initialStats }: UnifiedSuppliersViewProps
       } else {
         throw new Error('Formato de resposta inválido');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('❌ Erro ao carregar fornecedores:', err);
       setError(err.message);
     } finally {
@@ -166,7 +166,7 @@ export function UnifiedSuppliersView({ initialStats }: UnifiedSuppliersViewProps
 
       alert('✅ Fornecedor deletado com sucesso!');
       loadSuppliers();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Erro ao deletar fornecedor:', err);
       alert(`❌ Erro: ${err.message}`);
     }

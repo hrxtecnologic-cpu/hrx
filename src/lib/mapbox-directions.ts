@@ -44,7 +44,7 @@ export interface DirectionsResult {
   /** Duração em horas (conveniência) */
   durationHours: number;
   /** Geometria da rota (GeoJSON) */
-  geometry?: any;
+  geometry?: GeoJSON.Geometry;
   /** Passos da rota (turn-by-turn) */
   steps?: RouteStep[];
   /** Coordenadas de origem e destino */
@@ -160,7 +160,7 @@ export async function getRoute(
 
     // Adicionar steps se solicitado
     if (steps && route.legs && route.legs[0].steps) {
-      result.steps = route.legs[0].steps.map((step: any) => ({
+      result.steps = route.legs[0].steps.map((step: { distance: number; duration: number; instruction: string }) => ({
         distance: step.distance,
         duration: step.duration,
         instruction: step.maneuver?.instruction || '',

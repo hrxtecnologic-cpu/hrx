@@ -48,7 +48,7 @@ interface SearchParams {
 }
 
 interface SearchResult {
-  professionals: any[];
+  professionals: Array<Record<string, unknown>>;
   total: number;
   page: number;
   limit: number;
@@ -195,7 +195,7 @@ async function searchProfessionals(params: SearchParams): Promise<SearchResult> 
   }
 
   // Categorias (JSONB array - filtrar no código ao invés de SQL)
-  const categoryFilteredProfessionals: any[] | null = null;
+  const categoryFilteredProfessionals: Array<Record<string, unknown>> | null = null;
 
   if (params.categories && params.categories.length > 0) {
     logger.debug('Categorias serão filtradas no código (não no SQL)', {
@@ -224,7 +224,7 @@ async function searchProfessionals(params: SearchParams): Promise<SearchResult> 
   }
 
   // ========== Busca por Proximidade Geográfica (OTIMIZADO) ==========
-  let professionalsByDistance: any[] | null = null;
+  let professionalsByDistance: Array<Record<string, unknown>> | null = null;
   let totalByDistance: number | null = null;
 
   if (params.latitude && params.longitude && params.radius) {

@@ -47,8 +47,8 @@ type FormData = z.infer<typeof manualClientSchema>;
 
 export function ManualClientForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [professionalItems, setProfessionalItems] = useState<any[]>([]);
-  const [equipmentItems, setEquipmentItems] = useState<any[]>([]);
+  const [professionalItems, setProfessionalItems] = useState<Array<{ id: string; [key: string]: unknown }>>([]);
+  const [equipmentItems, setEquipmentItems] = useState<Array<{ id: string; [key: string]: unknown }>>([]);
 
   const {
     register,
@@ -94,9 +94,9 @@ export function ManualClientForm() {
       reset();
       setProfessionalItems([]);
       setEquipmentItems([]);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro ao cadastrar:', error);
-      toast.error(error.message || 'Erro ao cadastrar cliente');
+      toast.error(error instanceof Error ? error.message : 'Erro ao cadastrar cliente');
     } finally {
       setIsSubmitting(false);
     }

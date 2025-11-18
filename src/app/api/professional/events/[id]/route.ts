@@ -106,7 +106,7 @@ export async function GET(
     }
 
     // Montar resposta
-    const project = (teamMember as any).event_projects;
+    const project = (teamMember as Record<string, unknown>).event_projects;
 
     return NextResponse.json({
       success: true,

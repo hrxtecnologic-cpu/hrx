@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { CheckCircle, XCircle, Clock, AlertCircle, ExternalLink, FileText, ZoomIn, ZoomOut, Maximize2, RotateCw } from 'lucide-react';
+import Image from 'next/image';
 import {
   Dialog,
   DialogContent,
@@ -422,16 +423,20 @@ export function DocumentValidation({
                         title={DOCUMENT_LABELS[documentType]}
                       />
                     ) : (
-                      <img
-                        src={documentUrl}
-                        alt={DOCUMENT_LABELS[documentType]}
-                        className="max-w-full h-auto transition-transform duration-300"
-                        style={{
-                          transform: `rotate(${rotation}deg) scale(${zoom / 100})`,
-                          transformOrigin: 'center',
-                          cursor: zoom > 100 ? 'move' : 'default'
-                        }}
-                      />
+                      <div className="relative inline-block">
+                        <Image
+                          src={documentUrl}
+                          alt={DOCUMENT_LABELS[documentType]}
+                          width={800}
+                          height={600}
+                          className="max-w-full h-auto transition-transform duration-300"
+                          style={{
+                            transform: `rotate(${rotation}deg) scale(${zoom / 100})`,
+                            transformOrigin: 'center',
+                            cursor: zoom > 100 ? 'move' : 'default'
+                          }}
+                        />
+                      </div>
                     )}
                   </div>
 

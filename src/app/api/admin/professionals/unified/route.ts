@@ -125,11 +125,11 @@ export async function GET(req: NextRequest) {
     const { data: professionals, error } = await supabase.rpc('get_unified_professionals_data');
 
     if (error) {
-      return NextResponse.json({ error: 'Erro ao buscar profissionais', details: error.message }, { status: 500 });
+      return NextResponse.json({ error: 'Erro ao buscar profissionais', details: error instanceof Error ? error.message : String(error) }, { status: 500 });
     }
 
     // Buscar dados do Clerk para todos os profissionais (em lote)
-    const clerkIds = professionals?.map((p: any) => p.clerk_id).filter(Boolean) || [];
+    const clerkIds = professionals?.map((p) => p.clerk_id).filter(Boolean) || [];
     const clerkDataMap = new Map();
 
     if (clerkIds.length > 0) {
@@ -146,7 +146,7 @@ export async function GET(req: NextRequest) {
           // Null check para segurança
           (usersData?.data || []).forEach(user => {
             clerkDataMap.set(user.id, {
-              role: (user.publicMetadata as any)?.role || null,
+              role: (user.publicMetadata as Record<string, unknown>)?.role || null,
               clerk_created_at: user.createdAt,
               email: user.emailAddresses[0]?.emailAddress || null,
             });
@@ -159,7 +159,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Enriquecer com dados do Clerk
-    const enrichedProfessionals: UnifiedProfessional[] = (professionals || []).map((prof: any) => {
+    const enrichedProfessionals: UnifiedProfessional[] = (professionals || []).map((prof) => {
       const clerkData = clerkDataMap.get(prof.clerk_id) || {};
 
       return {
@@ -230,9 +230,9 @@ export async function GET(req: NextRequest) {
       },
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { error: 'Erro ao buscar profissionais', details: error.message },
+      { error: 'Erro ao buscar profissionais', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }

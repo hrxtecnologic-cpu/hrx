@@ -84,7 +84,7 @@ export async function POST(req: Request) {
     }
 
     // Buscar candidatos
-    const candidates: any[] = [];
+    const candidates: Array<Record<string, unknown>> = [];
 
     // Profissionais
     if (type === 'professional' || type === 'both') {
@@ -159,7 +159,7 @@ export async function POST(req: Request) {
         matches: matchesWithCost,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
       { error: error?.message || 'Erro interno do servidor' },
       { status: 500 }

@@ -40,7 +40,7 @@ export interface SearchOptions {
   sortOrder?: 'asc' | 'desc';
 }
 
-export interface SearchResult<T = any> {
+export interface SearchResult<T = unknown> {
   professionals: T[];
   total: number;
   page: number;
@@ -49,7 +49,7 @@ export interface SearchResult<T = any> {
   hasMore: boolean;
 }
 
-export interface UseAdvancedSearchReturn<T = any> {
+export interface UseAdvancedSearchReturn<T = unknown> {
   // Estado
   results: T[];
   total: number;
@@ -89,7 +89,7 @@ const DEBOUNCE_DELAY = 500; // ms
 // useAdvancedSearch Hook
 // =====================================================
 
-export function useAdvancedSearch<T = any>(
+export function useAdvancedSearch<T = unknown>(
   initialFilters: SearchFilters = {},
   initialOptions: SearchOptions = DEFAULT_OPTIONS,
   autoSearch: boolean = false
@@ -171,7 +171,7 @@ export function useAdvancedSearch<T = any>(
           total: data.total,
           returned: data.professionals.length,
         });
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (err.name === 'AbortError') {
           logger.debug('Busca cancelada');
           return;
@@ -308,7 +308,7 @@ export interface UseProximitySearchOptions {
   defaultRadius?: number;
 }
 
-export function useProximitySearch<T = any>(
+export function useProximitySearch<T = unknown>(
   baseFilters: SearchFilters = {},
   searchOptions: SearchOptions = DEFAULT_OPTIONS,
   options: UseProximitySearchOptions = {}

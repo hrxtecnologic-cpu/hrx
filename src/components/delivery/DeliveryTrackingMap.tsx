@@ -23,6 +23,9 @@ interface DeliveryTrackingMapProps {
 }
 
 export function DeliveryTrackingMap({ deliveries: initialDeliveries }: DeliveryTrackingMapProps) {
+  // IMPORTANT: All hooks must be called before any conditional returns
+  const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+
   // 🔥 Usar Realtime ao invés de polling!
   const { deliveries, isConnected } = useRealtimeDeliveries(initialDeliveries);
 
@@ -32,16 +35,6 @@ export function DeliveryTrackingMap({ deliveries: initialDeliveries }: DeliveryT
     latitude: -23.5505,
     zoom: 12,
   });
-
-  const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-
-  if (!mapboxToken) {
-    return (
-      <div className="flex items-center justify-center h-96 bg-zinc-800 rounded-lg">
-        <p className="text-zinc-400">Mapbox não configurado</p>
-      </div>
-    );
-  }
 
   // Calcular centro do mapa baseado nas entregas
   useEffect(() => {
@@ -69,6 +62,15 @@ export function DeliveryTrackingMap({ deliveries: initialDeliveries }: DeliveryT
       zoom: 12,
     });
   }, [deliveries]);
+
+  // Check for Mapbox token after all hooks
+  if (!mapboxToken) {
+    return (
+      <div className="flex items-center justify-center h-96 bg-zinc-800 rounded-lg">
+        <p className="text-zinc-400">Mapbox não configurado</p>
+      </div>
+    );
+  }
 
   return (
     <div className="relative w-full h-[600px] rounded-lg overflow-hidden">

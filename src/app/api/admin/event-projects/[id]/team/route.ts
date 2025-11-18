@@ -155,9 +155,9 @@ export async function POST(
       success: true,
       teamMember,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('Erro ao adicionar membro à equipe', {
-      error: error.message,
+      error: error instanceof Error ? error.message : String(error),
       errorType: typeof error,
       errorString: String(error),
       stack: error.stack,
@@ -167,7 +167,7 @@ export async function POST(
     return NextResponse.json(
       {
         error: 'Erro interno do servidor',
-        message: error.message || String(error),
+        message: error instanceof Error ? error.message : String(error),
         details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
       },
       { status: 500 }
@@ -220,7 +220,7 @@ export async function DELETE(
 
     if (error) {
       logger.error('Erro ao remover membro da equipe', {
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         memberId,
         userId,
       });
@@ -234,8 +234,8 @@ export async function DELETE(
     });
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    logger.error('Erro ao remover membro', { error: error.message });
+  } catch (error: unknown) {
+    logger.error('Erro ao remover membro', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }

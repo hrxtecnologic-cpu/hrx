@@ -67,19 +67,19 @@ export async function POST(req: Request) {
         email: email_addresses[0]?.email_address || '',
         full_name: `${first_name || ''} ${last_name || ''}`.trim() || null,
         avatar_url: image_url || null,
-        user_type: (public_metadata as any)?.userType || null,
+        user_type: (public_metadata as Record<string, unknown>)?.userType || null,
         status: 'active',
       }).select();
 
       if (error) {
         return new Response(JSON.stringify({
           error: 'Erro no banco de dados',
-          details: error.message,
+          details: error instanceof Error ? error.message : String(error),
           code: error.code
         }), { status: 500, headers: { 'Content-Type': 'application/json' } });
       }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       return new Response(JSON.stringify({
         error: 'Erro ao criar usuário',
         message: error.message
@@ -98,7 +98,7 @@ export async function POST(req: Request) {
           email: email_addresses[0]?.email_address || '',
           full_name: `${first_name || ''} ${last_name || ''}`.trim() || null,
           avatar_url: image_url || null,
-          user_type: (public_metadata as any)?.userType || null,
+          user_type: (public_metadata as Record<string, unknown>)?.userType || null,
           updated_at: new Date().toISOString(),
         })
         .eq('clerk_id', id);
@@ -106,11 +106,11 @@ export async function POST(req: Request) {
       if (error) {
         return new Response(JSON.stringify({
           error: 'Erro atualizando usuário',
-          details: error.message
+          details: error instanceof Error ? error.message : String(error)
         }), { status: 500, headers: { 'Content-Type': 'application/json' } });
       }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       return new Response(JSON.stringify({
         error: 'Erro ao atualizar usuário',
         message: error.message
@@ -135,11 +135,11 @@ export async function POST(req: Request) {
       if (error) {
         return new Response(JSON.stringify({
           error: 'Erro ao deletar usuário',
-          details: error.message
+          details: error instanceof Error ? error.message : String(error)
         }), { status: 500, headers: { 'Content-Type': 'application/json' } });
       }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       return new Response(JSON.stringify({
         error: 'Erro ao deletar usuário',
         message: error.message

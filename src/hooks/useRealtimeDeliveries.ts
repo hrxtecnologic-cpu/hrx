@@ -19,7 +19,7 @@ interface DeliveryUpdate {
  * - Status da entrega muda
  * - Nova entrega é criada
  */
-export function useRealtimeDeliveries(initialDeliveries: any[]) {
+export function useRealtimeDeliveries(initialDeliveries: Array<{ id: string; status: string; [key: string]: unknown }>) {
   const [deliveries, setDeliveries] = useState(initialDeliveries);
   const [isConnected, setIsConnected] = useState(false);
 

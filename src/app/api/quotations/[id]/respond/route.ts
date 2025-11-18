@@ -103,8 +103,8 @@ export async function GET(
       generateQuoteFormPage(quotation, isExpired),
       { status: 200, headers: { 'Content-Type': 'text/html' } }
     );
-  } catch (error: any) {
-    logger.error('Erro ao processar formulário de cotação', { error: error.message });
+  } catch (error: unknown) {
+    logger.error('Erro ao processar formulário de cotação', { error: error instanceof Error ? error.message : String(error) });
     return new NextResponse(
       generateErrorPage('Erro', 'Ocorreu um erro ao carregar o formulário.'),
       { status: 500, headers: { 'Content-Type': 'text/html' } }
@@ -200,8 +200,8 @@ export async function POST(
       message: 'Cotação enviada com sucesso!',
       totalPrice: body.total_price,
     });
-  } catch (error: any) {
-    logger.error('Erro ao processar resposta de cotação', { error: error.message });
+  } catch (error: unknown) {
+    logger.error('Erro ao processar resposta de cotação', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }
@@ -241,7 +241,7 @@ function generateErrorPage(title: string, message: string): string {
   `;
 }
 
-function generateAlreadyRespondedPage(quotation: any): string {
+function generateAlreadyRespondedPage(quotation: Record<string, unknown>): string {
   return `
     <!DOCTYPE html>
     <html>
@@ -278,7 +278,7 @@ function generateAlreadyRespondedPage(quotation: any): string {
   `;
 }
 
-function generateQuoteFormPage(quotation: any, isExpired: boolean): string {
+function generateQuoteFormPage(quotation: Record<string, unknown>, isExpired: boolean): string {
   const deadline = new Date(quotation.deadline);
   const deadlineFormatted = deadline.toLocaleDateString('pt-BR', {
     day: '2-digit',

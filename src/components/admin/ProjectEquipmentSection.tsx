@@ -138,7 +138,7 @@ export function ProjectEquipmentSection({
   // Seleção de fornecedor e equipamentos
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
   const [selectedEquipmentIds, setSelectedEquipmentIds] = useState<string[]>([]);
-  const [supplierEquipment, setSupplierEquipment] = useState<any[]>([]);
+  const [supplierEquipment, setSupplierEquipment] = useState<Array<{ id: string; [key: string]: unknown }>>([]);
   const [equipmentPrices, setEquipmentPrices] = useState<{ [key: string]: { quantity: number; daily_rate: number; days: number; details?: string } }>({});
   const [showAddEquipmentModal, setShowAddEquipmentModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -310,7 +310,7 @@ export function ProjectEquipmentSection({
 
         if (!response.ok) {
           const error = await response.json();
-          throw new Error(error.message || 'Erro ao adicionar equipamento');
+          throw new Error(error instanceof Error ? error.message : 'Erro ao adicionar equipamento');
         }
       }
 
@@ -322,8 +322,8 @@ export function ProjectEquipmentSection({
       setEquipmentPrices({});
 
       setTimeout(() => window.location.reload(), 500);
-    } catch (error: any) {
-      toast.error(error.message || 'Erro ao adicionar equipamentos');
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Erro ao adicionar equipamentos');
     } finally {
       setAddingEquipment(null);
     }
@@ -367,9 +367,9 @@ export function ProjectEquipmentSection({
       toast.success(`Cotação enviada para ${result.supplierEmail}!`);
 
       setTimeout(() => window.location.reload(), 1500);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro completo:', error);
-      toast.error(error.message || 'Erro ao enviar cotação');
+      toast.error(error instanceof Error ? error.message : 'Erro ao enviar cotação');
       throw error; // Re-throw para o handleSendAllQuotes capturar
     }
   };
@@ -860,7 +860,7 @@ export function ProjectEquipmentSection({
 
                 <div className="space-y-2 max-h-96 overflow-y-auto">
                   {supplierEquipment
-                    .filter((equip: any) => {
+                    .filter((equip: Record<string, unknown>) => {
                       if (selectedCategory === 'all') return true;
 
                       // equip.name é um equipment_type (subcategoria)
@@ -869,7 +869,7 @@ export function ProjectEquipmentSection({
                       const filteredTypes = getEquipmentTypesByCategory(equipmentTypes, selectedCategory);
                       return filteredTypes.includes(equip.name);
                     })
-                    .map((equip: any) => {
+                    .map((equip: Record<string, unknown>) => {
                     const isSelected = selectedEquipmentIds.includes(equip.id);
                     const prices = equipmentPrices[equip.id];
 

@@ -64,7 +64,6 @@ export default function NovoCursoPage() {
   });
 
   const isFree = watch('is_free');
-  const difficulty = watch('difficulty_level');
 
   const generateSlug = (title: string) => {
     return title
@@ -266,7 +265,7 @@ export default function NovoCursoPage() {
                         Nível de Dificuldade <span className="text-red-500">*</span>
                       </Label>
                       <Select
-                        onValueChange={(value: any) => setValue('difficulty_level', value)}
+                        onValueChange={(value: string | number | boolean) => setValue('difficulty_level', value)}
                         defaultValue="beginner"
                       >
                         <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white h-11">

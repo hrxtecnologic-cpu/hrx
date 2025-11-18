@@ -144,7 +144,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Processar manualmente
-    const processed: UnifiedServiceOrder[] = (rawOrders || []).map((order: any) => {
+    const processed: UnifiedServiceOrder[] = (rawOrders || []).map((order: Record<string, unknown>) => {
       const tasks = order.tasks || [];
       const logs = order.logs || [];
 
@@ -153,7 +153,7 @@ export async function GET(request: NextRequest) {
       const supplierAssignments = order.supplier_assignments || [];
 
       // Contar emails enviados (filtrar logs de email_sent)
-      const emailLogs = logs.filter((log: any) => log.action_type === 'email_sent');
+      const emailLogs = logs.filter((log: Record<string, unknown>) => log.action_type === 'email_sent');
 
       // Último log
       const lastLog = logs.length > 0 ? logs[0] : null;
@@ -191,7 +191,7 @@ export async function GET(request: NextRequest) {
         completed_at: order.completed_at,
 
         total_tasks: tasks.length,
-        completed_tasks: tasks.filter((t: any) => t.status === 'completed').length,
+        completed_tasks: tasks.filter((t: Record<string, unknown>) => t.status === 'completed').length,
         total_professionals: teamAssignments.length,
         total_suppliers: supplierAssignments.length,
         total_emails_sent: emailLogs.length,
@@ -214,13 +214,13 @@ export async function GET(request: NextRequest) {
         duration_seconds: parseFloat(duration),
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('❌ Erro ao buscar service orders', error);
 
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'Erro ao buscar service orders',
+        error: error instanceof Error ? error.message : 'Erro ao buscar service orders',
       },
       { status: 500 }
     );

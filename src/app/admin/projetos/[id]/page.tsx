@@ -491,7 +491,7 @@ export default async function ProjetoDetailPage({
                             Profissionais ({project.professionals_needed.length})
                           </h4>
                           <div className="space-y-2">
-                            {project.professionals_needed.map((prof: any, index: number) => (
+                            {project.professionals_needed.map((prof, index: number) => (
                               <div key={index} className="flex items-start gap-3 p-3 bg-zinc-800/50 rounded-md border border-zinc-700/50">
                                 <div className="flex-shrink-0 w-8 h-8 bg-red-600/20 rounded-full flex items-center justify-center border border-red-600/30">
                                   <span className="text-xs font-bold text-red-500">{index + 1}</span>
@@ -527,7 +527,7 @@ export default async function ProjetoDetailPage({
                             Equipamentos ({project.equipment_needed.length})
                           </h4>
                           <div className="space-y-2">
-                            {project.equipment_needed.map((equip: any, index: number) => (
+                            {project.equipment_needed.map((equip, index: number) => (
                               <div key={index} className="flex items-start gap-3 p-3 bg-zinc-800/50 rounded-md border border-zinc-700/50">
                                 <div className="flex-shrink-0 w-8 h-8 bg-blue-600/20 rounded-full flex items-center justify-center border border-blue-600/30">
                                   <span className="text-xs font-bold text-blue-500">{index + 1}</span>
@@ -591,7 +591,7 @@ export default async function ProjetoDetailPage({
             <ProjectQuotationsSection
               projectId={id}
               projectName={project.event_name}
-              equipmentItems={(equipment || []).map((item: any) => ({
+              equipmentItems={(equipment || []).map((item: Record<string, unknown>) => ({
                 name: item.name,
                 category: item.category || '',
                 quantity: item.quantity || 1,

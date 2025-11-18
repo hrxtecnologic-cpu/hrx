@@ -19,7 +19,7 @@ interface CacheEntry<T> {
 }
 
 interface CacheStore {
-  [key: string]: CacheEntry<any>;
+  [key: string]: CacheEntry<unknown>;
 }
 
 export interface CacheConfig {

@@ -106,7 +106,7 @@ export async function POST(req: NextRequest) {
     // Buscar estatísticas de orçamentos para TODOS os fornecedores de uma vez (otimização N+1)
     const supplierIds = (suppliers || []).map(s => s.id);
 
-    let quotationsBySupplier: Record<string, any[]> = {};
+    let quotationsBySupplier: Record<string, Array<Record<string, unknown>>> = {};
 
     if (supplierIds.length > 0) {
       const { data: allQuotations } = await supabase
@@ -122,7 +122,7 @@ export async function POST(req: NextRequest) {
         }
         acc[supplierId].push(quotation);
         return acc;
-      }, {} as Record<string, any[]>);
+      }, {} as Record<string, Array<Record<string, unknown>>>);
     }
 
     // Calcular stats para cada fornecedor usando os dados já carregados

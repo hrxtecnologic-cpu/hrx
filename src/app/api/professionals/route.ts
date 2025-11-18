@@ -82,7 +82,7 @@ export async function POST(req: Request) {
     const validatedData = professionalSchema.parse(formData);
 
     // Buscar ou criar o user_id no Supabase baseado no clerk_id
-    let { data: userData, error: userError } = await supabase
+    const { data: userData, error: userError } = await supabase
       .from('users')
       .select('id')
       .eq('clerk_id', userId)

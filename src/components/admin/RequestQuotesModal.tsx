@@ -118,9 +118,9 @@ export function RequestQuotesModal({
 
       // Reload da página para mostrar orçamentos solicitados
       setTimeout(() => window.location.reload(), 1000);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro ao solicitar orçamentos:', error);
-      toast.error(error.message || 'Erro ao solicitar orçamentos');
+      toast.error(error instanceof Error ? error.message : 'Erro ao solicitar orçamentos');
     } finally {
       setSubmitting(false);
     }

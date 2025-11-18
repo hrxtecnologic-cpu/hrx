@@ -136,8 +136,8 @@ export async function POST(
     // Enviar email para fornecedor aceito
     try {
       const acceptedEmailResult = await sendQuoteAcceptedEmail({
-        supplierName: (quotation as any).supplier?.contact_name || (quotation as any).supplier?.company_name || 'Fornecedor',
-        supplierEmail: (quotation as any).supplier?.email || '',
+        supplierName: (quotation as Record<string, unknown>).supplier?.contact_name || (quotation as Record<string, unknown>).supplier?.company_name || 'Fornecedor',
+        supplierEmail: (quotation as Record<string, unknown>).supplier?.email || '',
         quoteRequestId: project.project_number,
         clientName: 'HRX Eventos',
         eventDate: new Date().toISOString(), // Buscar do projeto se necessário
@@ -148,7 +148,7 @@ export async function POST(
         logger.info('Email de aceite enviado', {
           emailId: acceptedEmailResult.emailId,
           quotationId,
-          supplierEmail: (quotation as any).supplier?.email,
+          supplierEmail: (quotation as Record<string, unknown>).supplier?.email,
         });
       }
     } catch (emailError) {
@@ -174,10 +174,10 @@ export async function POST(
     if (rejectedQuotations && rejectedQuotations.length > 0) {
       for (const rejected of rejectedQuotations) {
         try {
-          if ((rejected as any).supplier?.email) {
+          if ((rejected as Record<string, unknown>).supplier?.email) {
             const rejectedEmailResult = await sendQuoteRejectedEmail({
-              supplierName: (rejected as any).supplier?.contact_name || (rejected as any).supplier?.company_name || 'Fornecedor',
-              supplierEmail: (rejected as any).supplier.email,
+              supplierName: (rejected as Record<string, unknown>).supplier?.contact_name || (rejected as Record<string, unknown>).supplier?.company_name || 'Fornecedor',
+              supplierEmail: (rejected as Record<string, unknown>).supplier.email,
               quoteRequestId: project.project_number,
               clientName: 'HRX Eventos',
               reason: 'Selecionamos outro fornecedor para este projeto',
@@ -187,7 +187,7 @@ export async function POST(
               logger.info('Email de rejeição enviado', {
                 emailId: rejectedEmailResult.emailId,
                 quotationId: rejected.id,
-                supplierEmail: (rejected as any).supplier.email,
+                supplierEmail: (rejected as Record<string, unknown>).supplier.email,
               });
             }
           }
@@ -212,7 +212,7 @@ export async function POST(
         rejected: rejectedQuotations?.length || 0,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
       { error: error?.message || 'Erro interno do servidor' },
       { status: 500 }

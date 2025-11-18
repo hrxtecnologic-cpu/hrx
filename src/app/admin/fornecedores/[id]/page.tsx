@@ -17,7 +17,6 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { ImageViewer } from '@/components/ImageViewer';
 
 export default async function FornecedorDetalhesPage({
@@ -40,7 +39,7 @@ export default async function FornecedorDetalhesPage({
   }
 
   const totalEquipamentos = supplier.equipment_catalog?.length || 0;
-  const equipamentosComFoto = supplier.equipment_catalog?.filter((item: any) => item.photos && item.photos.length > 0).length || 0;
+  const equipamentosComFoto = supplier.equipment_catalog?.filter((item: Record<string, unknown>) => item.photos && item.photos.length > 0).length || 0;
 
   return (
     <div className="space-y-6 pb-8">
@@ -261,7 +260,7 @@ export default async function FornecedorDetalhesPage({
             <CardContent>
               {supplier.equipment_catalog && supplier.equipment_catalog.length > 0 ? (
                 <div className="grid gap-4">
-                  {supplier.equipment_catalog.map((item: any, index: number) => (
+                  {supplier.equipment_catalog.map((item, index: number) => (
                     <div
                       key={index}
                       className="border border-zinc-800 rounded-lg p-4 hover:border-purple-500/50 transition-colors bg-zinc-800/30"
@@ -339,7 +338,7 @@ export default async function FornecedorDetalhesPage({
                             <div className="mt-3 pt-3 border-t border-zinc-700">
                               <p className="text-xs text-zinc-500 mb-2 font-medium">📋 Especificações Técnicas:</p>
                               <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                                {Object.entries(item.specifications).map(([key, value]: [string, any]) => (
+                                {Object.entries(item.specifications).map(([key, value]: [string, unknown]) => (
                                   <div key={key} className="text-xs">
                                     <span className="text-zinc-500">{key}:</span>{' '}
                                     <span className="text-white font-medium">{value}</span>

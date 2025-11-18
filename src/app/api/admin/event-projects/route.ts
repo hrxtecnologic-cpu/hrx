@@ -107,19 +107,19 @@ export const GET = withAdmin(async (userId: string, req: Request) => {
 
 
     if (error) {
-      logger.error('Erro ao buscar projetos', error as any, { userId });
+      logger.error('Erro ao buscar projetos', error as Error, { userId });
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     // Calcular contadores a partir da DEMANDA DO CLIENTE (professionals_needed e equipment_needed)
-    const projectsWithCounts = (data || []).map((project: any) => {
+    const projectsWithCounts = (data || []).map((project: Record<string, unknown>) => {
       // professionals_needed é array de objetos com 'quantity'
       const professionalsNeeded = Array.isArray(project.professionals_needed)
         ? project.professionals_needed
         : [];
 
       // Somar quantity de cada profissional solicitado
-      const team_count = professionalsNeeded.reduce((sum: number, prof: any) => {
+      const team_count = professionalsNeeded.reduce((sum: number, prof: Record<string, unknown>) => {
         return sum + (prof.quantity || 0);
       }, 0);
 
@@ -129,7 +129,7 @@ export const GET = withAdmin(async (userId: string, req: Request) => {
         : [];
 
       // Somar quantity de cada equipamento solicitado
-      const equipment_count = equipmentNeeded.reduce((sum: number, equip: any) => {
+      const equipment_count = equipmentNeeded.reduce((sum: number, equip: Record<string, unknown>) => {
         return sum + (equip.quantity || 0);
       }, 0);
 
@@ -152,7 +152,7 @@ export const GET = withAdmin(async (userId: string, req: Request) => {
       limit,
       offset,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('Erro ao listar projetos', error);
     return NextResponse.json(
       { error: error?.message || 'Erro interno do servidor' },
@@ -239,7 +239,7 @@ export const POST = withAdmin(async (userId: string, req: Request) => {
       .single();
 
     if (projectError) {
-      logger.error('Erro ao criar projeto', projectError as any, { userId });
+      logger.error('Erro ao criar projeto', projectError as Error, { userId });
       return NextResponse.json({ error: projectError.message }, { status: 500 });
     }
 
@@ -271,7 +271,7 @@ export const POST = withAdmin(async (userId: string, req: Request) => {
         .insert(teamMembers);
 
       if (teamError) {
-        logger.error('Erro ao criar equipe do projeto', teamError as any, {
+        logger.error('Erro ao criar equipe do projeto', teamError as Error, {
           projectId: project.id,
         });
       } else {
@@ -303,7 +303,7 @@ export const POST = withAdmin(async (userId: string, req: Request) => {
         .insert(equipment);
 
       if (equipmentError) {
-        logger.error('Erro ao criar equipamentos do projeto', equipmentError as any, {
+        logger.error('Erro ao criar equipamentos do projeto', equipmentError as Error, {
           projectId: project.id,
         });
       } else {
@@ -335,7 +335,7 @@ export const POST = withAdmin(async (userId: string, req: Request) => {
         });
 
         logger.info('Email urgente enviado ao admin', { projectId: project.id });
-      } catch (emailError: any) {
+      } catch (emailError: unknown) {
         logger.error('Erro ao enviar email urgente', emailError, {
           projectId: project.id,
         });
@@ -350,7 +350,7 @@ export const POST = withAdmin(async (userId: string, req: Request) => {
       },
       { status: 201 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('Erro ao criar projeto', error);
     return NextResponse.json(
       { error: error?.message || 'Erro interno do servidor' },

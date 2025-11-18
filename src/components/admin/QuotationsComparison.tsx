@@ -98,9 +98,9 @@ export function QuotationsComparison({ projectId }: QuotationsComparisonProps) {
       }
 
       setRefreshTrigger(prev => prev + 1);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro ao aceitar orçamento:', error);
-      toast.error(error.message || 'Erro ao aceitar orçamento');
+      toast.error(error instanceof Error ? error.message : 'Erro ao aceitar orçamento');
     } finally {
       setAccepting(null);
     }

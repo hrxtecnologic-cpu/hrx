@@ -83,7 +83,7 @@ export async function GET(
       success: true,
       project,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
       { error: error?.message || 'Erro interno do servidor' },
       { status: 500 }
@@ -138,7 +138,7 @@ export async function PATCH(
     }
 
     // Preparar dados de atualização
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
 
     // Dados do cliente
     if (body.client_name !== undefined) updateData.client_name = body.client_name;
@@ -187,7 +187,7 @@ export async function PATCH(
       message: 'Projeto atualizado com sucesso',
       project: updatedProject,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
       { error: error?.message || 'Erro interno do servidor' },
       { status: 500 }

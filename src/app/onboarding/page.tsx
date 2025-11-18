@@ -147,7 +147,7 @@ export default function OnboardingPage() {
       });
 
       if (!response.ok) {
-        let errorData: any = {};
+        let errorData: Record<string, unknown> = {};
         try {
           errorData = await response.json();
         } catch (e) {

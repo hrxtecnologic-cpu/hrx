@@ -11,7 +11,7 @@ import { isAdmin } from '@/lib/auth';
  *   return NextResponse.json({ message: 'Admin only' });
  * });
  */
-export function withAdmin<T extends any[] = []>(
+export function withAdmin<T extends unknown[] = []>(
   handler: (userId: string, req: Request, ...args: T) => Promise<Response>
 ) {
   return async (req: Request, ...args: T): Promise<Response> => {
@@ -35,9 +35,9 @@ export function withAdmin<T extends any[] = []>(
       }
 
       return await handler(userId, req, ...args);
-    } catch (error: any) {
+    } catch (error: unknown) {
       return NextResponse.json(
-        { error: error?.message || 'Erro de autenticação' },
+        { error: error instanceof Error ? error.message : 'Erro de autenticação' },
         { status: 500 }
       );
     }

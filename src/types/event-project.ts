@@ -9,6 +9,24 @@
 // ENUMS E CONSTANTES
 // =====================================================
 
+// Equipment specifications - flexible structure for different equipment types
+export interface EquipmentSpecifications {
+  [key: string]: string | number | boolean | string[] | number[] | null | undefined;
+}
+
+// Requested items structure for quotations
+export interface RequestedEquipmentItem {
+  equipment_id: string;
+  equipment_type: string;
+  category: string;
+  subcategory?: string;
+  name: string;
+  description?: string;
+  quantity: number;
+  duration_days: number;
+  specifications?: EquipmentSpecifications;
+}
+
 export type ProfitMargin = 35.00 | 80.00;
 
 export type ProjectStatus =
@@ -204,7 +222,7 @@ export interface ProjectEquipment {
   total_cost?: number | null;
 
   // Especificações
-  specifications: Record<string, any>;
+  specifications: EquipmentSpecifications;
 
   // Status
   status: EquipmentStatus;
@@ -232,7 +250,7 @@ export interface SupplierQuotation {
   token: string;
 
   // Items solicitados (JSONB array)
-  requested_items: any[]; // Array de equipamentos solicitados
+  requested_items: RequestedEquipmentItem[];
 
   // Valores
   total_price?: number | null;

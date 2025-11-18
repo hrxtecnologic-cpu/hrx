@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { Plus, Trash2, Edit2, Check, X, Loader2, Upload, Image as ImageIcon } from 'lucide-react';
+import Image from 'next/image';
 import { useCategories, convertToWizardFormat } from '@/hooks/useCategories';
 import { toast } from 'sonner';
 
@@ -102,9 +103,9 @@ export function SimpleCatalogItemsManager({ items, onChange }: SimpleCatalogItem
       });
 
       toast.success(`${urls.length} foto(s) enviada(s) com sucesso`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro ao fazer upload:', error);
-      toast.error(error.message || 'Erro ao fazer upload das fotos');
+      toast.error(error instanceof Error ? error.message : 'Erro ao fazer upload das fotos');
     } finally {
       setUploadingPhoto(false);
       // Limpar input
@@ -272,12 +273,14 @@ export function SimpleCatalogItemsManager({ items, onChange }: SimpleCatalogItem
                     </p>
                     <div className="grid grid-cols-2 gap-2">
                       {item.photos.map((url, idx) => (
-                        <img
-                          key={idx}
-                          src={url}
-                          alt={`Foto ${idx + 1} - ${item.name}`}
-                          className="w-full h-24 object-cover rounded border border-zinc-600"
-                        />
+                        <div key={idx} className="relative w-full h-24">
+                          <Image
+                            src={url}
+                            alt={`Foto ${idx + 1} - ${item.name}`}
+                            fill
+                            className="object-cover rounded border border-zinc-600"
+                          />
+                        </div>
                       ))}
                     </div>
                   </div>
@@ -516,18 +519,19 @@ export function SimpleCatalogItemsManager({ items, onChange }: SimpleCatalogItem
               {currentItem.photos && currentItem.photos.length > 0 && (
                 <div className="grid grid-cols-2 gap-2 mb-3">
                   {currentItem.photos.map((url, idx) => (
-                    <div key={idx} className="relative group">
-                      <img
+                    <div key={idx} className="relative group h-32">
+                      <Image
                         src={url}
                         alt={`Foto ${idx + 1}`}
-                        className="w-full h-32 object-cover rounded border border-zinc-700"
+                        fill
+                        className="object-cover rounded border border-zinc-700"
                       />
                       <Button
                         type="button"
                         size="sm"
                         variant="ghost"
                         onClick={() => handleRemovePhoto(idx)}
-                        className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white p-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white p-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity z-10"
                       >
                         <X className="h-4 w-4" />
                       </Button>

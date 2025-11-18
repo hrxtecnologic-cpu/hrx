@@ -63,10 +63,10 @@ export async function GET(
     }
 
     // 1. Validar JWT token
-    let decoded: any;
+    let decoded: Record<string, unknown>;
     try {
       decoded = jwt.verify(token, JWT_SECRET);
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error.name === 'TokenExpiredError') {
         return createErrorPage('Link Expirado', 'Este link de assinatura expirou. Solicite um novo contrato.');
       }
@@ -108,7 +108,7 @@ export async function GET(
 
     // Mostrar página de confirmação de assinatura
     return createSignaturePage(contract, token);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Erro ao processar assinatura:', error);
     return createErrorPage('Erro', 'Ocorreu um erro ao processar sua solicitação');
   }
@@ -147,10 +147,10 @@ export async function POST(
     }
 
     // 1. Validar JWT token
-    let decoded: any;
+    let decoded: Record<string, unknown>;
     try {
       decoded = jwt.verify(token, JWT_SECRET);
-    } catch (error: any) {
+    } catch (error: unknown) {
       return NextResponse.json({ error: 'Token inválido ou expirado' }, { status: 401 });
     }
 
@@ -275,7 +275,7 @@ export async function POST(
             error: osResult.message,
           });
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         const { logger } = await import('@/lib/logger');
         logger.error('Exceção ao gerar OS automaticamente', error);
       }
@@ -286,10 +286,10 @@ export async function POST(
       message: 'Contrato assinado com sucesso',
       signatureHash,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Erro ao assinar contrato:', error);
     return NextResponse.json(
-      { error: error.message || 'Erro interno do servidor' },
+      { error: error instanceof Error ? error.message : 'Erro interno do servidor' },
       { status: 500 }
     );
   }
@@ -354,7 +354,7 @@ function createErrorPage(title: string, message: string) {
   );
 }
 
-function createSignaturePage(contract: any, token: string) {
+function createSignaturePage(contract: Record<string, unknown>, token: string) {
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -386,7 +386,7 @@ function createSignaturePage(contract: any, token: string) {
           </tr>
         </thead>
         <tbody>
-          ${teamMembers.map((member: any) => `
+          ${teamMembers.map((member) => `
             <tr>
               <td>${member.category}</td>
               <td>${member.quantity} profissional(is)</td>
@@ -411,7 +411,7 @@ function createSignaturePage(contract: any, token: string) {
           </tr>
         </thead>
         <tbody>
-          ${equipment.map((item: any) => `
+          ${equipment.map((item) => `
             <tr>
               <td>${item.name}</td>
               <td>${item.quantity} unidade(s)</td>
@@ -767,7 +767,7 @@ function createSignaturePage(contract: any, token: string) {
   );
 }
 
-function createSuccessPage(contract: any, alreadySigned: boolean) {
+function createSuccessPage(contract: Record<string, unknown>, alreadySigned: boolean) {
   return new NextResponse(
     `<!DOCTYPE html>
     <html>

@@ -87,11 +87,11 @@ export function MapboxAutocomplete({
       const data = await response.json();
 
       if (data.features && data.features.length > 0) {
-        const parsed = data.features.map((feature: any) => {
+        const parsed = data.features.map((feature) => {
           // Extrair componentes do endereço
           const context = feature.context || [];
-          const cityContext = context.find((c: any) => c.id.startsWith('place'));
-          const stateContext = context.find((c: any) => c.id.startsWith('region'));
+          const cityContext = context.find((c) => c.id.startsWith('place'));
+          const stateContext = context.find((c) => c.id.startsWith('region'));
 
           return {
             id: feature.id,

@@ -65,7 +65,7 @@ export const POST = withAdmin(async (userId: string, request: NextRequest) => {
 
     // Extrair tipos de equipamento do catálogo
     const equipment_types = equipment_catalog
-      ? [...new Set(equipment_catalog.map((item: any) => item.category))]
+      ? [...new Set(equipment_catalog.map((item) => item.category))]
       : [];
 
     // Inserir fornecedor
@@ -115,10 +115,10 @@ export const POST = withAdmin(async (userId: string, request: NextRequest) => {
         status: supplier.status,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[manual-supplier] Erro:', error);
     return NextResponse.json(
-      { error: 'Erro interno do servidor', details: error.message },
+      { error: 'Erro interno do servidor', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }

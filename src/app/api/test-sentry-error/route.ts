@@ -21,7 +21,7 @@ export async function GET() {
     });
 
     // Agora vamos causar um erro de verdade
-    // @ts-ignore
+    // @ts-expect-error - Intentionally calling undefined function to test Sentry
     const resultado = funcaoQueNaoExiste();
 
     return NextResponse.json({

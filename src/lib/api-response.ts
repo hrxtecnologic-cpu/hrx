@@ -278,7 +278,7 @@ export function handleError(
   if (error instanceof Error) {
     // Erros conhecidos do Supabase/PostgreSQL
     if ('code' in error) {
-      const pgError = error as any;
+      const pgError = error as { code?: string; detail?: string; message?: string };
 
       // Violação de constraint único
       if (pgError.code === '23505') {
@@ -296,7 +296,7 @@ export function handleError(
       }
     }
 
-    return internalErrorResponse(error.message || defaultMessage);
+    return internalErrorResponse(error instanceof Error ? error.message : defaultMessage);
   }
 
   return internalErrorResponse(defaultMessage);

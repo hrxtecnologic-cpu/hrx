@@ -19,7 +19,7 @@ interface ProfessionalHistoryProps {
   professionalId: string;
 }
 
-const ACTION_ICONS: Record<string, any> = {
+const ACTION_ICONS: Record<string, unknown> = {
   created: UserPlus,
   updated: Edit,
   approved: CheckCircle,

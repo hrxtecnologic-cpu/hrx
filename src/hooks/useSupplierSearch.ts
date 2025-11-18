@@ -23,7 +23,7 @@ export interface SupplierSearchOptions {
   limit?: number;
 }
 
-export interface SupplierSearchResult<T = any> {
+export interface SupplierSearchResult<T = unknown> {
   suppliers: T[];
   total: number;
   page: number;
@@ -32,7 +32,7 @@ export interface SupplierSearchResult<T = any> {
   hasMore: boolean;
 }
 
-export interface UseSupplierSearchReturn<T = any> {
+export interface UseSupplierSearchReturn<T = unknown> {
   // Estado
   results: T[];
   total: number;
@@ -68,7 +68,7 @@ const DEFAULT_OPTIONS: SupplierSearchOptions = {
 // useSupplierSearch Hook
 // =====================================================
 
-export function useSupplierSearch<T = any>(
+export function useSupplierSearch<T = unknown>(
   initialFilters: SupplierSearchFilters = {},
   initialOptions: SupplierSearchOptions = DEFAULT_OPTIONS
 ): UseSupplierSearchReturn<T> {

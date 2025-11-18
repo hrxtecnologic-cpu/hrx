@@ -10,7 +10,7 @@ import { NextResponse } from 'next/server';
  *   return NextResponse.json({ userId });
  * });
  */
-export function withAuth<T extends any[] = []>(
+export function withAuth<T extends unknown[] = []>(
   handler: (userId: string, req: Request, ...args: T) => Promise<Response>
 ) {
   return async (req: Request, ...args: T): Promise<Response> => {
@@ -25,7 +25,7 @@ export function withAuth<T extends any[] = []>(
       }
 
       return await handler(userId, req, ...args);
-    } catch (error: any) {
+    } catch (error: unknown) {
       return NextResponse.json(
         { error: error?.message || 'Erro de autenticação' },
         { status: 500 }

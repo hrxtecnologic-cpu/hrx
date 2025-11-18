@@ -49,7 +49,7 @@ export const GET = withAuth(async (userId: string, req: Request) => {
     if (error) throw error;
 
     // Agrupar por tipo de documento (pegar apenas a última versão)
-    const latestValidations = validations?.reduce((acc: any, val: any) => {
+    const latestValidations = validations?.reduce((acc: Record<string, unknown>, val: Record<string, unknown>) => {
       if (!acc[val.document_type] || val.version > acc[val.document_type].version) {
         acc[val.document_type] = val;
       }

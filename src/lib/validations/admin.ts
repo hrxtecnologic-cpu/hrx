@@ -67,7 +67,7 @@ export const createEquipmentSchema = z.object({
   description: z.string().max(1000).optional().nullable(),
   quantity: z.number().int().min(1, 'Quantidade mínima é 1'),
   duration_days: z.number().int().min(1, 'Duração mínima é 1 dia'),
-  specifications: z.record(z.any()).optional(),
+  specifications: z.record(z.union([z.string(), z.number(), z.boolean(), z.array(z.string()), z.array(z.number())])).optional(),
 });
 
 export const updateEquipmentSchema = z.object({
@@ -78,7 +78,7 @@ export const updateEquipmentSchema = z.object({
   daily_rate: z.number().min(0).optional(),
   status: z.enum(['pending', 'quoted', 'confirmed', 'cancelled']).optional(),
   selected_supplier_id: z.string().uuid().optional().nullable(),
-  specifications: z.record(z.any()).optional(),
+  specifications: z.record(z.union([z.string(), z.number(), z.boolean(), z.array(z.string()), z.array(z.number())])).optional(),
 });
 
 // ========== Send Proposal ==========

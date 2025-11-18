@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import Image from 'next/image';
 import { formatFileSize } from '@/lib/supabase/storage';
 
 interface DocumentUploadProps {
@@ -86,10 +87,11 @@ export function DocumentUpload({
         {preview && (
           <div className="mb-4 w-full max-w-xs mx-auto">
             <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden bg-zinc-900">
-              <img
+              <Image
                 src={preview}
                 alt="Preview"
-                className="absolute inset-0 w-full h-full object-contain"
+                fill
+                className="object-contain"
               />
             </div>
           </div>

@@ -25,7 +25,7 @@ interface FormDraftManagerProps<T> {
  * </FormDraftManager>
  * ```
  */
-export function FormDraftManager<T = any>({
+export function FormDraftManager<T = unknown>({
   storageKey,
   onLoadDraft,
   children,

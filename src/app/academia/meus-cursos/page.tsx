@@ -13,7 +13,7 @@ interface Enrollment {
   progress_percentage: number;
   completed_at: string | null;
   certificate_code: string | null;
-  courses: any;
+  courses: Array<Record<string, unknown>>;
 }
 
 interface Stats {

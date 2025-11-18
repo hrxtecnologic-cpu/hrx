@@ -15,7 +15,6 @@ import {
 import {
   Users,
   Search,
-  Filter,
   Award,
   BookOpen,
   TrendingUp,
@@ -102,13 +101,13 @@ export default function AlunosAdminPage() {
         : 0,
   };
 
-  const statusColors: any = {
+  const statusColors: Record<string, string> = {
     active: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
     completed: 'bg-green-500/10 text-green-500 border-green-500/20',
     dropped: 'bg-red-500/10 text-red-500 border-red-500/20',
   };
 
-  const statusLabels: any = {
+  const statusLabels: Record<string, string> = {
     active: 'Ativo',
     completed: 'Concluído',
     dropped: 'Desistente',

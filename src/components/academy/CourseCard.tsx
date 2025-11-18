@@ -2,6 +2,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Clock, Users, Award, PlayCircle } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import type { Course } from '@/types/academy';
 
 interface CourseCardProps {
@@ -30,10 +31,11 @@ export function CourseCard({ course, showProgress = false, progress = 0, enrolle
         {/* Cover Image */}
         {course.cover_image_url ? (
           <div className="relative h-48 bg-zinc-800 overflow-hidden">
-            <img
+            <Image
               src={course.cover_image_url}
               alt={course.title}
-              className="w-full h-full object-cover"
+              fill
+              className="object-cover"
             />
             {enrolled && (
               <div className="absolute top-3 right-3 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">

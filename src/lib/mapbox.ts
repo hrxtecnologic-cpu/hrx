@@ -26,7 +26,7 @@ interface DirectionsResult {
   success: boolean;
   distance_km?: number;
   duration_minutes?: number;
-  route?: any;
+  route?: { distance: number; duration: number; geometry?: GeoJSON.Geometry };
   error?: string;
 }
 
@@ -79,11 +79,11 @@ export async function geocodeAddress(address: string): Promise<GeocodeResult> {
       longitude,
       formatted_address: feature.place_name,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('❌ Erro ao geocodificar endereço', error);
     return {
       success: false,
-      error: error.message,
+      error: error instanceof Error ? error.message : String(error),
     };
   }
 }
@@ -162,7 +162,7 @@ export async function getDirections(params: {
       duration_minutes,
       route: route.geometry,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('❌ Erro ao calcular rota', error);
 
     // Fallback para cálculo simples

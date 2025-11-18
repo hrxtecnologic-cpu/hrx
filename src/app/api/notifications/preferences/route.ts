@@ -31,7 +31,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Usuario nao encontrado' }, { status: 404 });
     }
 
-    let { data: preferences, error } = await supabase
+    const { data: preferences, error } = await supabase
       .from('notification_preferences')
       .select('*')
       .eq('user_id', user.id)
@@ -112,7 +112,7 @@ export async function PUT(request: NextRequest) {
       'digest_frequency',
     ];
 
-    const updates: Record<string, any> = {};
+    const updates: Record<string, unknown> = {};
     for (const field of allowedFields) {
       if (field in body) {
         updates[field] = body[field];

@@ -73,9 +73,9 @@ export async function GET(req: Request) {
       success: true,
       deliveries: deliveries || [],
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { error: error.message || 'Erro ao buscar entregas' },
+      { error: error instanceof Error ? error.message : 'Erro ao buscar entregas' },
       { status: 500 }
     );
   }
@@ -160,9 +160,9 @@ export async function POST(req: Request) {
       success: true,
       delivery,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { error: error.message || 'Erro ao criar entrega' },
+      { error: error instanceof Error ? error.message : 'Erro ao criar entrega' },
       { status: 500 }
     );
   }

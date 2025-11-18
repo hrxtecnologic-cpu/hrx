@@ -62,7 +62,7 @@ export default function CadastrosManuaisPage() {
       </Card>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v)} className="w-full">
         <TabsList className="grid w-full grid-cols-3 bg-zinc-900 border border-zinc-800">
           <TabsTrigger
             value="profissionais"

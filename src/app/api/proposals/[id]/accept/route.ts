@@ -175,7 +175,7 @@ export async function GET(
                 error: sendResult.message,
               });
             }
-          } catch (sendError: any) {
+          } catch (sendError: unknown) {
             logger.error('Exceção ao enviar contrato automaticamente', {
               projectId,
               contractId,
@@ -188,10 +188,10 @@ export async function GET(
             error: contractResult.message,
           });
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         logger.error('Erro no fluxo automático de contrato', {
           projectId,
-          error: error.message,
+          error: error instanceof Error ? error.message : String(error),
         });
       }
     });
@@ -377,8 +377,8 @@ export async function GET(
       `,
       { status: 200, headers: { 'Content-Type': 'text/html' } }
     );
-  } catch (error: any) {
-    logger.error('Erro ao processar aceitação de proposta', { error: error.message });
+  } catch (error: unknown) {
+    logger.error('Erro ao processar aceitação de proposta', { error: error instanceof Error ? error.message : String(error) });
     return new NextResponse(
       `
       <!DOCTYPE html>

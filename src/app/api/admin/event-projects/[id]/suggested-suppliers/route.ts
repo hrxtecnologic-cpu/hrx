@@ -104,7 +104,7 @@ export const GET = withAdmin(async (
       requiredEquipmentTypes = equipmentTypesParam.split(',').map(e => e.trim()).filter(Boolean);
     } else if (project.equipment_needed && Array.isArray(project.equipment_needed)) {
       // Pegar do projeto
-      requiredEquipmentTypes = project.equipment_needed.map((item: any) => item.category).filter(Boolean);
+      requiredEquipmentTypes = project.equipment_needed.map((item) => item.category).filter(Boolean);
     }
 
     // Chamar função SQL de sugestões inteligentes
@@ -128,7 +128,7 @@ export const GET = withAdmin(async (
     }
 
     // Formatar resposta
-    const formattedSuggestions: SuggestedSupplier[] = (suggestions || []).map((supplier: any) => ({
+    const formattedSuggestions: SuggestedSupplier[] = (suggestions || []).map((supplier: Record<string, unknown>) => ({
       id: supplier.id,
       company_name: supplier.company_name,
       contact_name: supplier.contact_name,

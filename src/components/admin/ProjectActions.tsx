@@ -55,8 +55,8 @@ export function AddTeamMemberButton({ projectId, project, onSuccess }: AddTeamMe
   const [loading, setLoading] = useState(false);
   const [geolocationEnabled, setGeolocationEnabled] = useState(true);
   const [searchingProfessionals, setSearchingProfessionals] = useState(false);
-  const [nearbyProfessionals, setNearbyProfessionals] = useState<any[]>([]);
-  const [selectedProfessional, setSelectedProfessional] = useState<any>(null);
+  const [nearbyProfessionals, setNearbyProfessionals] = useState<Array<{ id: string; [key: string]: unknown }>>([]);
+  const [selectedProfessional, setSelectedProfessional] = useState<unknown>(null);
   const [formData, setFormData] = useState({
     professional_id: '',
     role: '',
@@ -145,8 +145,8 @@ export function AddTeamMemberButton({ projectId, project, onSuccess }: AddTeamMe
 
       if (onSuccess) onSuccess();
       router.refresh();
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : String(error));
     } finally {
       setLoading(false);
     }
@@ -208,7 +208,7 @@ export function AddTeamMemberButton({ projectId, project, onSuccess }: AddTeamMe
                   </Label>
                 </div>
                 <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
-                  {requestedProfessionals.map((prof: any, index: number) => (
+                  {requestedProfessionals.map((prof, index: number) => (
                     <div
                       key={index}
                       className="p-3 bg-zinc-800/50 border border-zinc-700/50 rounded-md"
@@ -530,8 +530,8 @@ export function AddEquipmentButton({ projectId, project, onSuccess }: AddEquipme
   const [geolocationEnabled, setGeolocationEnabled] = useState(true);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [searchingSuppliers, setSearchingSuppliers] = useState(false);
-  const [nearbySuppliers, setNearbySuppliers] = useState<any[]>([]);
-  const [selectedSupplier, setSelectedSupplier] = useState<any>(null);
+  const [nearbySuppliers, setNearbySuppliers] = useState<Array<{ id: string; [key: string]: unknown }>>([]);
+  const [selectedSupplier, setSelectedSupplier] = useState<unknown>(null);
   const [formData, setFormData] = useState({
     supplier_id: '',
     name: '',
@@ -634,8 +634,8 @@ export function AddEquipmentButton({ projectId, project, onSuccess }: AddEquipme
 
       if (onSuccess) onSuccess();
       router.refresh();
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : String(error));
     } finally {
       setLoading(false);
     }
@@ -1037,8 +1037,8 @@ export function RequestQuotesButton({
 
       const data = await response.json();
       setSuppliers(data || []);
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : String(error));
       console.error(error);
     } finally {
       setLoadingSuppliers(false);
@@ -1090,8 +1090,8 @@ export function RequestQuotesButton({
 
       if (onSuccess) onSuccess();
       router.refresh();
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : String(error));
     } finally {
       setLoading(false);
     }
@@ -1353,9 +1353,9 @@ export function SendProposalButton({
       } else {
         router.refresh();
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error('Erro ao enviar proposta', {
-        description: error.message || 'Tente novamente mais tarde',
+        description: error instanceof Error ? error.message : 'Tente novamente mais tarde',
       });
     } finally {
       setLoading(false);

@@ -49,9 +49,9 @@ export async function POST(req: Request) {
         cost: route.distanceKm * 2.5, // R$ 2.50/km padrão
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { error: error.message || 'Erro interno' },
+      { error: error instanceof Error ? error.message : 'Erro interno' },
       { status: 500 }
     );
   }

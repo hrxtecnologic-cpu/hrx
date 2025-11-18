@@ -88,9 +88,9 @@ export async function POST(
       success: true,
       message: 'Localização atualizada',
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { error: error.message || 'Erro ao atualizar localização' },
+      { error: error instanceof Error ? error.message : 'Erro ao atualizar localização' },
       { status: 500 }
     );
   }
@@ -128,9 +128,9 @@ export async function GET(
       success: true,
       locations: locations || [],
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { error: error.message || 'Erro ao buscar histórico' },
+      { error: error instanceof Error ? error.message : 'Erro ao buscar histórico' },
       { status: 500 }
     );
   }

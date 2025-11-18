@@ -88,7 +88,7 @@ export function UnifiedProfessionalsView({ initialStats }: UnifiedProfessionalsV
       } else {
         throw new Error(data.error || 'Erro desconhecido');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('❌ Erro ao carregar profissionais:', err);
       setError(err.message);
     } finally {
@@ -155,7 +155,7 @@ export function UnifiedProfessionalsView({ initialStats }: UnifiedProfessionalsV
         const error = await response.json();
         alert(`❌ Erro ao enviar e-mail: ${error.error || 'Erro desconhecido'}`);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Erro ao enviar email:', err);
       alert(`❌ Erro ao enviar e-mail: ${err.message}`);
     } finally {
@@ -181,7 +181,7 @@ export function UnifiedProfessionalsView({ initialStats }: UnifiedProfessionalsV
 
       alert('✅ Profissional deletado com sucesso!');
       loadProfessionals();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Erro ao deletar profissional:', err);
       alert(`❌ Erro: ${err.message}`);
     }

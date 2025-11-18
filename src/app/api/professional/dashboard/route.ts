@@ -86,8 +86,8 @@ export const GET = withAuth(async (userId: string) => {
     // 3. PROCESSAR E CATEGORIZAR EVENTOS
     // ========================================
     const allEvents = (teamMembers || [])
-      .filter((member: any) => member.event_projects)
-      .map((member: any) => {
+      .filter((member) => member.event_projects)
+      .map((member) => {
         const project = member.event_projects;
         return {
           id: member.id,
@@ -115,19 +115,19 @@ export const GET = withAuth(async (userId: string) => {
       });
 
     // Categorizar eventos
-    const pendingEvents = allEvents.filter((event: any) => event.status === 'invited');
+    const pendingEvents = allEvents.filter((event) => event.status === 'invited');
     const upcomingEvents = allEvents.filter(
-      (event: any) =>
+      (event) =>
         (event.status === 'confirmed' || event.status === 'allocated') &&
         new Date(event.event_date) >= new Date()
     );
-    const completedEvents = allEvents.filter((event: any) => event.status === 'completed');
+    const completedEvents = allEvents.filter((event) => event.status === 'completed');
 
     // ========================================
     // 4. CALCULAR ESTATÍSTICAS
     // ========================================
-    const totalEarned = completedEvents.reduce((sum: number, event: any) => sum + (event.total_cost || 0), 0);
-    const pendingEarnings = upcomingEvents.reduce((sum: number, event: any) => sum + (event.total_cost || 0), 0);
+    const totalEarned = completedEvents.reduce((sum: number, event) => sum + (event.total_cost || 0), 0);
+    const pendingEarnings = upcomingEvents.reduce((sum: number, event) => sum + (event.total_cost || 0), 0);
 
     const stats = {
       pending_invitations: pendingEvents.length,

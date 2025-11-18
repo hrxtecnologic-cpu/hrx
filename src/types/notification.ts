@@ -28,6 +28,11 @@ export type NotificationType =
 export type NotificationPriority = 'low' | 'normal' | 'high' | 'urgent';
 export type UserType = 'admin' | 'professional' | 'supplier' | 'client';
 
+// Notification metadata - flexible structure for additional data
+export interface NotificationMetadata {
+  [key: string]: string | number | boolean | string[] | number[] | null | undefined;
+}
+
 export interface Notification {
   id: string;
   user_id: string;
@@ -44,7 +49,7 @@ export interface Notification {
   priority: NotificationPriority;
   created_at: string;
   expires_at?: string;
-  metadata: Record<string, any>;
+  metadata: NotificationMetadata;
 }
 
 export interface NotificationPreferences {
@@ -85,7 +90,7 @@ export interface CreateNotificationData {
   professional_id?: string;
   supplier_id?: string;
   priority?: NotificationPriority;
-  metadata?: Record<string, any>;
+  metadata?: NotificationMetadata;
 }
 
 // =====================================================

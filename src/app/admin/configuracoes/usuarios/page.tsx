@@ -188,38 +188,6 @@ export default function UsuariosPage() {
     }
   };
 
-  const getRoleBadge = (role?: string | null) => {
-    switch (role) {
-      case 'admin':
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-red-600/20 text-red-500 border border-red-600/30">
-            <ShieldCheck className="h-3 w-3" />
-            Admin
-          </span>
-        );
-      case 'professional':
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-blue-600/20 text-blue-500 border border-blue-600/30">
-            <Shield className="h-3 w-3" />
-            Profissional
-          </span>
-        );
-      case 'contractor':
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-green-600/20 text-green-500 border border-green-600/30">
-            <Shield className="h-3 w-3" />
-            Contratante
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-zinc-700/50 text-zinc-400 border border-zinc-700">
-            <ShieldX className="h-3 w-3" />
-            Sem role
-          </span>
-        );
-    }
-  };
 
   const getUserTypeBadge = (type?: string | null) => {
     switch (type) {

@@ -236,7 +236,7 @@ export default function CadastroProfissionalWizardPage() {
     const fields = fieldsToValidate[step];
     if (!fields || fields.length === 0) return true;
 
-    const result = await trigger(fields as any);
+    const result = await trigger(fields as string[]);
     return result;
   };
 
@@ -718,7 +718,7 @@ export default function CadastroProfissionalWizardPage() {
                   }}
                   onCertificationUpload={async (code, file) => {
                     if (!user?.id) return { error: 'Usuário não autenticado' };
-                    const { url, error } = await uploadDocument(file, user.id, code as any);
+                    const { url, error } = await uploadDocument(file, user.id, code as string);
                     return error ? { error } : { url };
                   }}
                   disabled={isSubmitting}
@@ -769,7 +769,7 @@ export default function CadastroProfissionalWizardPage() {
                       <Label htmlFor="yearsOfExperience" className="text-sm font-medium text-zinc-200">
                         Anos de experiência
                       </Label>
-                      <Select onValueChange={(value) => setValue('yearsOfExperience', value as any)}>
+                      <Select onValueChange={(value) => setValue('yearsOfExperience', value as 'availability.monday' | 'availability.tuesday' | 'availability.wednesday' | 'availability.thursday' | 'availability.friday' | 'availability.saturday' | 'availability.sunday')}>
                         <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white mt-1.5">
                           <SelectValue placeholder="Selecione" />
                         </SelectTrigger>
@@ -818,7 +818,7 @@ export default function CadastroProfissionalWizardPage() {
                       <div key={key} className="flex items-center space-x-3 p-3 bg-zinc-800/50 rounded-lg hover:bg-zinc-700/50 transition">
                         <Checkbox
                           checked={availability?.[key as keyof typeof availability] || false}
-                          onCheckedChange={(checked) => setValue(`availability.${key}` as any, checked as boolean)}
+                          onCheckedChange={(checked) => setValue(`availability.${key}` as 'availability.monday' | 'availability.tuesday' | 'availability.wednesday' | 'availability.thursday' | 'availability.friday' | 'availability.saturday' | 'availability.sunday', checked as boolean)}
                           className="border-zinc-700 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
                         />
                         <label className="text-sm text-zinc-200 flex-1 cursor-pointer">{label}</label>

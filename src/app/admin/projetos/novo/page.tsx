@@ -43,7 +43,7 @@ const equipmentSchema = z.object({
   description: z.string().optional(),
   quantity: z.number().min(1).default(1),
   duration_days: z.number().min(1).default(1),
-  specifications: z.any().optional(),
+  specifications: z.unknown().optional(),
   notes: z.string().optional(),
 });
 
@@ -148,9 +148,9 @@ export default function NovoProjetoPage() {
 
       toast.success('Projeto criado com sucesso!');
       router.push(`/admin/projetos/${result.project.id}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro ao criar projeto:', error);
-      toast.error(error.message || 'Erro ao criar projeto');
+      toast.error(error instanceof Error ? error.message : 'Erro ao criar projeto');
     } finally {
       setIsSubmitting(false);
     }

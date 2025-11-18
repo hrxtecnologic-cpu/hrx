@@ -218,9 +218,9 @@ export default function ProjetosPage() {
 
       toast.success('Projeto deletado com sucesso');
       fetchProjects();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro ao deletar projeto:', error);
-      toast.error(error.message || 'Erro ao deletar projeto');
+      toast.error(error instanceof Error ? error.message : 'Erro ao deletar projeto');
     } finally {
       setDeletingId(null);
     }
@@ -252,9 +252,9 @@ export default function ProjetosPage() {
       setIsDialogOpen(false);
       fetchProjects();
       router.push(`/admin/projetos/${result.project.id}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro ao criar projeto:', error);
-      toast.error(error.message || 'Erro ao criar projeto');
+      toast.error(error instanceof Error ? error.message : 'Erro ao criar projeto');
     }
   };
 

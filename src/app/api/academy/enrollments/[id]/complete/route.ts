@@ -185,7 +185,7 @@ export async function POST(
     });
 
     // ========== Resposta ==========
-    const response: AcademyAPIResponse<CourseEnrollment & { certificate_code: string; new_badges?: any[] }> = {
+    const response: AcademyAPIResponse<CourseEnrollment & { certificate_code: string; new_badges?: Array<Record<string, unknown>> }> = {
       success: true,
       data: {
         ...completedEnrollment,

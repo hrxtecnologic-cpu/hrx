@@ -57,7 +57,7 @@ export async function GET() {
       projects: projects || [],
       total: projects?.length || 0,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
       { error: error?.message || 'Erro interno do servidor' },
       { status: 500 }

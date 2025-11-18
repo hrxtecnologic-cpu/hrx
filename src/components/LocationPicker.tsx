@@ -67,7 +67,7 @@ export function LocationPicker({
   }, [latitude, longitude]);
 
   // Parsear endereço do Mapbox
-  const parseMapboxAddress = (feature: any): ParsedAddress => {
+  const parseMapboxAddress = (feature: Record<string, unknown>): ParsedAddress => {
     const fullAddress = feature.place_name || '';
     const parsed: ParsedAddress = { fullAddress };
 
@@ -75,7 +75,7 @@ export function LocationPicker({
     const context = feature.context || [];
 
     // Extrair informações do contexto
-    context.forEach((item: any) => {
+    context.forEach((item: Record<string, unknown>) => {
       const id = item.id || '';
 
       if (id.startsWith('postcode')) {
@@ -152,7 +152,7 @@ export function LocationPicker({
 
   // Handler para clique no mapa
   const handleMapClick = useCallback(
-    async (event: any) => {
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
       if (disabled) return;
 
       const { lngLat } = event;

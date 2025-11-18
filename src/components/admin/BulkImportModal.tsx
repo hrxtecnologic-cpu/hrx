@@ -140,9 +140,9 @@ export function BulkImportModal({ open, onOpenChange, importType }: BulkImportMo
       if (data.failed > 0) {
         toast.warning(`⚠️ ${data.failed} registro(s) com erro`);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro ao importar:', error);
-      toast.error(error.message || 'Erro ao importar arquivo');
+      toast.error(error instanceof Error ? error.message : 'Erro ao importar arquivo');
     } finally {
       setIsProcessing(false);
     }

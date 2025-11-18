@@ -222,7 +222,7 @@ export function ProjectTeamSection({
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Erro ao adicionar profissional');
+        throw new Error(error instanceof Error ? error.message : 'Erro ao adicionar profissional');
       }
 
       toast.success('Profissional adicionado ao projeto!');
@@ -230,8 +230,8 @@ export function ProjectTeamSection({
       setSelectedProfessional(null);
 
       setTimeout(() => window.location.reload(), 500);
-    } catch (error: any) {
-      toast.error(error.message || 'Erro ao adicionar profissional');
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Erro ao adicionar profissional');
     } finally {
       setAddingProfessional(null);
     }
@@ -268,15 +268,15 @@ export function ProjectTeamSection({
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Erro ao enviar convite');
+        throw new Error(error instanceof Error ? error.message : 'Erro ao enviar convite');
       }
 
       const result = await response.json();
       toast.success(`Convite enviado para ${result.professionalEmail}!`);
 
       setTimeout(() => window.location.reload(), 1500);
-    } catch (error: any) {
-      toast.error(error.message || 'Erro ao enviar convite');
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Erro ao enviar convite');
     }
   };
 

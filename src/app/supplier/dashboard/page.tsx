@@ -27,7 +27,7 @@ interface QuotationRequest {
   project_id: string;
   supplier_id: string;
   token: string;
-  requested_items: any[];
+  requested_items: Array<Record<string, unknown>>;
   status: 'pending' | 'submitted' | 'accepted' | 'rejected' | 'expired';
   total_price?: number;
   daily_rate?: number;

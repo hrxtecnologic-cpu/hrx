@@ -97,7 +97,7 @@ export default function MapPage() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               type,
-              ids: pending.map((p: any) => p.id)
+              ids: pending.map((p: Record<string, unknown>) => p.id)
             })
           });
 

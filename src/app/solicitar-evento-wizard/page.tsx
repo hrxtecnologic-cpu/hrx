@@ -152,7 +152,7 @@ function SolicitarEventoWizardContent() {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [selectedEquipment, setSelectedEquipment] = useState<string[]>([]);
   const [selectedEquipmentTypes, setSelectedEquipmentTypes] = useState<string[]>([]);
-  const [catalogItems, setCatalogItems] = useState<any[]>([]);
+  const [catalogItems, setCatalogItems] = useState<Array<Record<string, unknown>>>([]);
   const [mapLatitude, setMapLatitude] = useState<number | undefined>();
   const [mapLongitude, setMapLongitude] = useState<number | undefined>();
   const [isEditMode, setIsEditMode] = useState(false);
@@ -160,8 +160,8 @@ function SolicitarEventoWizardContent() {
   const [loadingData, setLoadingData] = useState(false);
 
   // States para catálogos do cliente
-  const [professionalItems, setProfessionalItems] = useState<any[]>([]);
-  const [equipmentItems, setEquipmentItems] = useState<any[]>([]);
+  const [professionalItems, setProfessionalItems] = useState<Array<Record<string, unknown>>>([]);
+  const [equipmentItems, setEquipmentItems] = useState<Array<Record<string, unknown>>>([]);
 
   const wizard = useWizard(requestType === 'client' ? CLIENT_WIZARD_STEPS.length : SUPPLIER_WIZARD_STEPS.length);
 
@@ -196,8 +196,8 @@ function SolicitarEventoWizardContent() {
     control,
     trigger,
     formState: { errors },
-  } = useForm<any>({
-    resolver: zodResolver(requestType === 'client' ? clientRequestSchema : requestType === 'supplier' ? supplierRequestSchema : z.any()),
+  } = useForm<Record<string, unknown>>({
+    resolver: zodResolver(requestType === 'client' ? clientRequestSchema : requestType === 'supplier' ? supplierRequestSchema : z.unknown()),
     defaultValues: {
       request_type: requestType,
       professionals: [{ category_group: '', category: '', quantity: 1, requirements: '' }],
@@ -223,13 +223,13 @@ function SolicitarEventoWizardContent() {
   });
 
   // Handler para restaurar rascunho
-  const handleLoadDraft = (draft: any) => {
+  const handleLoadDraft = (draft: Record<string, unknown>) => {
     if (!draft) return;
 
     // Restaurar campos do formulário
     Object.keys(draft).forEach((key) => {
       if (key !== 'catalogItems' && key !== 'mapLatitude' && key !== 'mapLongitude') {
-        setValue(key as any, draft[key]);
+        setValue(key as keyof typeof draft, draft[key]);
       }
     });
 
@@ -258,10 +258,10 @@ function SolicitarEventoWizardContent() {
   const isUrgent = watch('is_urgent');
 
   // Helper para extrair mensagem de erro
-  const getErrorMessage = (error: any): string => {
+  const getErrorMessage = (error: unknown): string => {
     if (!error) return '';
     if (typeof error === 'string') return error;
-    if (error.message && typeof error.message === 'string') return error.message;
+    if (error instanceof Error && error.message && typeof error.message === 'string') return error.message;
     return '';
   };
 
@@ -370,7 +370,7 @@ function SolicitarEventoWizardContent() {
 
             // Carregar profissionais se existirem
             if (project.project_team && Array.isArray(project.project_team) && project.project_team.length > 0) {
-              const professionals = project.project_team.map((member: any) => ({
+              const professionals = project.project_team.map((member: Record<string, unknown>) => ({
                 category_group: member.category || '',
                 category: member.subcategory || '',
                 quantity: member.quantity || 1,
@@ -381,7 +381,7 @@ function SolicitarEventoWizardContent() {
 
             // Carregar equipamentos se existirem
             if (project.project_equipment && Array.isArray(project.project_equipment) && project.project_equipment.length > 0) {
-              const equipment = project.project_equipment.map((item: any) => ({
+              const equipment = project.project_equipment.map((item: Record<string, unknown>) => ({
                 equipment_group: item.category || '',
                 equipment_type: item.subcategory || item.equipment_type || '',
                 quantity: item.quantity || 1,
@@ -440,7 +440,7 @@ function SolicitarEventoWizardContent() {
     const category = EQUIPMENT_CATEGORIES.find((c) => c.name === categoryName);
     if (!category) return 0;
     return category.subtypes.filter((subtype) =>
-      equipmentFields.some((field: any) => field.category === subtype.label)
+      equipmentFields.some((field: string[]) => field.category === subtype.label)
     ).length;
   };
 
@@ -481,7 +481,7 @@ function SolicitarEventoWizardContent() {
         3: ['professionals'],
         4: [], // Review
       };
-      const result = await trigger(fieldsToValidate[step] as any);
+      const result = await trigger(fieldsToValidate[step] as 'availability.monday' | 'availability.tuesday' | 'availability.wednesday' | 'availability.thursday' | 'availability.friday' | 'availability.saturday' | 'availability.sunday');
       return result;
     } else if (requestType === 'supplier') {
       const fieldsToValidate: Record<number, string[]> = {
@@ -490,7 +490,7 @@ function SolicitarEventoWizardContent() {
         2: [], // Pricing is optional
         3: [], // Review
       };
-      const result = await trigger(fieldsToValidate[step] as any);
+      const result = await trigger(fieldsToValidate[step] as 'availability.monday' | 'availability.tuesday' | 'availability.wednesday' | 'availability.thursday' | 'availability.friday' | 'availability.saturday' | 'availability.sunday');
       return result;
     }
     return true;
@@ -542,7 +542,7 @@ function SolicitarEventoWizardContent() {
     }
   };
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: Record<string, unknown>) => {
     console.log('🚀 [Wizard] onSubmit chamado!', { requestType, isEditMode, data });
     setIsSubmitting(true);
 
@@ -653,7 +653,7 @@ function SolicitarEventoWizardContent() {
         // Para cliente: usar dados dos catálogos visuais
         ...(requestType === 'client' && {
           professionals: professionalItems,
-          equipment: equipmentItems.map((equip: any) => ({
+          equipment: equipmentItems.map((equip: Record<string, unknown>) => ({
             equipment_group: equip.equipment_group,
             equipment_type: equip.equipment_type,
             quantity: equip.quantity,
@@ -663,7 +663,7 @@ function SolicitarEventoWizardContent() {
         }),
         // Para supplier: Mapear equipment_type → type para compatibilidade com schema backend
         ...(requestType === 'supplier' && {
-          equipment: data.equipment?.map((equip: any) => ({
+          equipment: data.equipment?.map((equip: Record<string, unknown>) => ({
             type: equip.equipment_type || equip.type,
             quantity: equip.quantity,
           })) || [],
@@ -719,7 +719,7 @@ function SolicitarEventoWizardContent() {
 
         // Mostrar erros detalhados
         if (result.details && Array.isArray(result.details)) {
-          result.details.forEach((detail: any) => {
+          result.details.forEach((detail: { field: string; message: string }) => {
             console.error('  ⚠️', detail.path?.join('.') || 'campo', ':', detail.message);
           });
         }
@@ -743,9 +743,9 @@ function SolicitarEventoWizardContent() {
           router.push('/dashboard/contratante');
         }
       }, 1500);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ [Wizard] Erro ao enviar:', error);
-      toast.error(error.message || 'Erro ao enviar solicitação');
+      toast.error(error instanceof Error ? error.message : 'Erro ao enviar solicitação');
     } finally {
       setIsSubmitting(false);
       console.log('🏁 [Wizard] onSubmit finalizado');
@@ -1303,7 +1303,7 @@ function SolicitarEventoWizardContent() {
                       <div className="p-4 bg-zinc-800/50 border border-zinc-700 rounded-lg">
                         <h3 className="text-sm font-semibold text-red-500 mb-3">Equipamentos Solicitados</h3>
                         <div className="space-y-2">
-                          {watch('equipment').map((equip: any, index: number) => (
+                          {watch('equipment').map((equip, index: number) => (
                             <div key={index} className="flex items-start gap-3 p-3 bg-zinc-900/50 rounded-md border border-zinc-700/50">
                               <div className="flex-shrink-0 w-8 h-8 bg-blue-600/20 rounded-full flex items-center justify-center border border-blue-600/30">
                                 <span className="text-xs font-bold text-blue-500">{index + 1}</span>

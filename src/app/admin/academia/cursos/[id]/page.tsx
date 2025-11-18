@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -26,7 +26,6 @@ import {
   Trash2,
   Edit,
   PlayCircle,
-  CheckCircle,
   Eye,
   Archive,
   Send,
@@ -68,8 +67,6 @@ export default function EditCoursePage({ params }: EditCoursePageProps) {
   const [submitting, setSubmitting] = useState(false);
   const [learningObjectives, setLearningObjectives] = useState<string[]>(['']);
   const [requirements, setRequirements] = useState<string[]>(['']);
-  const [showLessonModal, setShowLessonModal] = useState(false);
-  const [editingLesson, setEditingLesson] = useState<CourseLesson | null>(null);
 
   const {
     register,
@@ -453,7 +450,7 @@ export default function EditCoursePage({ params }: EditCoursePageProps) {
                       Nível *
                     </Label>
                     <Select
-                      onValueChange={(value: any) => setValue('difficulty_level', value)}
+                      onValueChange={(value: string | number | boolean) => setValue('difficulty_level', value)}
                       value={watch('difficulty_level')}
                     >
                       <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">

@@ -126,7 +126,7 @@ export async function PUT(
     }
 
     // Montar objeto de atualização apenas com campos fornecidos
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
 
     if (body.title !== undefined) updateData.title = body.title;
     if (body.description !== undefined) updateData.description = body.description;

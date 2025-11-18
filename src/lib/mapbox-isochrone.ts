@@ -27,7 +27,7 @@ export interface IsochroneOptions {
 
 export interface IsochroneResult {
   /** GeoJSON do polígono */
-  polygon: any;
+  polygon: GeoJSON.Polygon;
   /** Tempo em minutos */
   minutes: number;
   /** Centro do isochrone */

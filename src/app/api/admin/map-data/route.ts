@@ -30,10 +30,10 @@ export const GET = withAdmin(async (userId: string, request: NextRequest) => {
     const maxLng = searchParams.get('maxLng');
     const types = searchParams.get('types')?.split(',') || ['professional', 'supplier', 'event'];
 
-    const markers: any[] = [];
+    const markers: Array<Record<string, unknown>> = [];
 
     // Queries paralelas (3-4x mais rápido)
-    const queries: Promise<any>[] = [];
+    const queries: Promise<Record<string, unknown>>[] = [];
 
     // Buscar profissionais (se solicitado e com viewport se disponível)
     if (types.includes('professional')) {
@@ -104,7 +104,7 @@ export const GET = withAdmin(async (userId: string, request: NextRequest) => {
     // Processar resultados (com null checks para segurança)
     results.forEach(result => {
       if (result.type === 'professionals' && result.data) {
-        (result.data || []).forEach((prof: any) => {
+        (result.data || []).forEach((prof) => {
           // Montar endereço completo
           const addressParts = [
             prof.street,
@@ -133,7 +133,7 @@ export const GET = withAdmin(async (userId: string, request: NextRequest) => {
           });
         });
       } else if (result.type === 'suppliers' && result.data) {
-        (result.data || []).forEach((sup: any) => {
+        (result.data || []).forEach((sup: Record<string, unknown>) => {
           markers.push({
             id: sup.id,
             type: 'supplier',
@@ -150,7 +150,7 @@ export const GET = withAdmin(async (userId: string, request: NextRequest) => {
           });
         });
       } else if (result.type === 'events' && result.data) {
-        (result.data || []).forEach((event: any) => {
+        (result.data || []).forEach((event) => {
           markers.push({
             id: event.id,
             type: 'event',

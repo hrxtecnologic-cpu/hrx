@@ -9,6 +9,7 @@ export interface CustomPublicMetadata {
 }
 
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   interface UserPublicMetadata extends CustomPublicMetadata {}
 
   // Custom JWT Session Claims - permite acessar metadata no sessionClaims

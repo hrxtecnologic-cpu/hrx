@@ -108,7 +108,7 @@ export default function ConfiguracoesEmailPage() {
     }
   };
 
-  const updateConfig = (field: keyof EmailTemplateConfig, value: any) => {
+  const updateConfig = (field: keyof EmailTemplateConfig, value: string | number | boolean) => {
     if (!config) return;
     setConfig({ ...config, [field]: value });
   };

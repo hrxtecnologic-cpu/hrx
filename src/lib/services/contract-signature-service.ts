@@ -150,7 +150,7 @@ export async function sendContractForSignature(contractId: string): Promise<Send
         emailSent = true;
         console.log('[contract-signature-service] Email de contrato enviado:', emailResult?.id);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       emailError = error.message;
       console.error('[contract-signature-service] Exceção ao enviar email:', error);
     }
@@ -198,11 +198,11 @@ export async function sendContractForSignature(contractId: string): Promise<Send
       },
       recipient: contract.project.client_email,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[contract-signature-service] Erro ao enviar contrato:', error);
     return {
       success: false,
-      message: error.message || 'Erro interno do servidor',
+      message: error instanceof Error ? error.message : 'Erro interno do servidor',
       error: 'INTERNAL_ERROR',
     };
   }

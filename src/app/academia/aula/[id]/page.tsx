@@ -13,7 +13,6 @@ import {
   ChevronRight,
   CheckCircle,
   PlayCircle,
-  Lock,
   Loader2,
   BookOpen,
   Home,
@@ -30,7 +29,7 @@ export default function LessonPlayerPage({ params }: LessonPlayerPageProps) {
   const [lessonId, setLessonId] = useState<string>('');
   const [lesson, setLesson] = useState<CourseLesson | null>(null);
   const [course, setCourse] = useState<Course | null>(null);
-  const [enrollment, setEnrollment] = useState<any>(null);
+  const [enrollment, setEnrollment] = useState<unknown>(null);
   const [allLessons, setAllLessons] = useState<CourseLesson[]>([]);
   const [loading, setLoading] = useState(true);
   const [lessonCompleted, setLessonCompleted] = useState(false);
@@ -85,7 +84,7 @@ export default function LessonPlayerPage({ params }: LessonPlayerPageProps) {
 
         if (enrollmentData.success) {
           const userEnrollment = enrollmentData.data.enrollments.find(
-            (e: any) => e.course_id === lessonInfo.course_id
+            (e: Record<string, unknown>) => e.course_id === lessonInfo.course_id
           );
 
           if (!userEnrollment) {
@@ -98,7 +97,7 @@ export default function LessonPlayerPage({ params }: LessonPlayerPageProps) {
 
           // Check if lesson is completed
           const lessonProgress = userEnrollment.lesson_progress?.find(
-            (p: any) => p.lesson_id === lessonId
+            (p: Record<string, unknown>) => p.lesson_id === lessonId
           );
           setLessonCompleted(lessonProgress?.completed || false);
         }
@@ -135,7 +134,7 @@ export default function LessonPlayerPage({ params }: LessonPlayerPageProps) {
 
         if (enrollmentData.success) {
           const updated = enrollmentData.data.enrollments.find(
-            (e: any) => e.id === enrollment.id
+            (e: Record<string, unknown>) => e.id === enrollment.id
           );
           setEnrollment(updated);
         }
@@ -155,7 +154,7 @@ export default function LessonPlayerPage({ params }: LessonPlayerPageProps) {
     currentLessonIndex < allLessons.length - 1 ? allLessons[currentLessonIndex + 1] : null;
 
   const completedLessonsCount =
-    enrollment?.lesson_progress?.filter((p: any) => p.completed).length || 0;
+    enrollment?.lesson_progress?.filter((p: Record<string, unknown>) => p.completed).length || 0;
 
   if (loading) {
     return (
@@ -312,7 +311,7 @@ export default function LessonPlayerPage({ params }: LessonPlayerPageProps) {
                 <div className="space-y-2">
                   {allLessons.map((l, idx) => {
                     const isCompleted = enrollment?.lesson_progress?.find(
-                      (p: any) => p.lesson_id === l.id && p.completed
+                      (p: Record<string, unknown>) => p.lesson_id === l.id && p.completed
                     );
                     const isCurrent = l.id === lessonId;
 

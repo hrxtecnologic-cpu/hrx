@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { FileText, ExternalLink, AlertCircle, CheckCircle } from 'lucide-react';
+import Image from 'next/image';
 import {
   Dialog,
   DialogContent,
@@ -77,11 +78,14 @@ export function DocumentViewer({
                   title={label}
                 />
               ) : (
-                <img
-                  src={url}
-                  alt={label}
-                  className="w-full h-auto rounded-lg"
-                />
+                <div className="relative w-full min-h-[600px]">
+                  <Image
+                    src={url}
+                    alt={label}
+                    fill
+                    className="object-contain rounded-lg"
+                  />
+                </div>
               )}
             </div>
             <div className="flex justify-end">

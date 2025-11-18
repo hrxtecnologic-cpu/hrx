@@ -3,13 +3,12 @@ import {
   Users,
   FileCheck,
   ClipboardList,
-  Calendar,
-  TrendingUp,
   AlertCircle,
   CheckCircle,
   Clock,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
+import Link from 'next/link';
 
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
@@ -233,7 +232,7 @@ export default async function AdminDashboardPage() {
               </div>
             </a>
 
-            <a
+            <Link
               href="/admin/projetos"
               className="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-lg hover:bg-red-500/20 transition"
             >
@@ -242,9 +241,9 @@ export default async function AdminDashboardPage() {
                 <p className="font-semibold text-white">Ver Projetos</p>
                 <p className="text-xs text-zinc-400">{newProjects || 0} novos</p>
               </div>
-            </a>
+            </Link>
 
-            <a
+            <Link
               href="/admin/profissionais"
               className="flex items-center gap-3 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg hover:bg-blue-500/20 transition"
             >
@@ -253,7 +252,7 @@ export default async function AdminDashboardPage() {
                 <p className="font-semibold text-white">Gerenciar Profissionais</p>
                 <p className="text-xs text-zinc-400">{totalProfessionals || 0} cadastrados</p>
               </div>
-            </a>
+            </Link>
           </div>
         </CardContent>
       </Card>

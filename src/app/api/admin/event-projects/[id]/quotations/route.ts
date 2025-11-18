@@ -76,8 +76,8 @@ export async function GET(
       success: true,
       quotations: quotations || [],
     });
-  } catch (error: any) {
-    logger.error('Erro ao listar cotações', { error: error.message });
+  } catch (error: unknown) {
+    logger.error('Erro ao listar cotações', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }

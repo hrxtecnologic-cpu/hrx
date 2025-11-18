@@ -55,8 +55,8 @@ interface ProjectDetails {
   quoted_at: string | null;
   approved_at: string | null;
   completed_at: string | null;
-  project_team: any[];
-  project_equipment: any[];
+  project_team: Array<Record<string, unknown>>;
+  project_equipment: Array<Record<string, unknown>>;
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; description: string }> = {
@@ -141,7 +141,7 @@ export default function ProjetoDetalhesPage({
 
       const data = await response.json();
       setProject(data.project);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Erro ao carregar projeto:', error);
       toast.error('Erro ao carregar detalhes do projeto');
     } finally {
@@ -319,7 +319,7 @@ export default function ProjetoDetalhesPage({
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {project.project_team.map((member: any) => (
+                    {project.project_team.map((member: Record<string, unknown>) => (
                       <div
                         key={member.id}
                         className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg"
@@ -359,7 +359,7 @@ export default function ProjetoDetalhesPage({
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {project.project_equipment.map((equipment: any) => (
+                    {project.project_equipment.map((equipment: Array<Record<string, unknown>>) => (
                       <div
                         key={equipment.id}
                         className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg"

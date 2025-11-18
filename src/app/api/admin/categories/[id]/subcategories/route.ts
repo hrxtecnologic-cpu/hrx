@@ -4,7 +4,7 @@ import { withAdmin } from '@/lib/api';
 import { logger } from '@/lib/logger';
 
 // GET - Listar subcategorias de uma categoria
-export const GET = withAdmin(async (userId: string, req: Request, context: any) => {
+export const GET = withAdmin(async (userId: string, req: Request, context: { params: Promise<Record<string, string>> }) => {
   try {
     const { id } = await context.params;
     const supabase = await createClient();
@@ -32,7 +32,7 @@ export const GET = withAdmin(async (userId: string, req: Request, context: any) 
 });
 
 // POST - Criar nova subcategoria
-export const POST = withAdmin(async (userId: string, req: Request, context: any) => {
+export const POST = withAdmin(async (userId: string, req: Request, context: { params: Promise<Record<string, string>> }) => {
   try {
     const { id: categoryId } = await context.params;
     const body = await req.json();

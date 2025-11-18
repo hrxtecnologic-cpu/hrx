@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import Image from 'next/image';
 import { formatFileSize } from '@/lib/supabase/storage';
 
 interface PortfolioUploadProps {
@@ -80,16 +81,17 @@ export function PortfolioUpload({
       {previews.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           {previews.map((preview, index) => (
-            <div key={index} className="relative group">
-              <img
+            <div key={index} className="relative group h-32">
+              <Image
                 src={preview}
                 alt={`Portfolio ${index + 1}`}
-                className="w-full h-32 object-cover rounded-md border border-zinc-700"
+                fill
+                className="object-cover rounded-md border border-zinc-700"
               />
               <button
                 type="button"
                 onClick={() => removePreview(index)}
-                className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
+                className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition z-10"
               >
                 <svg
                   className="h-4 w-4"

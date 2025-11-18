@@ -55,7 +55,7 @@ export function useMapboxRoute(
         } else {
           setRoute(null);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Erro ao buscar rota:', err);
         setError(err.message);
         setRoute(null);

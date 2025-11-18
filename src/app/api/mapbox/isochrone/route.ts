@@ -38,9 +38,9 @@ export async function POST(req: Request) {
       minutes: isochrone.minutes,
       center: isochrone.center,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { error: error.message || 'Erro interno' },
+      { error: error instanceof Error ? error.message : 'Erro interno' },
       { status: 500 }
     );
   }

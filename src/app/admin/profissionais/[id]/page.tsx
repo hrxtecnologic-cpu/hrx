@@ -16,8 +16,8 @@ import {
 } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ProfessionalActions } from '@/components/admin/ProfessionalActions';
-import { DocumentViewer } from '@/components/admin/DocumentViewer';
 import { DocumentValidation } from '@/components/admin/DocumentValidation';
 import { ProfessionalHistory } from '@/components/admin/ProfessionalHistory';
 import { EditProfessionalModal } from '@/components/admin/EditProfessionalModal';
@@ -282,12 +282,13 @@ export default async function ProfessionalDetailPage({
                       href={url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="aspect-square rounded-lg overflow-hidden bg-zinc-800 hover:ring-2 hover:ring-red-600 transition"
+                      className="aspect-square rounded-lg overflow-hidden bg-zinc-800 hover:ring-2 hover:ring-red-600 transition relative"
                     >
-                      <img
+                      <Image
                         src={url}
                         alt={`Portfolio ${index + 1}`}
-                        className="w-full h-full object-cover"
+                        fill
+                        className="object-cover"
                       />
                     </a>
                   ))}

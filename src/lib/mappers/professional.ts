@@ -56,7 +56,7 @@ export interface ProfessionalFrontend {
   drtValidity?: string | null;
 
   // Disponibilidade (JSONB)
-  availability?: any;
+  availability?: { monday?: boolean; tuesday?: boolean; wednesday?: boolean; thursday?: boolean; friday?: boolean; saturday?: boolean; sunday?: boolean };
 
   // Status e metadados
   status?: 'pending' | 'approved' | 'rejected' | 'incomplete';
@@ -117,7 +117,7 @@ export interface ProfessionalDatabase {
   drt_validity?: string | null;
 
   // Disponibilidade (JSONB)
-  availability?: any;
+  availability?: { monday?: boolean; tuesday?: boolean; wednesday?: boolean; thursday?: boolean; friday?: boolean; saturday?: boolean; sunday?: boolean };
 
   // Status e metadados
   status?: 'pending' | 'approved' | 'rejected' | 'incomplete';
@@ -286,8 +286,8 @@ export function professionalToDatabase(
  * Converte apenas campos de validade de documentos
  * Útil quando precisa converter apenas esses campos sem converter objeto inteiro
  */
-export function mapValidityFieldsToDatabase(data: Record<string, any>): Record<string, any> {
-  const mapped: Record<string, any> = {};
+export function mapValidityFieldsToDatabase(data: Record<string, unknown>): Record<string, unknown> {
+  const mapped: Record<string, unknown> = {};
 
   const validityFields = {
     cnhNumber: 'cnh_number',
@@ -312,8 +312,8 @@ export function mapValidityFieldsToDatabase(data: Record<string, any>): Record<s
 /**
  * Converte apenas campos de validade de documentos (database → frontend)
  */
-export function mapValidityFieldsFromDatabase(data: Record<string, any>): Record<string, any> {
-  const mapped: Record<string, any> = {};
+export function mapValidityFieldsFromDatabase(data: Record<string, unknown>): Record<string, unknown> {
+  const mapped: Record<string, unknown> = {};
 
   const validityFields = {
     cnh_number: 'cnhNumber',

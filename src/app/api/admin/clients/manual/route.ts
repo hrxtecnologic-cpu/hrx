@@ -103,7 +103,7 @@ export const POST = withAdmin(async (userId: string, request: NextRequest) => {
 
     // Adicionar profissionais ao projeto
     if (professionals && professionals.length > 0) {
-      const teamMembers = professionals.map((prof: any) => ({
+      const teamMembers = professionals.map((prof) => ({
         project_id: project.id,
         category: prof.category,
         subcategory: prof.category_group,
@@ -123,7 +123,7 @@ export const POST = withAdmin(async (userId: string, request: NextRequest) => {
 
     // Adicionar equipamentos ao projeto
     if (equipment && equipment.length > 0) {
-      const equipmentItems = equipment.map((equip: any) => ({
+      const equipmentItems = equipment.map((equip) => ({
         project_id: project.id,
         category: equip.equipment_group,
         equipment_type: equip.equipment_type,
@@ -147,10 +147,10 @@ export const POST = withAdmin(async (userId: string, request: NextRequest) => {
       projectId: project.id,
       projectNumber: project.project_number,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[manual-client] Erro:', error);
     return NextResponse.json(
-      { error: 'Erro interno do servidor', details: error.message },
+      { error: 'Erro interno do servidor', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }

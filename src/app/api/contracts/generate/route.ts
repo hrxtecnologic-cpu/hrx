@@ -53,10 +53,10 @@ export const POST = withAdmin(async (userId: string, request: NextRequest) => {
     }
 
     return NextResponse.json(result);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Erro ao gerar contrato:', error);
     return NextResponse.json(
-      { error: error.message || 'Erro interno do servidor' },
+      { error: error instanceof Error ? error.message : 'Erro interno do servidor' },
       { status: 500 }
     );
   }

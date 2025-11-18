@@ -187,7 +187,7 @@ export async function PUT(
     }
 
     // ========== Atualizar Curso ==========
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
 
     // Só atualiza campos que foram enviados
     if (body.title !== undefined) updateData.title = body.title;

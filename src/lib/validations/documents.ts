@@ -18,6 +18,7 @@ import {
   DOCUMENT_LABELS,
   getDocumentRequirements as getRequirements
 } from '@/types/document';
+import { getRequiredDocumentsForSubcategories } from '@/lib/categories-subcategories';
 
 // =====================================================
 // Types
@@ -366,9 +367,6 @@ export function validateDocumentsForSubcategories(
       missingValidity: [],
     };
   }
-
-  // Importar funções de subcategorias
-  const { getRequiredDocumentsForSubcategories } = require('@/lib/categories-subcategories');
 
   // Obter documentos obrigatórios baseado nas subcategorias
   const requiredDocs = getRequiredDocumentsForSubcategories(subcategories);

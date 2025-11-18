@@ -195,7 +195,7 @@ export default function NotificationPreferencesPage() {
               <Label className="text-white mb-2 block">Frequencia de Notificacoes</Label>
               <Select
                 value={preferences.digest_frequency}
-                onValueChange={(value: any) => updatePreference('digest_frequency', value)}
+                onValueChange={(value: string | number | boolean) => updatePreference('digest_frequency', value)}
               >
                 <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
                   <SelectValue />

@@ -47,7 +47,7 @@ interface Project {
   completed_at: string | null;
 }
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
+const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ComponentType }> = {
   new: { label: 'Novo', color: 'bg-blue-500/10 text-blue-500 border-blue-500/20', icon: Clock },
   analyzing: { label: 'Em Análise', color: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20', icon: Clock },
   quoting: { label: 'Orçando', color: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20', icon: DollarSign },
@@ -94,7 +94,7 @@ export default function DashboardContratantePage() {
 
       const data = await response.json();
       setProjects(data.projects || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Erro ao carregar projetos:', error);
       toast.error('Erro ao carregar seus projetos');
     } finally {

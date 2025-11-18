@@ -87,7 +87,7 @@ export async function GET(
       success: true,
       quotation,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
       { error: error?.message || 'Erro interno do servidor' },
       { status: 500 }
@@ -253,7 +253,7 @@ export async function POST(
       message: 'Orçamento enviado com sucesso!',
       quotation: updated,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
       { error: error?.message || 'Erro interno do servidor' },
       { status: 500 }

@@ -61,7 +61,7 @@ interface UseFormAutoSaveOptions<T> {
  * };
  * ```
  */
-export function useFormAutoSave<T = any>({
+export function useFormAutoSave<T = unknown>({
   storageKey,
   data,
   debounceMs = 2000,

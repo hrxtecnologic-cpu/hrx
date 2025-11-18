@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import Image from 'next/image';
 
 interface ImageViewerProps {
   images: string[];
@@ -46,10 +47,11 @@ export function ImageViewer({ images, initialIndex = 0 }: ImageViewerProps) {
             onClick={() => openViewer(photoIndex)}
             className="relative aspect-square rounded-lg overflow-hidden bg-zinc-900 border border-zinc-700 hover:border-red-500 transition-all group cursor-pointer"
           >
-            <img
+            <Image
               src={photoUrl}
               alt={`Foto ${photoIndex + 1}`}
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+              fill
+              className="object-cover group-hover:scale-110 transition-transform duration-300"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
               <div className="absolute inset-0 flex items-center justify-center">
@@ -114,11 +116,14 @@ export function ImageViewer({ images, initialIndex = 0 }: ImageViewerProps) {
             className="relative max-w-6xl max-h-[90vh] w-full h-full flex items-center justify-center"
             onClick={(e) => e.stopPropagation()}
           >
-            <img
-              src={images[currentIndex]}
-              alt={`Foto ${currentIndex + 1}`}
-              className="max-w-full max-h-full object-contain rounded-lg"
-            />
+            <div className="relative w-full h-full">
+              <Image
+                src={images[currentIndex]}
+                alt={`Foto ${currentIndex + 1}`}
+                fill
+                className="object-contain rounded-lg"
+              />
+            </div>
 
             {/* Image Counter */}
             <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/70 text-white px-4 py-2 rounded-full text-sm">

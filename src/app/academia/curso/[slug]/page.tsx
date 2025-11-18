@@ -30,7 +30,7 @@ export default function CourseDetailsPage({ params }: CourseDetailsPageProps) {
   const [slug, setSlug] = useState<string>('');
   const [course, setCourse] = useState<Course | null>(null);
   const [lessons, setLessons] = useState<CourseLesson[]>([]);
-  const [enrollment, setEnrollment] = useState<any>(null);
+  const [enrollment, setEnrollment] = useState<unknown>(null);
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
 
@@ -74,7 +74,7 @@ export default function CourseDetailsPage({ params }: CourseDetailsPageProps) {
 
             if (enrollmentData.success) {
               const userEnrollment = enrollmentData.data.enrollments.find(
-                (e: any) => e.course_id === foundCourse.id
+                (e: Record<string, unknown>) => e.course_id === foundCourse.id
               );
               setEnrollment(userEnrollment);
             }
@@ -131,7 +131,7 @@ export default function CourseDetailsPage({ params }: CourseDetailsPageProps) {
 
     // Find first incomplete lesson or first lesson
     const incompleLesson = lessons.find((lesson) => {
-      const progress = enrollment.lesson_progress?.find((p: any) => p.lesson_id === lesson.id);
+      const progress = enrollment.lesson_progress?.find((p: Record<string, unknown>) => p.lesson_id === lesson.id);
       return !progress?.completed;
     });
 
@@ -167,7 +167,7 @@ export default function CourseDetailsPage({ params }: CourseDetailsPageProps) {
     advanced: 'Avançado',
   };
 
-  const completedLessons = enrollment?.lesson_progress?.filter((p: any) => p.completed).length || 0;
+  const completedLessons = enrollment?.lesson_progress?.filter((p: Record<string, unknown>) => p.completed).length || 0;
 
   return (
     <div className="min-h-screen bg-black">
@@ -267,7 +267,7 @@ export default function CourseDetailsPage({ params }: CourseDetailsPageProps) {
                 <div className="space-y-2">
                   {lessons.map((lesson, idx) => {
                     const isCompleted = enrollment?.lesson_progress?.find(
-                      (p: any) => p.lesson_id === lesson.id && p.completed
+                      (p: Record<string, unknown>) => p.lesson_id === lesson.id && p.completed
                     );
 
                     return (
