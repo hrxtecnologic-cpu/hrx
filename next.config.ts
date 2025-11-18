@@ -2,16 +2,6 @@ import {withSentryConfig} from "@sentry/nextjs";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // ESLint: Ignorar durante build (podemos corrigir depois)
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-
-  // TypeScript: Ignorar erros temporariamente (incompatibilidade react-hook-form/zod)
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-
   // Headers de segurança
   async headers() {
     const isDevelopment = process.env.NODE_ENV === 'development';
