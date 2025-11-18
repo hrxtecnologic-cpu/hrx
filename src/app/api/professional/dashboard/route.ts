@@ -25,7 +25,7 @@ export const GET = withAuth(async (userId: string) => {
       .from('professionals')
       .select('id, full_name, email, phone, status, categories, subcategories, documents, city, state, rejection_reason')
       .eq('clerk_id', userId)
-      .single();
+      .maybeSingle();
 
     if (profError || !professional) {
       return NextResponse.json(

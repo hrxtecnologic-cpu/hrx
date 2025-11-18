@@ -22,7 +22,7 @@ export const GET = withAuth(async (userId: string, req: Request) => {
       .from('users')
       .select('id')
       .eq('clerk_id', userId)
-      .single();
+      .maybeSingle();
 
     if (!userData) {
       return notFoundResponse('Usuário não encontrado');
@@ -33,7 +33,7 @@ export const GET = withAuth(async (userId: string, req: Request) => {
       .from('professionals')
       .select('*')
       .eq('user_id', userData.id)
-      .single();
+      .maybeSingle();
 
     if (error || !professional) {
       return notFoundResponse('Perfil profissional não encontrado');
@@ -98,7 +98,7 @@ export const PATCH = withAuth(async (userId: string, req: Request) => {
       .from('users')
       .select('id')
       .eq('clerk_id', userId)
-      .single();
+      .maybeSingle();
 
     if (!userData) {
       return notFoundResponse('Usuário não encontrado');
@@ -136,7 +136,7 @@ export const PATCH = withAuth(async (userId: string, req: Request) => {
       })
       .eq('user_id', userData.id)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) {
       logger.error('Erro ao atualizar perfil profissional', error, {

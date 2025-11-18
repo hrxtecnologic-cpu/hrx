@@ -10,6 +10,7 @@ import { z } from 'zod';
 export const createCategorySchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório').max(100, 'Nome muito longo'),
   description: z.string().max(500, 'Descrição muito longa').optional().nullable(),
+  category_type: z.enum(['professional', 'equipment']).default('professional'),
 });
 
 export const updateCategorySchema = z.object({

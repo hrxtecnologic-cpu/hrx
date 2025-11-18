@@ -1,5 +1,5 @@
 import { auth } from '@clerk/nextjs/server';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { rateLimit, RateLimitPresets, createRateLimitError } from '@/lib/rate-limit';
 import { updateCategorySchema } from '@/lib/validations/admin';
@@ -45,7 +45,7 @@ export async function PUT(
 
     const { name, description } = validation.data;
 
-    const supabase = await createClient();
+    const supabase = await createAdminClient();
 
     // Verificar se outro registro já tem esse nome
     const { data: existing } = await supabase
@@ -53,7 +53,7 @@ export async function PUT(
       .select('id')
       .eq('name', name)
       .neq('id', id)
-      .single();
+      .maybeSingle();
 
     if (existing) {
       return NextResponse.json(
@@ -67,7 +67,7 @@ export async function PUT(
       .update({ name, description })
       .eq('id', id)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) {
       throw error;
@@ -110,14 +110,14 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    const supabase = await createClient();
+    const supabase = await createAdminClient();
 
     // ========== Buscar nome da categoria antes de deletar ==========
     const { data: category, error: fetchError } = await supabase
       .from('categories')
       .select('name')
       .eq('id', id)
-      .single();
+      .maybeSingle();
 
     if (fetchError || !category) {
       return NextResponse.json(

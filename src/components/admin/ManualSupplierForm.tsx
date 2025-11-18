@@ -71,6 +71,7 @@ export function ManualSupplierForm() {
               status: 'available',
               quantity: parseInt(item.quantity) || 1,
             },
+            photos: item.photos || [], // Incluir fotos do equipamento
             is_active: true,
           })),
         }),
@@ -79,14 +80,24 @@ export function ManualSupplierForm() {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || 'Erro ao cadastrar fornecedor');
+        console.error('Erro da API:', {
+          status: response.status,
+          error: result.error,
+          details: result.details,
+          existing: result.existing,
+        });
+
+        // Mensagem mais detalhada para o usuário
+        const errorMsg = result.error || 'Erro ao cadastrar fornecedor';
+        const detailsMsg = result.details ? `\n${result.details}` : '';
+        throw new Error(errorMsg + detailsMsg);
       }
 
       toast.success('✅ Fornecedor cadastrado com sucesso!');
       reset();
       setCatalogItems([]);
     } catch (error: any) {
-      console.error('Erro ao cadastrar:', error);
+      console.error('Erro ao cadastrar fornecedor:', error);
       toast.error(error.message || 'Erro ao cadastrar fornecedor');
     } finally {
       setIsSubmitting(false);

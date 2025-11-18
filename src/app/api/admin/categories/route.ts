@@ -83,7 +83,7 @@ export const POST = withAdmin(async (userId: string, req: Request) => {
       );
     }
 
-    const { name, description } = validation.data;
+    const { name, description, category_type } = validation.data;
 
     const supabase = await createClient();
 
@@ -92,7 +92,7 @@ export const POST = withAdmin(async (userId: string, req: Request) => {
       .from('categories')
       .select('id')
       .eq('name', name)
-      .eq('category_type', 'professional')
+      .eq('category_type', category_type)
       .single();
 
     if (existing) {
@@ -107,7 +107,7 @@ export const POST = withAdmin(async (userId: string, req: Request) => {
       .insert([{
         name,
         description,
-        category_type: 'professional',
+        category_type, // Usar o tipo do body
         active: true,
         order_index: 999 // Novas categorias vão pro final
       }])

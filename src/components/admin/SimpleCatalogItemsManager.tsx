@@ -7,8 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
-import { Plus, Trash2, Edit2, Check, X, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Edit2, Check, X, Loader2, Upload, Image as ImageIcon } from 'lucide-react';
 import { useCategories, convertToWizardFormat } from '@/hooks/useCategories';
+import { toast } from 'sonner';
 
 interface CatalogItem {
   id: string;
@@ -21,6 +22,7 @@ interface CatalogItem {
   pricing_monthly?: string;
   quantity: string;
   specifications: { key: string; value: string }[];
+  photos?: string[]; // URLs das fotos do equipamento
 }
 
 interface SimpleCatalogItemsManagerProps {
@@ -45,7 +47,77 @@ export function SimpleCatalogItemsManager({ items, onChange }: SimpleCatalogItem
     pricing_monthly: '',
     quantity: '1',
     specifications: [{ key: '', value: '' }],
+    photos: [],
   });
+
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    // Validar número de fotos (máximo 2)
+    if ((currentItem.photos?.length || 0) + files.length > 2) {
+      toast.error('Máximo de 2 fotos por equipamento');
+      return;
+    }
+
+    setUploadingPhoto(true);
+
+    try {
+      const uploadPromises = Array.from(files).map(async (file) => {
+        // Validar tipo de arquivo
+        if (!file.type.startsWith('image/')) {
+          throw new Error(`${file.name} não é uma imagem válida`);
+        }
+
+        // Validar tamanho (máximo 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          throw new Error(`${file.name} excede o tamanho máximo de 5MB`);
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('folder', 'equipment');
+
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Erro ao fazer upload');
+        }
+
+        const data = await response.json();
+        return data.url;
+      });
+
+      const urls = await Promise.all(uploadPromises);
+
+      setCurrentItem({
+        ...currentItem,
+        photos: [...(currentItem.photos || []), ...urls],
+      });
+
+      toast.success(`${urls.length} foto(s) enviada(s) com sucesso`);
+    } catch (error: any) {
+      console.error('Erro ao fazer upload:', error);
+      toast.error(error.message || 'Erro ao fazer upload das fotos');
+    } finally {
+      setUploadingPhoto(false);
+      // Limpar input
+      e.target.value = '';
+    }
+  };
+
+  const handleRemovePhoto = (index: number) => {
+    setCurrentItem({
+      ...currentItem,
+      photos: currentItem.photos?.filter((_, i) => i !== index) || [],
+    });
+  };
 
   const handleAddItem = () => {
     const newItem = {
@@ -64,6 +136,7 @@ export function SimpleCatalogItemsManager({ items, onChange }: SimpleCatalogItem
       pricing_monthly: '',
       quantity: '1',
       specifications: [{ key: '', value: '' }],
+      photos: [],
     });
     setIsAdding(false);
   };
@@ -85,6 +158,7 @@ export function SimpleCatalogItemsManager({ items, onChange }: SimpleCatalogItem
       pricing_monthly: '',
       quantity: '1',
       specifications: [{ key: '', value: '' }],
+      photos: [],
     });
   };
 
@@ -99,7 +173,7 @@ export function SimpleCatalogItemsManager({ items, onChange }: SimpleCatalogItem
   };
 
   const availableSubcategories = currentItem.category
-    ? EQUIPMENT_CATEGORIES.find(c => c.name === currentItem.category)?.subtypes || []
+    ? EQUIPMENT_CATEGORIES.find(c => c.name === currentItem.category)?.subcategories || []
     : [];
 
   const addSpecification = () => {
@@ -188,6 +262,26 @@ export function SimpleCatalogItemsManager({ items, onChange }: SimpleCatalogItem
 
                 {/* Descrição */}
                 <p className="text-xs text-zinc-400 mb-3">{item.description}</p>
+
+                {/* Fotos do Equipamento */}
+                {item.photos && item.photos.length > 0 && (
+                  <div className="mb-3 pb-3 border-b border-zinc-700">
+                    <p className="text-xs font-medium text-white mb-2 flex items-center gap-1">
+                      <ImageIcon className="h-3 w-3" />
+                      Fotos:
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {item.photos.map((url, idx) => (
+                        <img
+                          key={idx}
+                          src={url}
+                          alt={`Foto ${idx + 1} - ${item.name}`}
+                          className="w-full h-24 object-cover rounded border border-zinc-600"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Especificações Técnicas */}
                 {item.specifications && item.specifications.length > 0 && item.specifications.some(s => s.key && s.value) && (
@@ -405,6 +499,79 @@ export function SimpleCatalogItemsManager({ items, onChange }: SimpleCatalogItem
                 min="1"
                 className="bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-500 mt-1"
               />
+            </div>
+
+            {/* Fotos do Equipamento */}
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <div>
+                  <Label className="text-xs text-white">Fotos do Equipamento</Label>
+                  <p className="text-xs text-zinc-500 mt-0.5">
+                    Envie 1 ou 2 fotos para averiguar a qualidade (máx. 5MB cada)
+                  </p>
+                </div>
+              </div>
+
+              {/* Preview das fotos */}
+              {currentItem.photos && currentItem.photos.length > 0 && (
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  {currentItem.photos.map((url, idx) => (
+                    <div key={idx} className="relative group">
+                      <img
+                        src={url}
+                        alt={`Foto ${idx + 1}`}
+                        className="w-full h-32 object-cover rounded border border-zinc-700"
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleRemovePhoto(idx)}
+                        className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white p-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Input de upload */}
+              {(!currentItem.photos || currentItem.photos.length < 2) && (
+                <div>
+                  <input
+                    type="file"
+                    id="equipment-photo-upload"
+                    accept="image/*"
+                    multiple
+                    onChange={handlePhotoUpload}
+                    disabled={uploadingPhoto}
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    onClick={() => document.getElementById('equipment-photo-upload')?.click()}
+                    variant="outline"
+                    size="sm"
+                    disabled={uploadingPhoto}
+                    className="w-full border-zinc-700 text-white hover:bg-zinc-800"
+                  >
+                    {uploadingPhoto ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Enviando...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="h-4 w-4 mr-2" />
+                        {currentItem.photos && currentItem.photos.length > 0
+                          ? 'Adicionar mais fotos'
+                          : 'Enviar fotos'}
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
             </div>
 
             {/* Botões */}

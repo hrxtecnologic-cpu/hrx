@@ -20,7 +20,7 @@ export async function GET() {
       .from('users')
       .select('id')
       .eq('clerk_id', userId)
-      .single();
+      .maybeSingle();
 
     if (!userData) {
       return NextResponse.json({
@@ -34,7 +34,7 @@ export async function GET() {
       .from('professionals')
       .select('id')
       .eq('user_id', userData.id)
-      .single();
+      .maybeSingle();
 
     return NextResponse.json({
       hasProfessionalRegistration: !!professional,

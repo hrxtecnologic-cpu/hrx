@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { rateLimit, RateLimitPresets, createRateLimitError } from '@/lib/rate-limit';
 import { auth } from '@clerk/nextjs/server';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/server';
 import { isAdmin } from '@/lib/auth';
 import { sendQuoteAcceptedEmail, sendQuoteRejectedEmail } from '@/lib/resend/emails';
 import { logger } from '@/lib/logger';
@@ -47,7 +47,7 @@ export async function POST(
     }
 
     const { id: projectId, quotationId } = await params;
-    const supabase = await createClient();
+    const supabase = await createAdminClient();
 
     // Buscar o orçamento aceito
     const { data: quotation, error: quotationError } = await supabase
@@ -55,7 +55,7 @@ export async function POST(
       .select('*')
       .eq('id', quotationId)
       .eq('project_id', projectId)
-      .single();
+      .maybeSingle();
 
     if (quotationError || !quotation) {
       return NextResponse.json(
@@ -104,9 +104,9 @@ export async function POST(
     // Buscar projeto para recalcular custos totais
     const { data: project, error: projectFetchError } = await supabase
       .from('event_projects')
-      .select('total_team_cost, profit_margin')
+      .select('total_team_cost, profit_margin, project_number')
       .eq('id', projectId)
-      .single();
+      .maybeSingle();
 
     if (projectFetchError) {
     }

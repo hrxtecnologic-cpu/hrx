@@ -25,7 +25,7 @@ export async function GET() {
       .from('users')
       .select('id')
       .eq('clerk_id', userId)
-      .single();
+      .maybeSingle();
 
     if (!user) {
       return NextResponse.json({ error: 'Usuario nao encontrado' }, { status: 404 });
@@ -35,7 +35,7 @@ export async function GET() {
       .from('notification_preferences')
       .select('*')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
     if (error && error.code === 'PGRST116') {
       const { data: newPreferences, error: createError } = await supabase
@@ -54,7 +54,7 @@ export async function GET() {
           digest_frequency: 'instant',
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (createError) {
         console.error('Erro ao criar preferencias:', createError);
@@ -91,7 +91,7 @@ export async function PUT(request: NextRequest) {
       .from('users')
       .select('id')
       .eq('clerk_id', userId)
-      .single();
+      .maybeSingle();
 
     if (!user) {
       return NextResponse.json({ error: 'Usuario nao encontrado' }, { status: 404 });
@@ -128,7 +128,7 @@ export async function PUT(request: NextRequest) {
       .update(updates)
       .eq('user_id', user.id)
       .select()
-      .single();
+      .maybeSingle();
 
     if (updateError) {
       console.error('Erro ao atualizar preferencias:', updateError);

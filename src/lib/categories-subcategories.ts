@@ -1,4 +1,24 @@
 /**
+ * ⚠️ DEPRECATED - ESTE ARQUIVO É LEGACY E NÃO DEVE SER USADO
+ *
+ * As categorias agora vêm do BANCO DE DADOS via hook useCategories
+ * Este arquivo é mantido apenas por compatibilidade temporária
+ *
+ * ❌ NÃO ADICIONE NOVAS CATEGORIAS AQUI!
+ * ✅ Use /admin/configuracoes/categorias para gerenciar categorias
+ *
+ * Hook recomendado:
+ * ```typescript
+ * import { useCategories } from '@/hooks/useCategories';
+ * const { categories, loading } = useCategories('professional');
+ * ```
+ *
+ * @deprecated Use useCategories hook instead
+ * @see hooks/useCategories.ts
+ * @see app/admin/configuracoes/categorias
+ */
+
+/**
  * Mapeamento Completo de Categorias e Subcategorias de Profissionais para Eventos
  *
  * Abrange: Eventos Corporativos, Feiras, Festivais, Convenções, Shows, Exposições, etc.

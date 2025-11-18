@@ -7,7 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/server';
 import { withAdmin } from '@/lib/api';
 
 export const POST = withAdmin(async (userId: string, request: NextRequest) => {
@@ -34,7 +34,7 @@ export const POST = withAdmin(async (userId: string, request: NextRequest) => {
       );
     }
 
-    const supabase = await createClient();
+    const supabase = await createAdminClient();
 
     // Verificar se já existe fornecedor com mesmo email ou CNPJ
     let duplicateQuery = supabase
@@ -47,7 +47,7 @@ export const POST = withAdmin(async (userId: string, request: NextRequest) => {
       duplicateQuery = duplicateQuery.eq('email', email);
     }
 
-    const { data: existing } = await duplicateQuery.limit(1).single();
+    const { data: existing } = await duplicateQuery.limit(1).maybeSingle();
 
     if (existing) {
       return NextResponse.json(
@@ -83,16 +83,23 @@ export const POST = withAdmin(async (userId: string, request: NextRequest) => {
         equipment_types,
         equipment_catalog: equipment_catalog || [],
         status: 'active',
-        created_by_admin: true,
-        created_by_admin_id: userId,
+        // Campos created_by_admin não existem na tabela equipment_suppliers
       })
       .select()
-      .single();
+      .maybeSingle();
 
     if (insertError) {
       console.error('[manual-supplier] Erro ao inserir:', insertError);
       return NextResponse.json(
         { error: 'Erro ao cadastrar fornecedor', details: insertError.message },
+        { status: 500 }
+      );
+    }
+
+    if (!supplier) {
+      console.error('[manual-supplier] Fornecedor não foi criado');
+      return NextResponse.json(
+        { error: 'Erro ao cadastrar fornecedor' },
         { status: 500 }
       );
     }

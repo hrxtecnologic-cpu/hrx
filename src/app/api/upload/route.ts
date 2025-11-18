@@ -40,6 +40,7 @@ export async function POST(req: Request) {
     const formData = await req.formData();
     const file = formData.get('file') as File;
     const documentType = formData.get('documentType') as string;
+    const folder = formData.get('folder') as string; // 'professional' ou 'equipment'
 
     if (!file) {
       return NextResponse.json({ error: 'Nenhum arquivo enviado' }, { status: 400 });
@@ -85,28 +86,45 @@ export async function POST(req: Request) {
       );
     }
 
-    // 🔒 SECURITY: Validar documentType para prevenir path traversal
-    const allowedDocumentTypes = [
-      'rg_front', 'rg_back', 'cpf', 'proof_of_address', 'cnh_photo',
-      'nr10', 'nr35', 'drt', 'cnv', 'portfolio'
-    ];
+    // 🔒 SECURITY: Validar folder e documentType
+    const allowedFolders = ['professional', 'equipment'];
+    const isEquipmentUpload = folder === 'equipment';
 
-    if (!documentType || !allowedDocumentTypes.includes(documentType)) {
-      return NextResponse.json(
-        { error: 'Tipo de documento inválido' },
-        { status: 400 }
-      );
+    if (!isEquipmentUpload) {
+      // Para uploads de profissionais, validar documentType
+      const allowedDocumentTypes = [
+        'rg_front', 'rg_back', 'cpf', 'proof_of_address', 'cnh_photo',
+        'nr10', 'nr35', 'drt', 'cnv', 'portfolio'
+      ];
+
+      if (!documentType || !allowedDocumentTypes.includes(documentType)) {
+        return NextResponse.json(
+          { error: 'Tipo de documento inválido' },
+          { status: 400 }
+        );
+      }
     }
 
     // Gerar nome do arquivo
     const fileExt = file.name.split('.').pop();
     let fileName: string;
+    let bucketName: string;
 
-    if (documentType === 'portfolio') {
+    if (isEquipmentUpload) {
+      // Upload de foto de equipamento
       const timestamp = Date.now();
-      fileName = `${userId}/portfolio/photo_${timestamp}.${fileExt}`;
+      const randomStr = Math.random().toString(36).substring(7);
+      fileName = `equipment/${userId}/${timestamp}_${randomStr}.${fileExt}`;
+      bucketName = 'equipment-photos';
     } else {
-      fileName = `${userId}/${documentType}.${fileExt}`;
+      // Upload de documento de profissional
+      if (documentType === 'portfolio') {
+        const timestamp = Date.now();
+        fileName = `${userId}/portfolio/photo_${timestamp}.${fileExt}`;
+      } else {
+        fileName = `${userId}/${documentType}.${fileExt}`;
+      }
+      bucketName = 'professional-documents';
     }
 
     // Converter File para ArrayBuffer
@@ -115,9 +133,9 @@ export async function POST(req: Request) {
 
     // Upload para Supabase Storage usando SERVICE_ROLE (ignora RLS)
     const { error: uploadError } = await supabase.storage
-      .from('professional-documents')
+      .from(bucketName)
       .upload(fileName, buffer, {
-        upsert: documentType !== 'portfolio', // Portfolio não substitui, documentos sim
+        upsert: !isEquipmentUpload && documentType !== 'portfolio', // Portfolio e equipamentos não substituem
         contentType: file.type,
       });
 
@@ -130,7 +148,7 @@ export async function POST(req: Request) {
 
     // Gerar URL pública
     const { data: urlData } = supabase.storage
-      .from('professional-documents')
+      .from(bucketName)
       .getPublicUrl(fileName);
 
     return NextResponse.json({

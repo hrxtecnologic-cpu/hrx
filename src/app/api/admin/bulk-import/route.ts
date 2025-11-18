@@ -7,12 +7,32 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/server';
 import { withAdmin } from '@/lib/api';
 import { geocodeAddress } from '@/lib/mapbox-geocoding';
+import { rateLimit, RateLimitPresets, createRateLimitError } from '@/lib/rate-limit';
 
 export const POST = withAdmin(async (userId: string, request: NextRequest) => {
   try {
+    // ========== Rate Limiting ==========
+    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+    const rateLimitResult = await rateLimit(ip, RateLimitPresets.API_WRITE);
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        createRateLimitError(rateLimitResult),
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': new Date(rateLimitResult.reset).toISOString(),
+            'Retry-After': Math.ceil((rateLimitResult.reset - Date.now()) / 1000).toString(),
+          }
+        }
+      );
+    }
+
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const type = formData.get('type') as string;
@@ -39,7 +59,7 @@ export const POST = withAdmin(async (userId: string, request: NextRequest) => {
     const headers = lines[0].split(',').map(h => h.trim());
     const rows = lines.slice(1);
 
-    const supabase = await createClient();
+    const supabase = await createAdminClient();
     const results = {
       success: 0,
       failed: 0,

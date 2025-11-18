@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import { rateLimit, RateLimitPresets, createRateLimitError } from '@/lib/rate-limit';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
@@ -26,6 +27,33 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // ========== Rate Limiting ==========
+    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+    const rateLimitResult = await rateLimit(ip, RateLimitPresets.PUBLIC_API);
+
+    if (!rateLimitResult.success) {
+      return new NextResponse(
+        `<!DOCTYPE html>
+        <html>
+          <head><meta charset="UTF-8"><title>Muitas Tentativas</title></head>
+          <body style="font-family: sans-serif; text-align: center; padding: 50px;">
+            <h1>⏱️ Muitas tentativas</h1>
+            <p>Por favor, aguarde alguns minutos antes de tentar novamente.</p>
+          </body>
+        </html>`,
+        {
+          status: 429,
+          headers: {
+            'Content-Type': 'text/html',
+            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': new Date(rateLimitResult.reset).toISOString(),
+            'Retry-After': Math.ceil((rateLimitResult.reset - Date.now()) / 1000).toString(),
+          }
+        }
+      );
+    }
+
     const { id: contractId } = await params;
     const { searchParams } = new URL(request.url);
     const token = searchParams.get('token');
@@ -62,7 +90,7 @@ export async function GET(
       `)
       .eq('id', contractId)
       .eq('signature_token', token)
-      .single();
+      .maybeSingle();
 
     if (contractError || !contract) {
       return createErrorPage('Contrato Não Encontrado', 'Não foi possível localizar este contrato');
@@ -91,6 +119,25 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // ========== Rate Limiting ==========
+    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+    const rateLimitResult = await rateLimit(ip, RateLimitPresets.API_WRITE);
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        createRateLimitError(rateLimitResult),
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': new Date(rateLimitResult.reset).toISOString(),
+            'Retry-After': Math.ceil((rateLimitResult.reset - Date.now()) / 1000).toString(),
+          }
+        }
+      );
+    }
+
     const { id: contractId } = await params;
     const body = await request.json();
     const { token, fullName } = body;
@@ -113,7 +160,7 @@ export async function POST(
       .select('*')
       .eq('id', contractId)
       .eq('signature_token', token)
-      .single();
+      .maybeSingle();
 
     if (contractError || !contract) {
       return NextResponse.json({ error: 'Contrato não encontrado' }, { status: 404 });

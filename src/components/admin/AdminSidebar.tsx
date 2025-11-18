@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -16,6 +17,9 @@ import {
   Map,
   UserPlus,
   ClipboardList,
+  GraduationCap,
+  BookOpen,
+  Award,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAdminCounts } from '@/hooks/useAdminCounts';
@@ -41,6 +45,15 @@ const getMenuItems = (documentCount: number) => [
     ],
   },
   {
+    title: 'Academia HRX',
+    items: [
+      { icon: GraduationCap, label: 'Dashboard', href: '/admin/academia', badge: null },
+      { icon: BookOpen, label: 'Cursos', href: '/admin/academia/cursos', badge: null },
+      { icon: Users, label: 'Alunos', href: '/admin/academia/alunos', badge: null },
+      { icon: Award, label: 'Certificados', href: '/admin/academia/certificados', badge: null },
+    ],
+  },
+  {
     title: 'Sistema',
     items: [
       { icon: BarChart3, label: 'Relatórios', href: '/admin/relatorios', badge: null },
@@ -58,8 +71,14 @@ interface AdminSidebarProps {
 export function AdminSidebar({ mobileMenuOpen = false, setMobileMenuOpen }: AdminSidebarProps) {
   const pathname = usePathname();
   const { counts } = useAdminCounts();
+  const [mounted, setMounted] = useState(false);
 
-  const menuItems = getMenuItems(counts.documents);
+  // Evita hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const menuItems = getMenuItems(mounted ? counts.documents : 0);
 
   const SidebarContent = () => (
     <div className="flex flex-col flex-grow bg-zinc-900 border-r border-zinc-800 overflow-y-auto">

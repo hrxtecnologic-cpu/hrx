@@ -13,13 +13,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { SimpleCatalogItemsManager } from '@/components/admin/SimpleCatalogItemsManager';
-import { EQUIPMENT_CATEGORIES } from '@/lib/equipment-types';
 import {
   Eye,
   CheckCircle,
@@ -32,8 +26,7 @@ import {
   AlertCircle,
   Building2,
   Package,
-  Trash2,
-  Plus
+  Trash2
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -94,20 +87,6 @@ export function UnifiedSuppliersView({ initialStats }: UnifiedSuppliersViewProps
   // Row expansion
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
-  // Dialog de cadastro
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [catalogItems, setCatalogItems] = useState<any[]>([]);
-  const [formData, setFormData] = useState({
-    company_name: '',
-    contact_name: '',
-    email: '',
-    phone: '',
-    equipment_types: [] as string[],
-    notes: '',
-    status: 'active' as 'active' | 'inactive',
-  });
-  const [saving, setSaving] = useState(false);
-
   // Carregar dados
   useEffect(() => {
     loadSuppliers();
@@ -167,94 +146,6 @@ export function UnifiedSuppliersView({ initialStats }: UnifiedSuppliersViewProps
   // Toggle row expansion
   function toggleRow(id: string) {
     setExpandedRow(expandedRow === id ? null : id);
-  }
-
-  // Abrir dialog para novo fornecedor
-  function handleOpenDialog() {
-    setFormData({
-      company_name: '',
-      contact_name: '',
-      email: '',
-      phone: '',
-      equipment_types: [],
-      notes: '',
-      status: 'active',
-    });
-    setCatalogItems([]);
-    setIsDialogOpen(true);
-  }
-
-  // Salvar fornecedor
-  async function handleSave() {
-    // Validação básica
-    if (!formData.company_name || !formData.email || !formData.phone) {
-      alert('❌ Preencha todos os campos obrigatórios');
-      return;
-    }
-
-    setSaving(true);
-
-    try {
-      const equipment_catalog = catalogItems.map(item => ({
-        id: item.id,
-        category: item.category,
-        subcategory: item.subcategory,
-        name: item.name,
-        description: item.description,
-        specifications: item.specifications.reduce((acc: Record<string, string>, spec: { key: string; value: string }) => {
-          if (spec.key && spec.value) acc[spec.key] = spec.value;
-          return acc;
-        }, {}),
-        pricing: {
-          daily: item.pricing_daily ? parseFloat(item.pricing_daily) : undefined,
-          weekly: item.pricing_weekly ? parseFloat(item.pricing_weekly) : undefined,
-          monthly: item.pricing_monthly ? parseFloat(item.pricing_monthly) : undefined,
-        },
-        availability: {
-          status: 'available',
-          quantity: parseInt(item.quantity) || 1,
-        },
-        is_active: true,
-        is_featured: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }));
-
-      const payload = {
-        ...formData,
-        equipment_catalog,
-      };
-
-      const response = await fetch('/api/admin/suppliers', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Erro ao salvar fornecedor');
-      }
-
-      alert('✅ Fornecedor cadastrado com sucesso!');
-      setIsDialogOpen(false);
-      loadSuppliers();
-    } catch (err: any) {
-      console.error('Erro ao salvar fornecedor:', err);
-      alert(`❌ Erro: ${err.message}`);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  // Toggle equipment type
-  function toggleEquipmentType(type: string) {
-    setFormData(prev => ({
-      ...prev,
-      equipment_types: prev.equipment_types.includes(type)
-        ? prev.equipment_types.filter(t => t !== type)
-        : [...prev.equipment_types, type]
-    }));
   }
 
   // Deletar fornecedor
@@ -372,10 +263,7 @@ export function UnifiedSuppliersView({ initialStats }: UnifiedSuppliersViewProps
             className="pl-10 bg-zinc-900 border-zinc-800 text-white"
           />
         </div>
-        <Button onClick={handleOpenDialog} className="bg-red-600 hover:bg-red-700 text-white">
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Fornecedor
-        </Button>
+        {/* Botão "Novo Fornecedor" removido - todos os cadastros devem ser feitos via /admin/cadastros-manuais */}
       </div>
 
       {/* Tabela */}
@@ -666,124 +554,7 @@ export function UnifiedSuppliersView({ initialStats }: UnifiedSuppliersViewProps
         Mostrando {filteredSuppliers.length} de {suppliers.length} fornecedores
       </div>
 
-      {/* Dialog de Cadastro */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-zinc-900 border-zinc-800">
-          <DialogHeader>
-            <DialogTitle className="text-white">Novo Fornecedor</DialogTitle>
-            <DialogDescription className="text-zinc-400">
-              Cadastre um novo fornecedor parceiro com catálogo detalhado de equipamentos
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-6 py-4">
-            {/* Informações Básicas */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-white">Nome da Empresa *</Label>
-                <Input
-                  value={formData.company_name}
-                  onChange={(e) => setFormData({...formData, company_name: e.target.value})}
-                  className="bg-zinc-800 border-zinc-700 text-white mt-1 placeholder:text-zinc-500"
-                  placeholder="Ex: HRX Equipamentos"
-                />
-              </div>
-              <div>
-                <Label className="text-white">Nome do Contato</Label>
-                <Input
-                  value={formData.contact_name}
-                  onChange={(e) => setFormData({...formData, contact_name: e.target.value})}
-                  className="bg-zinc-800 border-zinc-700 text-white mt-1 placeholder:text-zinc-500"
-                  placeholder="Ex: João Silva"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-white">Email *</Label>
-                <Input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  className="bg-zinc-800 border-zinc-700 text-white mt-1 placeholder:text-zinc-500"
-                  placeholder="contato@empresa.com"
-                />
-              </div>
-              <div>
-                <Label className="text-white">Telefone *</Label>
-                <Input
-                  value={formData.phone}
-                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                  className="bg-zinc-800 border-zinc-700 text-white mt-1 placeholder:text-zinc-500"
-                  placeholder="(11) 99999-9999"
-                />
-              </div>
-            </div>
-
-            {/* Tipos de Equipamentos */}
-            <div>
-              <Label className="text-white mb-2 block">Tipos de Equipamentos</Label>
-              <div className="grid grid-cols-3 gap-2">
-                {EQUIPMENT_CATEGORIES.map((cat) => (
-                  <div key={cat.name} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={cat.name}
-                      checked={formData.equipment_types.includes(cat.name)}
-                      onCheckedChange={() => toggleEquipmentType(cat.name)}
-                      className="border-red-500 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
-                    />
-                    <label
-                      htmlFor={cat.name}
-                      className="text-sm text-white cursor-pointer"
-                    >
-                      {cat.label}
-                    </label>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Catálogo de Equipamentos */}
-            <div className="border-t border-zinc-800 pt-4">
-              <SimpleCatalogItemsManager
-                items={catalogItems}
-                onChange={setCatalogItems}
-              />
-            </div>
-
-            {/* Observações */}
-            <div>
-              <Label className="text-white">Observações</Label>
-              <Textarea
-                value={formData.notes}
-                onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                className="bg-zinc-800 border-zinc-700 text-white mt-1 placeholder:text-zinc-500"
-                rows={3}
-                placeholder="Informações adicionais sobre o fornecedor..."
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsDialogOpen(false)}
-              disabled={saving}
-              className="border-zinc-700 text-white hover:bg-zinc-800"
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleSave}
-              disabled={saving}
-              className="bg-red-600 hover:bg-red-700 text-white"
-            >
-              {saving ? 'Salvando...' : 'Salvar Fornecedor'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Dialog de Cadastro removido - todos os cadastros devem ser feitos via /admin/cadastros-manuais */}
     </div>
   );
 }

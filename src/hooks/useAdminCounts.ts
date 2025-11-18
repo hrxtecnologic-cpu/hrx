@@ -27,11 +27,12 @@ export function useAdminCounts(): UseAdminCountsResult {
   const [counts, setCounts] = useState<AdminCounts>({
     documents: 0,
   });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Começa false para evitar hydration mismatch
   const [error, setError] = useState<string | null>(null);
 
   const fetchCounts = async () => {
     try {
+      setLoading(true);
       const response = await fetch('/api/admin/counts', {
         method: 'GET',
         headers: {

@@ -89,6 +89,97 @@ CREATE TABLE public.contracts (
   CONSTRAINT contracts_pkey PRIMARY KEY (id),
   CONSTRAINT contracts_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.event_projects(id)
 );
+CREATE TABLE public.course_badges (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  name text NOT NULL UNIQUE,
+  slug text NOT NULL UNIQUE,
+  description text NOT NULL,
+  icon text,
+  color text DEFAULT '#3b82f6'::text,
+  image_url text,
+  criteria_type text NOT NULL CHECK (criteria_type = ANY (ARRAY['first_course'::text, 'courses_count'::text, 'streak_days'::text, 'average_score'::text, 'category_master'::text, 'quick_learner'::text, 'perfect_score'::text])),
+  criteria_value jsonb DEFAULT '{}'::jsonb,
+  is_active boolean DEFAULT true,
+  order_index integer DEFAULT 0,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT course_badges_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.course_enrollments (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  course_id uuid NOT NULL,
+  professional_id uuid NOT NULL,
+  status text NOT NULL DEFAULT 'active'::text CHECK (status = ANY (ARRAY['active'::text, 'completed'::text, 'cancelled'::text, 'expired'::text])),
+  progress_percentage integer DEFAULT 0 CHECK (progress_percentage >= 0 AND progress_percentage <= 100),
+  completed_lessons jsonb DEFAULT '[]'::jsonb,
+  quiz_scores jsonb DEFAULT '{}'::jsonb,
+  final_score numeric,
+  passed boolean DEFAULT false,
+  certificate_code text UNIQUE,
+  certificate_issued_at timestamp with time zone,
+  payment_status text CHECK (payment_status = ANY (ARRAY['pending'::text, 'paid'::text, 'refunded'::text, 'free'::text])),
+  payment_amount numeric,
+  payment_date timestamp with time zone,
+  enrolled_at timestamp with time zone NOT NULL DEFAULT now(),
+  completed_at timestamp with time zone,
+  expires_at timestamp with time zone,
+  last_accessed_at timestamp with time zone,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT course_enrollments_pkey PRIMARY KEY (id),
+  CONSTRAINT course_enrollments_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id),
+  CONSTRAINT course_enrollments_professional_id_fkey FOREIGN KEY (professional_id) REFERENCES public.professionals(id)
+);
+CREATE TABLE public.course_lessons (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  course_id uuid NOT NULL,
+  title text NOT NULL,
+  description text,
+  order_index integer NOT NULL CHECK (order_index >= 0),
+  content_type text NOT NULL CHECK (content_type = ANY (ARRAY['video'::text, 'text'::text, 'quiz'::text, 'assignment'::text])),
+  video_url text,
+  video_duration_seconds integer CHECK (video_duration_seconds >= 0),
+  video_provider text CHECK (video_provider = ANY (ARRAY['youtube'::text, 'vimeo'::text, 'supabase'::text, 'other'::text])),
+  text_content text,
+  quiz_data jsonb,
+  attachments jsonb DEFAULT '[]'::jsonb,
+  duration_minutes integer DEFAULT 0 CHECK (duration_minutes >= 0),
+  is_preview boolean DEFAULT false,
+  is_mandatory boolean DEFAULT true,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT course_lessons_pkey PRIMARY KEY (id),
+  CONSTRAINT course_lessons_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id)
+);
+CREATE TABLE public.courses (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  title text NOT NULL,
+  slug text NOT NULL UNIQUE,
+  description text NOT NULL,
+  category text NOT NULL,
+  workload_hours integer NOT NULL CHECK (workload_hours > 0),
+  difficulty_level text NOT NULL DEFAULT 'beginner'::text CHECK (difficulty_level = ANY (ARRAY['beginner'::text, 'intermediate'::text, 'advanced'::text])),
+  is_free boolean NOT NULL DEFAULT true,
+  price numeric DEFAULT 0 CHECK (price >= 0::numeric),
+  syllabus jsonb DEFAULT '[]'::jsonb,
+  learning_objectives jsonb DEFAULT '[]'::jsonb,
+  prerequisites text,
+  status text NOT NULL DEFAULT 'draft'::text CHECK (status = ANY (ARRAY['draft'::text, 'published'::text, 'archived'::text])),
+  enrolled_count integer DEFAULT 0 CHECK (enrolled_count >= 0),
+  completed_count integer DEFAULT 0 CHECK (completed_count >= 0),
+  average_rating numeric DEFAULT 0 CHECK (average_rating >= 0::numeric AND average_rating <= 5::numeric),
+  certificate_enabled boolean DEFAULT true,
+  minimum_score integer DEFAULT 70 CHECK (minimum_score >= 0 AND minimum_score <= 100),
+  cover_image_url text,
+  instructor_name text DEFAULT 'Equipe HRX'::text,
+  instructor_bio text,
+  meta_title text,
+  meta_description text,
+  published_at timestamp with time zone,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT courses_pkey PRIMARY KEY (id)
+);
 CREATE TABLE public.delivery_location_history (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   delivery_tracking_id uuid NOT NULL,
@@ -330,6 +421,18 @@ CREATE TABLE public.notifications (
   CONSTRAINT notifications_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.event_projects(id),
   CONSTRAINT notifications_professional_id_fkey FOREIGN KEY (professional_id) REFERENCES public.professionals(id),
   CONSTRAINT notifications_supplier_id_fkey FOREIGN KEY (supplier_id) REFERENCES public.equipment_suppliers(id)
+);
+CREATE TABLE public.professional_badges (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  professional_id uuid NOT NULL,
+  badge_id uuid NOT NULL,
+  earned_at timestamp with time zone NOT NULL DEFAULT now(),
+  related_course_id uuid,
+  achievement_data jsonb DEFAULT '{}'::jsonb,
+  CONSTRAINT professional_badges_pkey PRIMARY KEY (id),
+  CONSTRAINT professional_badges_professional_id_fkey FOREIGN KEY (professional_id) REFERENCES public.professionals(id),
+  CONSTRAINT professional_badges_badge_id_fkey FOREIGN KEY (badge_id) REFERENCES public.course_badges(id),
+  CONSTRAINT professional_badges_related_course_id_fkey FOREIGN KEY (related_course_id) REFERENCES public.courses(id)
 );
 CREATE TABLE public.professional_history (
   id uuid NOT NULL DEFAULT gen_random_uuid(),

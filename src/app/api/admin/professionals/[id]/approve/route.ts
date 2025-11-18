@@ -1,5 +1,5 @@
 import { auth } from '@clerk/nextjs/server';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { rateLimit, RateLimitPresets, createRateLimitError } from '@/lib/rate-limit';
 import { sendProfessionalApprovalEmail } from '@/lib/resend/emails';
@@ -46,14 +46,14 @@ export async function POST(
     }
 
     const { id } = await params;
-    const supabase = await createClient();
+    const supabase = await createAdminClient();
 
     // Buscar dados do profissional antes de aprovar
     const { data: professional, error: fetchError } = await supabase
       .from('professionals')
       .select('full_name, email')
       .eq('id', id)
-      .single();
+      .maybeSingle();
 
     if (fetchError || !professional) {
       logger.error('Erro ao buscar profissional para aprovação', fetchError, { professionalId: id });
@@ -65,7 +65,7 @@ export async function POST(
       .from('users')
       .select('id')
       .eq('clerk_id', userId)
-      .single();
+      .maybeSingle();
 
     // Atualizar status do profissional
     const { error } = await supabase

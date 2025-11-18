@@ -38,7 +38,8 @@ export async function POST(req: Request) {
   const body = JSON.stringify(payload);
 
 
-  // Verificar webhook com Svix
+  // Verificar webhook com Svix (segurança contra forging)
+  // Valida que o request realmente veio do Clerk usando HMAC
   const wh = new Webhook(WEBHOOK_SECRET);
   let evt: WebhookEvent;
 
@@ -49,7 +50,8 @@ export async function POST(req: Request) {
       'svix-signature': svix_signature,
     }) as WebhookEvent;
   } catch (err) {
-    return new Response('Assinatura inválida', { status: 400 });
+    console.error('❌ Webhook signature verification failed:', err);
+    return new Response('Assinatura inválida - requisição não autorizada', { status: 401 });
   }
 
   // Processar eventos
