@@ -59,6 +59,32 @@ export function VideoPlayer({
 
   // Simular tracking de progresso (YouTube API requer mais setup)
   useEffect(() => {
+    const markAsComplete = async () => {
+      if (!lessonId || !enrollmentId || hasMarkedComplete) return;
+
+      setHasMarkedComplete(true);
+
+      try {
+        const res = await fetch(`/api/academy/enrollments/${enrollmentId}/progress`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            lesson_id: lessonId,
+            action: 'complete',
+          }),
+        });
+
+        if (res.ok) {
+          if (onComplete) {
+            onComplete();
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao marcar aula como completa:', error);
+        setHasMarkedComplete(false);
+      }
+    };
+
     if (isPlaying && !progressIntervalRef.current) {
       progressIntervalRef.current = setInterval(() => {
         setProgress((prev) => {
@@ -87,33 +113,7 @@ export function VideoPlayer({
         clearInterval(progressIntervalRef.current);
       }
     };
-  }, [isPlaying, hasMarkedComplete, autoMarkComplete, onProgress]);
-
-  const markAsComplete = async () => {
-    if (!lessonId || !enrollmentId || hasMarkedComplete) return;
-
-    setHasMarkedComplete(true);
-
-    try {
-      const res = await fetch(`/api/academy/enrollments/${enrollmentId}/progress`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          lesson_id: lessonId,
-          action: 'complete',
-        }),
-      });
-
-      if (res.ok) {
-        if (onComplete) {
-          onComplete();
-        }
-      }
-    } catch (error) {
-      console.error('Erro ao marcar aula como completa:', error);
-      setHasMarkedComplete(false);
-    }
-  };
+  }, [isPlaying, hasMarkedComplete, autoMarkComplete, onProgress, lessonId, enrollmentId, onComplete]);
 
   return (
     <div className="relative w-full bg-black rounded-lg overflow-hidden">

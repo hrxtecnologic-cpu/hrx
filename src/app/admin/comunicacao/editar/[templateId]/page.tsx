@@ -117,26 +117,26 @@ export default function EditarTemplatePage() {
   const fields = TEMPLATE_FIELDS[templateId] || [];
 
   useEffect(() => {
-    fetchConfig();
-  }, []);
+    const fetchConfig = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/admin/emails/config');
+        const data = await response.json();
 
-  const fetchConfig = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch('/api/admin/emails/config');
-      const data = await response.json();
-
-      if (data.success) {
-        setConfig(data.config);
-        setTemplateTexts(data.config.template_texts?.[templateId] || {});
+        if (data.success) {
+          setConfig(data.config);
+          setTemplateTexts(data.config.template_texts?.[templateId] || {});
+        }
+      } catch (error) {
+        console.error('Erro ao buscar configuração:', error);
+        setMessage('❌ Erro ao carregar configurações');
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Erro ao buscar configuração:', error);
-      setMessage('❌ Erro ao carregar configurações');
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+
+    fetchConfig();
+  }, [templateId]);
 
   const handleSave = async () => {
     if (!config) return;
@@ -205,7 +205,7 @@ export default function EditarTemplatePage() {
               Template não encontrado
             </h3>
             <p className="text-zinc-400">
-              O template "{templateId}" não possui campos editáveis configurados.
+              O template &quot;{templateId}&quot; não possui campos editáveis configurados.
             </p>
           </CardContent>
         </Card>

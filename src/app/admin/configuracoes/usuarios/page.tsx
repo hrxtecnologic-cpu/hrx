@@ -55,8 +55,31 @@ export default function UsuariosPage() {
   const [sendingEmail, setSendingEmail] = useState<string | null>(null);
 
   useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const token = await getToken();
+        const response = await fetch('/api/admin/users/detailed', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setUsers(data.users || []);
+          setFilteredUsers(data.users || []);
+        } else {
+          console.error('Erro ao buscar usuários');
+        }
+      } catch (error) {
+        console.error('Erro ao buscar usuários:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchUsers();
-  }, []);
+  }, [getToken]);
 
   useEffect(() => {
     let filtered = users;

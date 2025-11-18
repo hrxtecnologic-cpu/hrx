@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
  */
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
@@ -20,6 +20,7 @@ export async function POST(
     }
 
     const supabase = await createClient();
+    const params = await context.params;
     const deliveryId = params.id;
 
     // Buscar user
@@ -101,7 +102,7 @@ export async function POST(
  */
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
@@ -110,6 +111,7 @@ export async function GET(
     }
 
     const supabase = await createClient();
+    const params = await context.params;
     const deliveryId = params.id;
 
     // Buscar histórico

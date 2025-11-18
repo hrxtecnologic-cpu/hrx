@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
  */
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
@@ -20,6 +20,7 @@ export async function PATCH(
     }
 
     const supabase = await createClient();
+    const params = await context.params;
     const deliveryId = params.id;
 
     // Buscar user

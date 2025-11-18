@@ -510,7 +510,7 @@ export default async function ProjetoDetailPage({
                                   )}
                                   {prof.requirements && (
                                     <p className="text-xs text-zinc-500 mt-1 italic">
-                                      "{prof.requirements}"
+                                      &quot;{prof.requirements}&quot;
                                     </p>
                                   )}
                                 </div>
@@ -553,7 +553,7 @@ export default async function ProjetoDetailPage({
                                       )}
                                       {equip.notes && (
                                         <p className="text-xs text-zinc-500 italic">
-                                          "{equip.notes}"
+                                          &quot;{equip.notes}&quot;
                                         </p>
                                       )}
                                     </div>

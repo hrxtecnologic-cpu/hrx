@@ -606,7 +606,7 @@ export function SimpleCatalogItemsManager({ items, onChange }: SimpleCatalogItem
       {items.length === 0 && !isAdding && (
         <div className="text-center py-8 border border-dashed border-zinc-700 rounded-lg">
           <p className="text-sm text-zinc-500">
-            Nenhum item no catálogo. Clique em "Novo Item" para adicionar.
+            Nenhum item no catálogo. Clique em &quot;Novo Item&quot; para adicionar.
           </p>
         </div>
       )}

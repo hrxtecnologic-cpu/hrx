@@ -91,23 +91,43 @@ export const POST = withAdmin(async (userId: string, request: NextRequest) => {
         }
 
         results.success++;
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         results.failed++;
-        results.errors.push(`Linha ${rowNumber}: ${error.message}`);
+        results.errors.push(`Linha ${rowNumber}: ${errorMessage}`);
       }
     }
 
     return NextResponse.json(results);
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('[bulk-import] Erro:', error);
     return NextResponse.json(
-      { error: 'Erro ao processar arquivo', details: error.message },
+      { error: 'Erro ao processar arquivo', details: errorMessage },
       { status: 500 }
     );
   }
 });
 
-async function importProfessional(supabase: any, record: Record<string, string>, userId: string) {
+interface SupabaseClient {
+  from: (table: string) => {
+    select: (columns: string) => {
+      or: (condition: string) => {
+        limit: (count: number) => {
+          maybeSingle: () => Promise<{ data: unknown; error: unknown }>;
+        };
+      };
+      eq: (column: string, value: string) => {
+        limit: (count: number) => {
+          maybeSingle: () => Promise<{ data: unknown; error: unknown }>;
+        };
+      };
+    };
+    insert: (data: Record<string, unknown>) => Promise<{ error: unknown }>;
+  };
+}
+
+async function importProfessional(supabase: SupabaseClient, record: Record<string, string>, userId: string) {
   const cpf = record.cpf?.replace(/\D/g, '');
   const phone = record.phone?.replace(/\D/g, '');
   const cep = record.cep?.replace(/\D/g, '');
@@ -195,7 +215,7 @@ async function importProfessional(supabase: any, record: Record<string, string>,
   if (error) throw error;
 }
 
-async function importClient(supabase: any, record: Record<string, string>, userId: string) {
+async function importClient(supabase: SupabaseClient, record: Record<string, string>, userId: string) {
   // Project number será gerado automaticamente pelo trigger
   const phone = record.client_phone?.replace(/\D/g, '');
   const cnpj = record.client_cnpj?.replace(/\D/g, '') || null;
@@ -267,7 +287,7 @@ async function importClient(supabase: any, record: Record<string, string>, userI
   if (error) throw error;
 }
 
-async function importSupplier(supabase: any, record: Record<string, string>, userId: string) {
+async function importSupplier(supabase: SupabaseClient, record: Record<string, string>, userId: string) {
   const cnpj = record.cnpj?.replace(/\D/g, '');
   const phone = record.phone?.replace(/\D/g, '');
   const zip_code = record.zip_code?.replace(/\D/g, '');

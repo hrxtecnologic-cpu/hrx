@@ -39,30 +39,30 @@ export default function CursosAdminPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
   useEffect(() => {
+    async function fetchCourses() {
+      try {
+        setLoading(true);
+        const url = new URL('/api/admin/academy/courses', window.location.origin);
+
+        if (statusFilter !== 'all') {
+          url.searchParams.set('status', statusFilter);
+        }
+
+        const res = await fetch(url.toString());
+        const data = await res.json();
+
+        if (data.success) {
+          setCourses(data.data);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar cursos:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
     fetchCourses();
   }, [statusFilter]);
-
-  async function fetchCourses() {
-    try {
-      setLoading(true);
-      const url = new URL('/api/admin/academy/courses', window.location.origin);
-
-      if (statusFilter !== 'all') {
-        url.searchParams.set('status', statusFilter);
-      }
-
-      const res = await fetch(url.toString());
-      const data = await res.json();
-
-      if (data.success) {
-        setCourses(data.data);
-      }
-    } catch (error) {
-      console.error('Erro ao carregar cursos:', error);
-    } finally {
-      setLoading(false);
-    }
-  }
 
   const filteredCourses = courses.filter(course =>
     course.title.toLowerCase().includes(search.toLowerCase()) ||

@@ -46,7 +46,7 @@ export default function SupplierDeliveriesPage() {
         navigator.geolocation.clearWatch(locationWatchId);
       }
     };
-  }, []);
+  }, [locationWatchId]);
 
   const fetchDeliveries = async () => {
     try {

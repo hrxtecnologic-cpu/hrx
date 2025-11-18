@@ -1456,7 +1456,7 @@ export function SendProposalButton({
                 <div className="text-xs text-yellow-200">
                   <p className="font-medium mb-1">Importante:</p>
                   <p>
-                    • O status do projeto será alterado para "Proposta Enviada"
+                    • O status do projeto será alterado para &quot;Proposta Enviada&quot;
                     <br />
                     • O cliente receberá um email com todos os detalhes e valores
                     <br />

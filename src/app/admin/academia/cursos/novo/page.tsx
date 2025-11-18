@@ -299,7 +299,7 @@ export default function NovoCursoPage() {
                         className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 h-11"
                         placeholder="Ex: João Silva"
                       />
-                      <p className="text-xs text-zinc-500">Deixe em branco para usar "Equipe HRX"</p>
+                      <p className="text-xs text-zinc-500">Deixe em branco para usar &quot;Equipe HRX&quot;</p>
                     </div>
 
                     <div className="space-y-3">

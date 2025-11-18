@@ -17,34 +17,34 @@ export default function AcademiaPage() {
   const [difficultyFilter, setDifficultyFilter] = useState<string>('all');
 
   useEffect(() => {
+    async function fetchCourses() {
+      try {
+        setLoading(true);
+        const url = new URL('/api/academy/courses', window.location.origin);
+
+        if (categoryFilter !== 'all') {
+          url.searchParams.set('category', categoryFilter);
+        }
+
+        if (difficultyFilter !== 'all') {
+          url.searchParams.set('difficulty', difficultyFilter);
+        }
+
+        const res = await fetch(url.toString());
+        const data = await res.json();
+
+        if (data.success) {
+          setCourses(data.data);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar cursos:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
     fetchCourses();
   }, [categoryFilter, difficultyFilter]);
-
-  async function fetchCourses() {
-    try {
-      setLoading(true);
-      const url = new URL('/api/academy/courses', window.location.origin);
-
-      if (categoryFilter !== 'all') {
-        url.searchParams.set('category', categoryFilter);
-      }
-
-      if (difficultyFilter !== 'all') {
-        url.searchParams.set('difficulty', difficultyFilter);
-      }
-
-      const res = await fetch(url.toString());
-      const data = await res.json();
-
-      if (data.success) {
-        setCourses(data.data);
-      }
-    } catch (error) {
-      console.error('Erro ao carregar cursos:', error);
-    } finally {
-      setLoading(false);
-    }
-  }
 
   const filteredCourses = courses.filter(course =>
     course.title.toLowerCase().includes(search.toLowerCase()) ||

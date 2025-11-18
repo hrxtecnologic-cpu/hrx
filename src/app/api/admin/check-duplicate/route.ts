@@ -17,7 +17,7 @@ export const POST = withAdmin(async (userId: string, request: NextRequest) => {
     const supabase = await createClient();
 
     let tableName = '';
-    let query: any = null;
+    let query: ReturnType<typeof supabase.from> | null = null;
 
     switch (type) {
       case 'professional':
@@ -94,8 +94,9 @@ export const POST = withAdmin(async (userId: string, request: NextRequest) => {
     return NextResponse.json({
       isDuplicate: false,
     });
-  } catch (error: any) {
-    console.error('[check-duplicate] Erro:', error);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[check-duplicate] Erro:', errorMessage);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }

@@ -46,7 +46,7 @@ export async function POST(
 
     const resolvedParams = await params;
     projectId = resolvedParams.id;
-    const body: any = await req.json();
+    const body: AddEquipmentData = await req.json();
 
     logger.info('📦 Request recebido para adicionar equipamento', {
       projectId,
@@ -142,18 +142,21 @@ export async function POST(
       success: true,
       equipment,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+
     logger.error('Erro ao adicionar equipamento', {
-      error: error.message,
+      error: errorMessage,
       errorType: typeof error,
       errorString: String(error),
-      stack: error.stack,
+      stack: errorStack,
     });
     return NextResponse.json(
       {
         error: 'Erro interno do servidor',
-        message: error.message || String(error),
-        details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+        message: errorMessage,
+        details: process.env.NODE_ENV === 'development' ? errorStack : undefined,
       },
       { status: 500 }
     );
@@ -211,9 +214,9 @@ export async function PATCH(
       'specifications',
       'notes',
       'status',
-    ];
+    ] as const;
 
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     for (const field of allowedFields) {
       if (body[field] !== undefined) {
         updateData[field] = body[field];
@@ -253,8 +256,9 @@ export async function PATCH(
     });
 
     return NextResponse.json({ success: true, equipment: data });
-  } catch (error: any) {
-    logger.error('Erro ao atualizar equipamento', { error: error.message });
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('Erro ao atualizar equipamento', { error: errorMessage });
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }
@@ -348,8 +352,9 @@ export async function DELETE(
     });
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    logger.error('Erro ao remover equipamento', { error: error.message });
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('Erro ao remover equipamento', { error: errorMessage });
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }

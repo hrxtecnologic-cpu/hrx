@@ -18,7 +18,7 @@ const supabase = createClient(
 // =============================================
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string; quotationId: string } }
+  context: { params: Promise<{ id: string; quotationId: string }> }
 ) {
   try {
     // Verificar autenticação
@@ -36,6 +36,7 @@ export async function PATCH(
       );
     }
 
+    const params = await context.params;
     const projectId = params.id;
     const quotationId = params.quotationId;
     const body = await req.json();
@@ -184,7 +185,7 @@ export async function PATCH(
 // =============================================
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string; quotationId: string } }
+  context: { params: Promise<{ id: string; quotationId: string }> }
 ) {
   try {
     // Verificar autenticação
@@ -202,6 +203,7 @@ export async function DELETE(
       );
     }
 
+    const params = await context.params;
     const quotationId = params.quotationId;
 
     // Verificar se cotação existe e não foi aceita

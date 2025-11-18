@@ -33,6 +33,35 @@ interface SendOSEmailsResult {
   errors?: string[];
 }
 
+interface TeamAssignment {
+  professional_name: string;
+  arrival_time?: string;
+  responsibilities?: string[];
+  equipment_assigned?: string[];
+}
+
+interface SupplierAssignment {
+  supplier: string;
+  delivery_time?: string;
+  pickup_time?: string;
+  special_instructions?: string;
+}
+
+interface SupplierData {
+  id: string;
+  company_name: string;
+  contact_name: string;
+  email: string;
+  phone: string;
+}
+
+interface EquipmentItem {
+  name: string;
+  quantity: number;
+  description?: string;
+  supplier: SupplierData | null;
+}
+
 /**
  * Envia emails de OS para todos os envolvidos
  */
@@ -107,8 +136,8 @@ export async function sendServiceOrderEmails(
 
         try {
           // Buscar atribuições específicas para este profissional
-          const assignment = (serviceOrder.team_assignments || []).find(
-            (a: any) => a.professional_name === member.professional.full_name
+          const assignment = (serviceOrder.team_assignments as TeamAssignment[] || []).find(
+            (a) => a.professional_name === member.professional.full_name
           );
 
           // Buscar checklist específico para este profissional
@@ -194,9 +223,10 @@ export async function sendServiceOrderEmails(
               sent_at: new Date().toISOString(),
             });
           }
-        } catch (error: any) {
-          logger.error('Erro ao processar email para profissional', error);
-          errors.push(`${member.professional.full_name}: ${error.message}`);
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          logger.error('Erro ao processar email para profissional', error instanceof Error ? error : new Error(String(error)));
+          errors.push(`${member.professional.full_name}: ${errorMessage}`);
         }
       }
     }
@@ -204,9 +234,18 @@ export async function sendServiceOrderEmails(
     // 5. Enviar emails para fornecedores
     if (equipment && equipment.length > 0) {
       // Agrupar equipamentos por fornecedor
-      const supplierGroups = new Map<string, any>();
+      interface SupplierGroup {
+        supplier: SupplierData;
+        items: Array<{
+          name: string;
+          quantity: number;
+          specifications?: string;
+        }>;
+      }
 
-      equipment.forEach((item: any) => {
+      const supplierGroups = new Map<string, SupplierGroup>();
+
+      equipment.forEach((item: EquipmentItem) => {
         if (!item.supplier) return;
 
         const supplierId = item.supplier.id;
@@ -236,8 +275,8 @@ export async function sendServiceOrderEmails(
           }
 
           // Buscar atribuições específicas para este fornecedor
-          const supplierAssignment = (serviceOrder.supplier_assignments || []).find(
-            (a: any) => a.supplier === group.supplier.company_name
+          const supplierAssignment = (serviceOrder.supplier_assignments as SupplierAssignment[] || []).find(
+            (a) => a.supplier === group.supplier.company_name
           );
 
           // Montar dados do email
@@ -297,9 +336,10 @@ export async function sendServiceOrderEmails(
               sent_at: new Date().toISOString(),
             });
           }
-        } catch (error: any) {
-          logger.error('Erro ao processar email para fornecedor', error);
-          errors.push(`Fornecedor: ${error.message}`);
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          logger.error('Erro ao processar email para fornecedor', error instanceof Error ? error : new Error(String(error)));
+          errors.push(`Fornecedor: ${errorMessage}`);
         }
       }
     }
@@ -343,11 +383,12 @@ export async function sendServiceOrderEmails(
       },
       errors: errors.length > 0 ? errors : undefined,
     };
-  } catch (error: any) {
-    logger.error('Erro ao enviar emails de OS', error);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Erro ao enviar emails';
+    logger.error('Erro ao enviar emails de OS', error instanceof Error ? error : new Error(String(error)));
     return {
       success: false,
-      message: error.message || 'Erro ao enviar emails',
+      message: errorMessage,
       emailsSent: { professionals: 0, suppliers: 0 },
     };
   }

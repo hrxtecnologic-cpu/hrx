@@ -44,6 +44,111 @@ interface GenerateOSResult {
   error?: string;
 }
 
+interface LogisticsData {
+  distance_km: number | string;
+  travel_time_minutes: number;
+  traffic_analysis: {
+    typical_duration?: number;
+    distance?: number;
+    route_geometry?: unknown;
+  };
+}
+
+interface TeamMemberData {
+  role: string;
+  category: string;
+  subcategory?: string;
+  quantity: number;
+  duration_days: number;
+  professional: {
+    full_name: string;
+    email: string;
+    phone: string;
+  } | null;
+}
+
+interface EquipmentItemData {
+  name: string;
+  category: string;
+  quantity: number;
+  duration_days: number;
+  supplier: {
+    company_name: string;
+    contact_name: string;
+    phone: string;
+  } | null;
+}
+
+interface ProcessedTeamMember {
+  role: string;
+  category: string;
+  subcategory?: string;
+  quantity: number;
+  duration_days: number;
+  professional: {
+    name: string;
+    email: string;
+    phone: string;
+  } | null;
+}
+
+interface ProcessedEquipment {
+  name: string;
+  category: string;
+  quantity: number;
+  duration_days: number;
+  supplier: {
+    company: string;
+    contact: string;
+    phone: string;
+  } | null;
+}
+
+interface AIResponse {
+  briefing?: string;
+  recommendations?: string[];
+  alerts?: string[];
+  recommended_arrival_time?: string;
+  estimated_setup_duration_minutes?: number;
+  estimated_teardown_duration_minutes?: number;
+  timeline?: Array<{
+    title: string;
+    time: string;
+    event_type: string;
+    description: string;
+    involved_roles: string[];
+    sequence: number;
+    duration?: number;
+  }>;
+  checklist?: Array<{
+    title: string;
+    description?: string;
+    category?: string;
+    assigned_to?: string;
+    assigned_to_type?: string;
+    priority?: string;
+    sequence?: number;
+    estimated_duration?: number;
+  }>;
+  team_assignments?: Array<{
+    professional_name: string;
+    role: string;
+    responsibilities: string[];
+    equipment_assigned: string[];
+    arrival_time: string;
+    departure_time: string;
+  }>;
+  supplier_deliveries?: Array<{
+    supplier: string;
+    items: string[];
+    delivery_time: string;
+    delivery_address?: string;
+    contact?: string;
+    special_instructions?: string;
+    pickup_time?: string;
+  }>;
+}
+
 /**
  * Gera uma OS completa usando IA
  */
@@ -119,7 +224,7 @@ export async function generateServiceOrder(
       .in('status', ['selected', 'confirmed']);
 
     // 5. Análise de logística com Mapbox
-    let logisticsData: any = {
+    let logisticsData: LogisticsData = {
       distance_km: 0,
       travel_time_minutes: 0,
       traffic_analysis: {},
@@ -150,7 +255,7 @@ export async function generateServiceOrder(
 
     // 6. Preparar dados para a IA
     const contractData = contract.contract_data || {};
-    const teamMembers = (team || []).map((member: any) => ({
+    const teamMembers = (team || []).map((member: TeamMemberData): ProcessedTeamMember => ({
       role: member.role,
       category: member.category,
       subcategory: member.subcategory,
@@ -165,7 +270,7 @@ export async function generateServiceOrder(
         : null,
     }));
 
-    const equipmentList = (equipment || []).map((item: any) => ({
+    const equipmentList = (equipment || []).map((item: EquipmentItemData): ProcessedEquipment => ({
       name: item.name,
       category: item.category,
       quantity: item.quantity,
@@ -202,10 +307,10 @@ export async function generateServiceOrder(
 - Base de saída: ${HRX_BASE_LOCATION.address}
 
 **EQUIPE ALOCADA:**
-${teamMembers.map((m: any) => `- ${m.quantity}x ${m.role} (${m.category}) - ${m.duration_days} dia(s)${m.professional ? ` - ${m.professional.name}` : ''}`).join('\n')}
+${teamMembers.map((m: ProcessedTeamMember) => `- ${m.quantity}x ${m.role} (${m.category}) - ${m.duration_days} dia(s)${m.professional ? ` - ${m.professional.name}` : ''}`).join('\n')}
 
 **EQUIPAMENTOS:**
-${equipmentList.map((e: any) => `- ${e.quantity}x ${e.name} (${e.category}) - ${e.duration_days} dia(s)${e.supplier ? ` - Fornecedor: ${e.supplier.company}` : ''}`).join('\n')}
+${equipmentList.map((e: ProcessedEquipment) => `- ${e.quantity}x ${e.name} (${e.category}) - ${e.duration_days} dia(s)${e.supplier ? ` - Fornecedor: ${e.supplier.company}` : ''}`).join('\n')}
 
 **OBSERVAÇÕES DO CLIENTE:**
 ${project.additional_notes || 'Nenhuma'}
@@ -310,7 +415,7 @@ Gere uma OS completa em formato JSON com a seguinte estrutura:
 - Use linguagem clara e objetiva
 - Retorne APENAS o JSON válido, sem markdown ou texto adicional`;
 
-    let aiResponse;
+    let aiResponse: AIResponse;
     try {
       const completion = await openai.chat.completions.create({
         model: 'gpt-4-turbo-preview',
@@ -331,10 +436,11 @@ Gere uma OS completa em formato JSON com a seguinte estrutura:
         throw new Error('GPT-4 não retornou resposta');
       }
 
-      aiResponse = JSON.parse(responseText);
+      aiResponse = JSON.parse(responseText) as AIResponse;
       logger.info('GPT-4 gerou briefing com sucesso', { projectId });
-    } catch (aiError: any) {
-      logger.error('Erro ao gerar briefing com GPT-4', aiError);
+    } catch (aiError: unknown) {
+      const errorMessage = aiError instanceof Error ? aiError.message : 'Unknown error';
+      logger.error('Erro ao gerar briefing com GPT-4', new Error(errorMessage));
       // Fallback: gerar OS básica sem IA
       aiResponse = generateBasicOS(project, teamMembers, equipmentList, logisticsData);
     }
@@ -407,7 +513,7 @@ Gere uma OS completa em formato JSON com a seguinte estrutura:
 
     // 9. Criar tarefas individuais
     if (aiResponse.checklist && aiResponse.checklist.length > 0) {
-      const tasks = aiResponse.checklist.map((task: any, index: number) => ({
+      const tasks = aiResponse.checklist.map((task, index: number) => ({
         service_order_id: serviceOrder.id,
         title: task.title,
         description: task.description || null,
@@ -424,7 +530,7 @@ Gere uma OS completa em formato JSON com a seguinte estrutura:
 
     // 10. Criar timeline
     if (aiResponse.timeline && aiResponse.timeline.length > 0) {
-      const timelineEvents = aiResponse.timeline.map((event: any) => ({
+      const timelineEvents = aiResponse.timeline.map((event) => ({
         service_order_id: serviceOrder.id,
         title: event.title,
         description: event.description || null,
@@ -462,11 +568,12 @@ Gere uma OS completa em formato JSON com a seguinte estrutura:
         status: serviceOrder.status,
       },
     };
-  } catch (error: any) {
-    logger.error('Erro ao gerar OS', error);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Erro interno ao gerar OS';
+    logger.error('Erro ao gerar OS', error instanceof Error ? error : new Error(String(error)));
     return {
       success: false,
-      message: error.message || 'Erro interno ao gerar OS',
+      message: errorMessage,
       error: 'INTERNAL_ERROR',
     };
   }
@@ -475,7 +582,12 @@ Gere uma OS completa em formato JSON com a seguinte estrutura:
 /**
  * Gera OS básica caso a IA falhe
  */
-function generateBasicOS(project: any, team: any[], equipment: any[], logistics: any) {
+function generateBasicOS(
+  project: { event_name: string; event_type: string; event_date: string; venue_name: string; venue_address: string },
+  team: ProcessedTeamMember[],
+  equipment: ProcessedEquipment[],
+  logistics: LogisticsData
+): AIResponse {
   return {
     briefing: `Ordem de Serviço para o evento ${project.event_name} (${project.event_type}), agendado para ${project.event_date}. Local: ${project.venue_name}, ${project.venue_address}.`,
     recommendations: [

@@ -268,7 +268,7 @@ export const ContractSignatureEmail = (props: ContractSignatureEmailProps) => {
               margin: '0 0 20px 0'
             }}>
               <li style={{ marginBottom: '8px' }}>
-                <span style={{ color: '#4ade80' }}>✅</span> O projeto será automaticamente movido para status <strong style={{ color: '#d4d4d8' }}>"Em Execução"</strong>
+                <span style={{ color: '#4ade80' }}>✅</span> O projeto será automaticamente movido para status <strong style={{ color: '#d4d4d8' }}>&quot;Em Execução&quot;</strong>
               </li>
               <li style={{ marginBottom: '8px' }}>
                 <span style={{ color: '#4ade80' }}>✅</span> Nossa equipe receberá a <strong style={{ color: '#d4d4d8' }}>Ordem de Serviço gerada automaticamente por IA</strong>

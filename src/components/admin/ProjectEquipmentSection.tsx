@@ -163,36 +163,36 @@ export function ProjectEquipmentSection({
 
   // Carregar sugestões (SEM LIMITE DE DISTÂNCIA)
   useEffect(() => {
-    loadSuggestions();
-  }, [projectId]);
+    async function loadSuggestions() {
+      try {
+        setLoadingSuggestions(true);
 
-  async function loadSuggestions() {
-    try {
-      setLoadingSuggestions(true);
+        const requiredTypes = equipmentNeeded?.map(need =>
+          need.category || need.type || need.equipment_type
+        ).filter(Boolean) || [];
 
-      const requiredTypes = equipmentNeeded?.map(need =>
-        need.category || need.type || need.equipment_type
-      ).filter(Boolean) || [];
+        const params = new URLSearchParams();
+        if (requiredTypes.length > 0) {
+          params.append('equipment_types', requiredTypes.join(','));
+        }
+        params.append('min_score', '0'); // Score mínimo 0 para mostrar todos
+        params.append('limit', '100');
 
-      const params = new URLSearchParams();
-      if (requiredTypes.length > 0) {
-        params.append('equipment_types', requiredTypes.join(','));
+        const response = await fetch(`/api/admin/event-projects/${projectId}/suggested-suppliers?${params}`);
+
+        if (response.ok) {
+          const result = await response.json();
+          setSuggestedSuppliers(result.data?.suppliers || []);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar sugestões:', error);
+      } finally {
+        setLoadingSuggestions(false);
       }
-      params.append('min_score', '0'); // Score mínimo 0 para mostrar todos
-      params.append('limit', '100');
-
-      const response = await fetch(`/api/admin/event-projects/${projectId}/suggested-suppliers?${params}`);
-
-      if (response.ok) {
-        const result = await response.json();
-        setSuggestedSuppliers(result.data?.suppliers || []);
-      }
-    } catch (error) {
-      console.error('Erro ao carregar sugestões:', error);
-    } finally {
-      setLoadingSuggestions(false);
     }
-  }
+
+    loadSuggestions();
+  }, [projectId, equipmentNeeded]);
 
   // Filtrar fornecedores disponíveis
   const filteredSuppliers = suppliers.filter((supplier) => {
@@ -444,7 +444,7 @@ export function ProjectEquipmentSection({
                       </p>
                     )}
                     {need.notes && (
-                      <p className="text-xs text-zinc-600 ml-8 mt-1 italic">"{need.notes}"</p>
+                      <p className="text-xs text-zinc-600 ml-8 mt-1 italic">&quot;{need.notes}&quot;</p>
                     )}
                   </div>
                 );

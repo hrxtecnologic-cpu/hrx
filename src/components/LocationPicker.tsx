@@ -333,7 +333,7 @@ export function LocationPicker({
               <p className="font-medium text-blue-500">Como usar:</p>
               <p className="text-blue-600 text-xs mt-1">
                 Clique em qualquer ponto do mapa para marcar sua localização, ou use o botão
-                "Usar minha localização" para detectar automaticamente.
+                &quot;Usar minha localização&quot; para detectar automaticamente.
               </p>
             </div>
           </div>

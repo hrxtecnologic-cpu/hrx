@@ -1333,7 +1333,7 @@ function SolicitarEventoWizardContent() {
 
                     <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
                       <p className="text-sm text-green-400">
-                        ✓ Tudo pronto! Clique em "Enviar Solicitação" para finalizar.
+                        ✓ Tudo pronto! Clique em &quot;Enviar Solicitação&quot; para finalizar.
                       </p>
                     </div>
                   </div>
@@ -1562,7 +1562,7 @@ function SolicitarEventoWizardContent() {
 
                     <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
                       <p className="text-sm text-green-400">
-                        ✓ Tudo pronto! Clique em "Cadastrar Empresa" para finalizar.
+                        ✓ Tudo pronto! Clique em &quot;Cadastrar Empresa&quot; para finalizar.
                       </p>
                     </div>
                   </div>

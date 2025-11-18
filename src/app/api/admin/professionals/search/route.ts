@@ -195,7 +195,7 @@ async function searchProfessionals(params: SearchParams): Promise<SearchResult> 
   }
 
   // Categorias (JSONB array - filtrar no código ao invés de SQL)
-  let categoryFilteredProfessionals: any[] | null = null;
+  const categoryFilteredProfessionals: any[] | null = null;
 
   if (params.categories && params.categories.length > 0) {
     logger.debug('Categorias serão filtradas no código (não no SQL)', {

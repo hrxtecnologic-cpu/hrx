@@ -24,7 +24,7 @@ const supabase = createClient(
 export const GET = withAdmin(async (
   userId: string,
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) => {
   try {
     // ========== Rate Limiting ==========
@@ -42,6 +42,7 @@ export const GET = withAdmin(async (
       });
     }
 
+    const params = await context.params;
     const professionalId = params.id;
 
     // Buscar profissional
@@ -78,7 +79,7 @@ export const GET = withAdmin(async (
 export const PATCH = withAdmin(async (
   userId: string,
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) => {
   try {
     // ========== Rate Limiting ==========
@@ -96,6 +97,7 @@ export const PATCH = withAdmin(async (
       });
     }
 
+    const params = await context.params;
     const professionalId = params.id;
     const body = await req.json();
 
@@ -156,7 +158,7 @@ export const PATCH = withAdmin(async (
 export const DELETE = withAdmin(async (
   userId: string,
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) => {
   try {
     // ========== Rate Limiting ==========
@@ -174,6 +176,7 @@ export const DELETE = withAdmin(async (
       });
     }
 
+    const params = await context.params;
     const professionalId = params.id;
 
     // Verificar se profissional existe

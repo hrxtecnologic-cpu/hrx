@@ -84,7 +84,7 @@ export async function POST(req: Request) {
     }
 
     // Buscar candidatos
-    let candidates: any[] = [];
+    const candidates: any[] = [];
 
     // Profissionais
     if (type === 'professional' || type === 'both') {

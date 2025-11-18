@@ -122,7 +122,7 @@ export default function ProjetosPage() {
 
   const isUrgent = watch('is_urgent');
 
-  // Buscar projetos
+  // Buscar projetos (used by handleDelete and onSubmit)
   const fetchProjects = async () => {
     try {
       const response = await fetch('/api/admin/event-projects');
@@ -144,11 +144,27 @@ export default function ProjetosPage() {
   const fetchStats = async () => {
     // Implementar busca de estatísticas
     // Por enquanto usar valores mockados dos projetos
-    fetchProjects();
   };
 
   useEffect(() => {
-    fetchProjects();
+    const loadProjects = async () => {
+      try {
+        const response = await fetch('/api/admin/event-projects');
+        if (!response.ok) {
+          // Se as tabelas ainda não existem, apenas não mostra nada
+          console.warn('Tabelas de projetos ainda não criadas. Execute as migrations.');
+          setProjects([]);
+          return;
+        }
+        const data = await response.json();
+        setProjects(data.projects || []);
+      } catch (error) {
+        console.warn('Sistema de projetos ainda não inicializado:', error);
+        setProjects([]);
+      }
+    };
+
+    loadProjects();
   }, []);
 
   // Função para formatar moeda

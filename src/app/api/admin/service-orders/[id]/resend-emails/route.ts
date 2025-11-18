@@ -14,7 +14,7 @@ import { auth, clerkClient } from '@clerk/nextjs/server';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     // 🔒 Verificar autenticação
@@ -78,6 +78,7 @@ export async function POST(
 
     const supabase = await createClient();
 
+    const params = await context.params;
     const { id: serviceOrderId } = params;
 
     logger.info('Reenviando emails de OS', { serviceOrderId, userId });

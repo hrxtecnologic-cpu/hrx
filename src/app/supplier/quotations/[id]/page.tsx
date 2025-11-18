@@ -90,43 +90,43 @@ export default function SupplierQuotationPage() {
   const watchPrice = watch('total_price');
 
   useEffect(() => {
-    if (quotationId) {
-      loadQuotation();
-    }
-  }, [quotationId]);
+    if (!quotationId) return;
 
-  async function loadQuotation() {
-    try {
-      setLoading(true);
-      setError(null);
+    async function loadQuotation() {
+      try {
+        setLoading(true);
+        setError(null);
 
-      const response = await fetch(`/api/supplier/quotations/${quotationId}`);
+        const response = await fetch(`/api/supplier/quotations/${quotationId}`);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao carregar cotação');
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Erro ao carregar cotação');
+        }
+
+        const data = await response.json();
+        setQuotation(data.quotation);
+
+        // Se já foi respondida, preencher formulário
+        if (data.quotation.total_price) {
+          setValue('total_price', data.quotation.total_price.toString());
+          setValue('daily_rate', data.quotation.daily_rate?.toString() || '');
+          setValue('delivery_fee', data.quotation.delivery_fee?.toString() || '');
+          setValue('setup_fee', data.quotation.setup_fee?.toString() || '');
+          setValue('payment_terms', data.quotation.payment_terms || '');
+          setValue('delivery_details', data.quotation.delivery_details || '');
+          setValue('notes', data.quotation.notes || '');
+        }
+      } catch (err: any) {
+        console.error('Erro ao carregar cotação:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
       }
-
-      const data = await response.json();
-      setQuotation(data.quotation);
-
-      // Se já foi respondida, preencher formulário
-      if (data.quotation.total_price) {
-        setValue('total_price', data.quotation.total_price.toString());
-        setValue('daily_rate', data.quotation.daily_rate?.toString() || '');
-        setValue('delivery_fee', data.quotation.delivery_fee?.toString() || '');
-        setValue('setup_fee', data.quotation.setup_fee?.toString() || '');
-        setValue('payment_terms', data.quotation.payment_terms || '');
-        setValue('delivery_details', data.quotation.delivery_details || '');
-        setValue('notes', data.quotation.notes || '');
-      }
-    } catch (err: any) {
-      console.error('Erro ao carregar cotação:', err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
     }
-  }
+
+    loadQuotation();
+  }, [quotationId, setValue]);
 
   async function onSubmit(data: QuotationResponseData) {
     try {

@@ -78,28 +78,28 @@ export default function SupplierDashboardPage() {
   });
 
   useEffect(() => {
+    async function loadDashboardData() {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/supplier/dashboard');
+
+        if (!response.ok) {
+          throw new Error('Erro ao carregar dados');
+        }
+
+        const data = await response.json();
+        setSupplier(data.supplier || null);
+        setQuotations(data.quotations || []);
+        setStats(data.stats || stats);
+      } catch (error) {
+        console.error('Erro ao carregar dashboard:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
     loadDashboardData();
   }, []);
-
-  async function loadDashboardData() {
-    try {
-      setLoading(true);
-      const response = await fetch('/api/supplier/dashboard');
-
-      if (!response.ok) {
-        throw new Error('Erro ao carregar dados');
-      }
-
-      const data = await response.json();
-      setSupplier(data.supplier || null);
-      setQuotations(data.quotations || []);
-      setStats(data.stats || stats);
-    } catch (error) {
-      console.error('Erro ao carregar dashboard:', error);
-    } finally {
-      setLoading(false);
-    }
-  }
 
   function getStatusBadge(status: string) {
     const badges = {

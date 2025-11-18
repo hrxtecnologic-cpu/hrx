@@ -20,6 +20,44 @@ interface GenerateContractOptions {
   userId?: string; // Optional - for audit logging
 }
 
+interface ContractData {
+  contractNumber: string;
+  projectNumber: string;
+  clientName: string;
+  clientEmail: string;
+  clientPhone: string;
+  clientCompany?: string;
+  clientCnpj?: string;
+  eventName: string;
+  eventDate: string;
+  eventType: string;
+  venueName: string;
+  venueAddress: string;
+  venueCity: string;
+  venueState: string;
+  teamMembers: Array<{
+    category: string;
+    quantity: number;
+    dailyRate: number;
+    durationDays: number;
+    total: number;
+  }>;
+  equipment: Array<{
+    name: string;
+    category: string;
+    quantity: number;
+    durationDays: number;
+    dailyRate: number;
+    total: number;
+  }>;
+  totalTeam: number;
+  totalEquipment: number;
+  totalValue: number;
+  paymentTerms: string;
+  specialClauses: string;
+  generatedAt: string;
+}
+
 interface GenerateContractResult {
   success: boolean;
   message: string;
@@ -31,7 +69,7 @@ interface GenerateContractResult {
     totalValue: number;
     createdAt: string;
   };
-  contractData?: any;
+  contractData?: ContractData;
   error?: string;
 }
 
@@ -87,7 +125,27 @@ export async function generateContract(
       .eq('project_id', projectId);
 
     // 4. Preparar dados do contrato
-    const teamMembers = (team || []).map((member: any) => ({
+    interface TeamMember {
+      category?: string;
+      quantity?: number;
+      daily_rate?: number;
+      duration_days?: number;
+      total_cost?: number;
+      professional?: {
+        categories?: string[];
+      };
+    }
+
+    interface EquipmentData {
+      name: string;
+      category: string;
+      quantity?: number;
+      duration_days?: number;
+      daily_rate?: number;
+      total_cost?: number;
+    }
+
+    const teamMembers = (team || []).map((member: TeamMember) => ({
       category: member.category || member.professional?.categories?.[0] || 'Profissional',
       quantity: member.quantity || 1,
       dailyRate: member.daily_rate || 0,
@@ -95,7 +153,7 @@ export async function generateContract(
       total: member.total_cost || 0,
     }));
 
-    const equipmentItems = (equipment || []).map((item: any) => ({
+    const equipmentItems = (equipment || []).map((item: EquipmentData) => ({
       name: item.name,
       category: item.category,
       quantity: item.quantity || 1,
@@ -108,7 +166,7 @@ export async function generateContract(
     const totalEquipment = equipmentItems.reduce((sum, e) => sum + e.total, 0);
     const totalValue = project.total_client_price || totalTeam + totalEquipment;
 
-    const contractData = {
+    const contractData: ContractData = {
       contractNumber: '', // Será gerado pelo trigger
       projectNumber: project.project_number,
       clientName: project.client_name,
@@ -202,11 +260,12 @@ export async function generateContract(
       },
       contractData,
     };
-  } catch (error: any) {
-    console.error('[contract-service] Erro ao gerar contrato:', error);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Erro interno do servidor';
+    console.error('[contract-service] Erro ao gerar contrato:', error instanceof Error ? error : new Error(String(error)));
     return {
       success: false,
-      message: error.message || 'Erro interno do servidor',
+      message: errorMessage,
       error: 'INTERNAL_ERROR',
     };
   }

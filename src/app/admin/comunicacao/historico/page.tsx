@@ -47,40 +47,41 @@ export default function HistoricoEmailsPage() {
   const [typeFilter, setTypeFilter] = useState('all');
   const [total, setTotal] = useState(0);
   const [importing, setImporting] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
+    const fetchEmails = async () => {
+      try {
+        setLoading(true);
+        const params = new URLSearchParams({
+          limit: '100',
+          offset: '0',
+        });
+
+        if (statusFilter !== 'all') {
+          params.append('status', statusFilter);
+        }
+
+        if (typeFilter !== 'all') {
+          params.append('recipientType', typeFilter);
+        }
+
+        const response = await fetch(`/api/admin/emails?${params}`);
+        const data = await response.json();
+
+        if (data.success) {
+          setEmails(data.emails || []);
+          setTotal(data.total || 0);
+        }
+      } catch (error) {
+        console.error('Erro ao buscar emails:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchEmails();
-  }, [statusFilter, typeFilter]);
-
-  const fetchEmails = async () => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams({
-        limit: '100',
-        offset: '0',
-      });
-
-      if (statusFilter !== 'all') {
-        params.append('status', statusFilter);
-      }
-
-      if (typeFilter !== 'all') {
-        params.append('recipientType', typeFilter);
-      }
-
-      const response = await fetch(`/api/admin/emails?${params}`);
-      const data = await response.json();
-
-      if (data.success) {
-        setEmails(data.emails || []);
-        setTotal(data.total || 0);
-      }
-    } catch (error) {
-      console.error('Erro ao buscar emails:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [statusFilter, typeFilter, refreshTrigger]);
 
   const filteredEmails = emails.filter(email => {
     const matchesSearch =
@@ -124,7 +125,7 @@ export default function HistoricoEmailsPage() {
 
       if (data.success) {
         alert(`✅ ${data.totalImported} emails importados com sucesso!`);
-        fetchEmails(); // Recarregar lista
+        setRefreshTrigger(prev => prev + 1); // Trigger re-fetch
       } else {
         alert(`❌ Erro ao importar: ${data.error}`);
       }
@@ -185,7 +186,7 @@ export default function HistoricoEmailsPage() {
               </p>
               <p className="text-sm text-blue-500/70">
                 A API do Resend está configurada com acesso completo (Full Access). Você pode importar todos os emails históricos
-                clicando no botão "Importar Histórico" acima. Todos os emails enviados a partir de agora são registrados
+                clicando no botão &quot;Importar Histórico&quot; acima. Todos os emails enviados a partir de agora são registrados
                 automaticamente no banco de dados.
               </p>
             </div>

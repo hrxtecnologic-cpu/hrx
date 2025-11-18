@@ -43,26 +43,27 @@ export function QuotationsComparison({ projectId }: QuotationsComparisonProps) {
   const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [loading, setLoading] = useState(true);
   const [accepting, setAccepting] = useState<string | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
-    loadQuotations();
-  }, [projectId]);
+    async function loadQuotations() {
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/admin/event-projects/${projectId}/quotations`);
+        if (!response.ok) throw new Error('Erro ao carregar orçamentos');
 
-  async function loadQuotations() {
-    try {
-      setLoading(true);
-      const response = await fetch(`/api/admin/event-projects/${projectId}/quotations`);
-      if (!response.ok) throw new Error('Erro ao carregar orçamentos');
-
-      const data = await response.json();
-      setQuotations(data.quotations || []);
-    } catch (error) {
-      console.error('Erro ao carregar orçamentos:', error);
-      toast.error('Erro ao carregar orçamentos');
-    } finally {
-      setLoading(false);
+        const data = await response.json();
+        setQuotations(data.quotations || []);
+      } catch (error) {
+        console.error('Erro ao carregar orçamentos:', error);
+        toast.error('Erro ao carregar orçamentos');
+      } finally {
+        setLoading(false);
+      }
     }
-  }
+
+    loadQuotations();
+  }, [projectId, refreshTrigger]);
 
   async function acceptQuotation(quotationId: string) {
     try {
@@ -96,7 +97,7 @@ export function QuotationsComparison({ projectId }: QuotationsComparisonProps) {
         toast.success('Orçamento aceito! Projeto atualizado.');
       }
 
-      loadQuotations();
+      setRefreshTrigger(prev => prev + 1);
     } catch (error: any) {
       console.error('Erro ao aceitar orçamento:', error);
       toast.error(error.message || 'Erro ao aceitar orçamento');
@@ -125,7 +126,7 @@ export function QuotationsComparison({ projectId }: QuotationsComparisonProps) {
             Nenhum orçamento solicitado ainda
           </h3>
           <p className="text-zinc-400">
-            Use o botão "Solicitar Orçamentos" para enviar pedidos aos fornecedores
+            Use o botão &quot;Solicitar Orçamentos&quot; para enviar pedidos aos fornecedores
           </p>
         </CardContent>
       </Card>
