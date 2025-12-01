@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, Save, X, Plus } from 'lucide-react';
+import { Loader2, Save, X, Plus, Video, FileText, HelpCircle, ArrowLeft } from 'lucide-react';
+import { RichTextEditor } from '@/components/academy/RichTextEditor';
+import { toast } from 'sonner';
 
 const lessonSchema = z.object({
   title: z.string().min(3, 'Título deve ter pelo menos 3 caracteres'),
@@ -28,6 +30,8 @@ const lessonSchema = z.object({
   video_provider: z.enum(['youtube', 'vimeo', 'other']).optional(),
   duration_minutes: z.number().min(0).optional(),
   text_content: z.string().optional(),
+  is_preview: z.boolean().optional(),
+  is_mandatory: z.boolean().optional(),
 });
 
 type LessonFormData = z.infer<typeof lessonSchema>;
@@ -64,6 +68,8 @@ export default function NewLessonPage({ params }: NewLessonPageProps) {
       video_provider: 'youtube',
       order_index: 1,
       duration_minutes: 0,
+      is_preview: false,
+      is_mandatory: true,
     },
   });
 
@@ -87,7 +93,9 @@ export default function NewLessonPage({ params }: NewLessonPageProps) {
         );
 
         if (validQuestions.length === 0) {
-          alert('Adicione pelo menos uma questão válida ao quiz.');
+          toast.error('Quiz inválido', {
+            description: 'Adicione pelo menos uma questão válida com todas as opções preenchidas.'
+          });
           setSubmitting(false);
           return;
         }
@@ -104,14 +112,20 @@ export default function NewLessonPage({ params }: NewLessonPageProps) {
       const result = await res.json();
 
       if (result.success) {
-        alert('Aula criada com sucesso!');
+        toast.success('Aula criada com sucesso!', {
+          description: 'Redirecionando para a página do curso...'
+        });
         router.push(`/admin/academia/cursos/${courseId}`);
       } else {
-        alert(result.error || 'Erro ao criar aula');
+        toast.error('Erro ao criar aula', {
+          description: result.error || 'Verifique os dados e tente novamente.'
+        });
       }
     } catch (error) {
       console.error('Erro ao criar aula:', error);
-      alert('Erro ao criar aula. Tente novamente.');
+      toast.error('Erro ao criar aula', {
+        description: 'Verifique sua conexão e tente novamente.'
+      });
     } finally {
       setSubmitting(false);
     }
@@ -372,59 +386,118 @@ export default function NewLessonPage({ params }: NewLessonPageProps) {
               <Card className="bg-zinc-900 border-zinc-800">
                 <CardHeader>
                   <CardTitle className="text-white">Conteúdo de Texto</CardTitle>
+                  <CardDescription className="text-zinc-400">
+                    Use o editor para formatar seu conteúdo com negrito, itálico, listas e mais
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Textarea
-                    {...register('text_content')}
-                    className="bg-zinc-800 border-zinc-700 text-white min-h-[300px]"
-                    placeholder="Digite o conteúdo da aula..."
+                  <RichTextEditor
+                    value={watch('text_content') || ''}
+                    onChange={(value) => setValue('text_content', value)}
+                    placeholder="Digite o conteúdo da aula aqui..."
+                    maxLength={50000}
+                    minHeight="400px"
                   />
-                  <p className="text-xs text-zinc-500 mt-2">Suporta HTML básico</p>
                 </CardContent>
               </Card>
             )}
+
           </div>
 
           {/* Sidebar */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 space-y-6">
+            {/* Configurações da Aula */}
             <Card className="bg-zinc-900 border-zinc-800 sticky top-6">
               <CardHeader>
-                <CardTitle className="text-white">Ações</CardTitle>
+                <CardTitle className="text-white">Configurações</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <Button
-                  type="submit"
-                  disabled={submitting}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12"
-                >
-                  {submitting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Criando...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4 mr-2" />
-                      Criar Aula
-                    </>
-                  )}
-                </Button>
+              <CardContent className="space-y-6">
+                {/* Opções de Exibição */}
+                <div className="space-y-4">
+                  <Label className="text-white text-sm">Opções de Exibição</Label>
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => router.push(`/admin/academia/cursos/${courseId}`)}
-                  className="w-full"
-                >
-                  Cancelar
-                </Button>
+                  <div className="flex items-center gap-3 p-3 bg-zinc-800/50 rounded-lg border border-zinc-800">
+                    <input
+                      type="checkbox"
+                      id="is_preview"
+                      {...register('is_preview')}
+                      className="w-4 h-4 rounded border-zinc-600 bg-zinc-800 text-blue-600 focus:ring-blue-600"
+                    />
+                    <div>
+                      <Label htmlFor="is_preview" className="text-sm font-medium text-white cursor-pointer">
+                        Aula Preview (Gratuita)
+                      </Label>
+                      <p className="text-xs text-zinc-500 mt-0.5">
+                        Visível para não matriculados
+                      </p>
+                    </div>
+                  </div>
 
-                <div className="pt-4 border-t border-zinc-800 space-y-2 text-sm text-zinc-400">
-                  <p>💡 Dicas:</p>
-                  <ul className="space-y-1 text-xs">
-                    <li>• Vídeos: Use URLs do YouTube ou Vimeo</li>
-                    <li>• Quiz: Mínimo 1 questão, 4 opções cada</li>
-                    <li>• Ordem: Define a sequência das aulas</li>
+                  <div className="flex items-center gap-3 p-3 bg-zinc-800/50 rounded-lg border border-zinc-800">
+                    <input
+                      type="checkbox"
+                      id="is_mandatory"
+                      {...register('is_mandatory')}
+                      className="w-4 h-4 rounded border-zinc-600 bg-zinc-800 text-blue-600 focus:ring-blue-600"
+                    />
+                    <div>
+                      <Label htmlFor="is_mandatory" className="text-sm font-medium text-white cursor-pointer">
+                        Aula Obrigatória
+                      </Label>
+                      <p className="text-xs text-zinc-500 mt-0.5">
+                        Necessária para conclusão do curso
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Ações */}
+                <div className="pt-4 border-t border-zinc-800 space-y-3">
+                  <Button
+                    type="submit"
+                    disabled={submitting}
+                    className="w-full bg-white text-black hover:bg-red-500 hover:text-white transition-colors h-12"
+                  >
+                    {submitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Criando...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-2" />
+                        Criar Aula
+                      </>
+                    )}
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => router.push(`/admin/academia/cursos/${courseId}`)}
+                    className="w-full border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Voltar ao Curso
+                  </Button>
+                </div>
+
+                {/* Dicas */}
+                <div className="pt-4 border-t border-zinc-800 space-y-2">
+                  <p className="text-sm font-medium text-white">Dicas</p>
+                  <ul className="space-y-2 text-xs text-zinc-400">
+                    <li className="flex items-start gap-2">
+                      <Video className="h-3.5 w-3.5 mt-0.5 text-red-500" />
+                      <span>Use URLs do YouTube ou Vimeo para vídeos</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <HelpCircle className="h-3.5 w-3.5 mt-0.5 text-purple-500" />
+                      <span>Quiz: mínimo 1 questão com 4 opções</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <FileText className="h-3.5 w-3.5 mt-0.5 text-blue-500" />
+                      <span>Textos suportam formatação rica</span>
+                    </li>
                   </ul>
                 </div>
               </CardContent>

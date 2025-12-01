@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
 
         const { data: user } = await supabase
           .from('users')
-          .select('role')
+          .select('is_admin')
           .eq('clerk_id', userId)
           .single();
 

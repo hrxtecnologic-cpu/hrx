@@ -54,7 +54,7 @@ export async function POST(
 
         const { data: user } = await supabase
           .from('users')
-          .select('role')
+          .select('is_admin')
           .eq('clerk_id', userId)
           .single();
 

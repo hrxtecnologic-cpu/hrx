@@ -77,7 +77,7 @@ export default function MeusCursosPage() {
               <p className="text-white/90">Continue sua jornada de aprendizado</p>
             </div>
             <Link href="/academia">
-              <Button variant="outline" className="border-white text-white hover:bg-white/10">
+              <Button variant="outline" className="border-white text-white hover:bg-red-500 hover:border-red-500 transition-colors">
                 <BookOpen className="h-4 w-4 mr-2" />
                 Explorar Cursos
               </Button>
@@ -153,21 +153,21 @@ export default function MeusCursosPage() {
           <Button
             variant={filter === 'all' ? 'default' : 'outline'}
             onClick={() => setFilter('all')}
-            className={filter === 'all' ? 'bg-blue-600' : ''}
+            className={filter === 'all' ? 'bg-white text-black hover:bg-red-500 hover:text-white' : 'text-white hover:bg-red-500 hover:border-red-500 hover:text-white'}
           >
             Todos ({enrollments.length})
           </Button>
           <Button
             variant={filter === 'active' ? 'default' : 'outline'}
             onClick={() => setFilter('active')}
-            className={filter === 'active' ? 'bg-blue-600' : ''}
+            className={filter === 'active' ? 'bg-white text-black hover:bg-red-500 hover:text-white' : 'text-white hover:bg-red-500 hover:border-red-500 hover:text-white'}
           >
             Em Andamento ({enrollments.filter(e => e.status === 'active').length})
           </Button>
           <Button
             variant={filter === 'completed' ? 'default' : 'outline'}
             onClick={() => setFilter('completed')}
-            className={filter === 'completed' ? 'bg-green-600' : ''}
+            className={filter === 'completed' ? 'bg-white text-black hover:bg-red-500 hover:text-white' : 'text-white hover:bg-red-500 hover:border-red-500 hover:text-white'}
           >
             Concluídos ({enrollments.filter(e => e.status === 'completed').length})
           </Button>
@@ -187,7 +187,7 @@ export default function MeusCursosPage() {
                 Explore o catálogo e comece a aprender hoje mesmo!
               </p>
               <Link href="/academia">
-                <Button className="bg-blue-600 hover:bg-blue-700">
+                <Button className="bg-white text-black hover:bg-red-500 hover:text-white transition-colors">
                   <BookOpen className="h-4 w-4 mr-2" />
                   Ver Cursos Disponíveis
                 </Button>

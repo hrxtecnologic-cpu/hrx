@@ -25,11 +25,11 @@ async function checkAdmin(userId: string) {
   const supabase = await createClient();
   const { data: user } = await supabase
     .from('users')
-    .select('role')
+    .select('is_admin')
     .eq('clerk_id', userId)
     .single();
 
-  return user?.role === 'admin';
+  return user?.is_admin === true;
 }
 
 export async function POST(req: NextRequest) {

@@ -764,5 +764,6 @@ CREATE TABLE public.users (
   status character varying DEFAULT 'active'::character varying CHECK (status::text = ANY (ARRAY['active'::character varying, 'inactive'::character varying, 'deleted'::character varying]::text[])),
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
+  is_admin boolean DEFAULT false,
   CONSTRAINT users_pkey PRIMARY KEY (id)
 );

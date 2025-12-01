@@ -39,11 +39,11 @@ export async function GET(req: NextRequest) {
 
     const { data: user, error: userError } = await supabase
       .from('users')
-      .select('role')
+      .select('is_admin')
       .eq('clerk_id', userId)
       .single();
 
-    if (userError || user?.role !== 'admin') {
+    if (userError || user?.is_admin !== true) {
       return NextResponse.json(
         { success: false, error: 'Acesso negado. Apenas administradores.' },
         { status: 403 }

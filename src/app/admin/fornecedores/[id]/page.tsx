@@ -18,6 +18,7 @@ import {
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ImageViewer } from '@/components/ImageViewer';
+import { EditSupplierModal } from '@/components/admin/EditSupplierModal';
 
 export default async function FornecedorDetalhesPage({
   params,
@@ -56,15 +57,18 @@ export default async function FornecedorDetalhesPage({
                 ← Voltar
               </Button>
             </Link>
-            <Badge
-              variant={supplier.status === 'active' ? 'default' : 'destructive'}
-              className={supplier.status === 'active'
-                ? 'bg-green-500/20 text-green-400 border-green-500/30'
-                : 'bg-red-500/20 text-red-400 border-red-500/30'
-              }
-            >
-              {supplier.status === 'active' ? '✓ Ativo' : '✕ Inativo'}
-            </Badge>
+            <div className="flex items-center gap-3">
+              <EditSupplierModal supplier={supplier} />
+              <Badge
+                variant={supplier.status === 'active' ? 'default' : 'destructive'}
+                className={supplier.status === 'active'
+                  ? 'bg-green-500/20 text-green-400 border-green-500/30'
+                  : 'bg-red-500/20 text-red-400 border-red-500/30'
+                }
+              >
+                {supplier.status === 'active' ? '✓ Ativo' : '✕ Inativo'}
+              </Badge>
+            </div>
           </div>
 
           <div className="flex items-start gap-4">

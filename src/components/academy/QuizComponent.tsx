@@ -179,7 +179,7 @@ export function QuizComponent({
           {/* Actions */}
           <div className="flex gap-3">
             {!passed && (
-              <Button onClick={handleRetry} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white">
+              <Button onClick={handleRetry} className="flex-1 bg-white text-black hover:bg-red-500 hover:text-white transition-colors">
                 Tentar Novamente
               </Button>
             )}
@@ -188,7 +188,7 @@ export function QuizComponent({
                 window.location.href = '/academia/meus-cursos';
               }}
               variant="outline"
-              className="flex-1"
+              className="flex-1 text-white hover:bg-red-500 hover:border-red-500 hover:text-white"
             >
               Voltar aos Meus Cursos
             </Button>
@@ -283,7 +283,7 @@ export function QuizComponent({
               {submitting ? 'Enviando...' : 'Enviar Quiz'}
             </Button>
           ) : (
-            <Button onClick={handleNext} disabled={selectedAnswer === -1} className="bg-blue-600 text-white">
+            <Button onClick={handleNext} disabled={selectedAnswer === -1} className="bg-white text-black hover:bg-red-500 hover:text-white transition-colors">
               Próxima
             </Button>
           )}

@@ -1,3 +1,6 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   GraduationCap,
@@ -5,35 +8,43 @@ import {
   Users,
   Award,
   TrendingUp,
+  Loader2,
 } from 'lucide-react';
 import Link from 'next/link';
 
-export default async function AcademiaAdminPage() {
-  // Buscar estatísticas da academia
-  let stats = {};
-  let weeklyActivity = {};
-  let popularCourses = [];
-  let recentEnrollments = [];
+export default function AcademiaAdminPage() {
+  const [stats, setStats] = useState<any>({});
+  const [weeklyActivity, setWeeklyActivity] = useState<any>({});
+  const [popularCourses, setPopularCourses] = useState<any[]>([]);
+  const [recentEnrollments, setRecentEnrollments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-    const response = await fetch(`${baseUrl}/api/admin/academy/statistics`, {
-      cache: 'no-store',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch('/api/admin/academy/statistics', {
+          cache: 'no-store',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
 
-    if (response.ok) {
-      const { data } = await response.json();
-      stats = data?.overview || {};
-      weeklyActivity = data?.weekly_activity || {};
-      popularCourses = data?.popular_courses || [];
-      recentEnrollments = data?.recent_enrollments || [];
-    }
-  } catch (error) {
-    console.error('Erro ao buscar estatísticas:', error);
-  }
+        if (response.ok) {
+          const { data } = await response.json();
+          setStats(data?.overview || {});
+          setWeeklyActivity(data?.weekly_activity || {});
+          setPopularCourses(data?.popular_courses || []);
+          setRecentEnrollments(data?.recent_enrollments || []);
+        }
+      } catch (error) {
+        console.error('Erro ao buscar estatísticas:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
 
   const statsCards = [
     {
@@ -70,6 +81,14 @@ export default async function AcademiaAdminPage() {
     },
   ];
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-white" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -80,7 +99,7 @@ export default async function AcademiaAdminPage() {
         </div>
         <Link
           href="/admin/academia/cursos/novo"
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition flex items-center gap-2"
+          className="px-4 py-2 bg-white text-black hover:bg-red-500 hover:text-white rounded-lg transition-colors flex items-center gap-2"
         >
           <BookOpen className="h-4 w-4" />
           Novo Curso

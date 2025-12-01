@@ -140,7 +140,7 @@ export default function AcademiaPage() {
                   placeholder="Buscar cursos..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="pl-10 bg-zinc-800 border-zinc-700 text-white"
+                  className="pl-10 bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
                 />
               </div>
 
@@ -150,7 +150,7 @@ export default function AcademiaPage() {
                   variant={categoryFilter === 'all' ? 'default' : 'outline'}
                   onClick={() => setCategoryFilter('all')}
                   size="sm"
-                  className={categoryFilter === 'all' ? 'bg-blue-600' : ''}
+                  className={categoryFilter === 'all' ? 'bg-white text-black hover:bg-red-500 hover:text-white' : 'text-white hover:bg-red-500 hover:border-red-500 hover:text-white'}
                 >
                   Todas
                 </Button>
@@ -160,7 +160,7 @@ export default function AcademiaPage() {
                     variant={categoryFilter === category ? 'default' : 'outline'}
                     onClick={() => setCategoryFilter(category)}
                     size="sm"
-                    className={categoryFilter === category ? 'bg-blue-600' : ''}
+                    className={categoryFilter === category ? 'bg-white text-black hover:bg-red-500 hover:text-white' : 'text-white hover:bg-red-500 hover:border-red-500 hover:text-white'}
                   >
                     {category}
                   </Button>
@@ -173,7 +173,7 @@ export default function AcademiaPage() {
                   variant={difficultyFilter === 'beginner' ? 'default' : 'outline'}
                   onClick={() => setDifficultyFilter(difficultyFilter === 'beginner' ? 'all' : 'beginner')}
                   size="sm"
-                  className={difficultyFilter === 'beginner' ? 'bg-blue-600' : ''}
+                  className={difficultyFilter === 'beginner' ? 'bg-white text-black hover:bg-red-500 hover:text-white' : 'text-white hover:bg-red-500 hover:border-red-500 hover:text-white'}
                 >
                   Iniciante
                 </Button>
@@ -181,7 +181,7 @@ export default function AcademiaPage() {
                   variant={difficultyFilter === 'intermediate' ? 'default' : 'outline'}
                   onClick={() => setDifficultyFilter(difficultyFilter === 'intermediate' ? 'all' : 'intermediate')}
                   size="sm"
-                  className={difficultyFilter === 'intermediate' ? 'bg-orange-600' : ''}
+                  className={difficultyFilter === 'intermediate' ? 'bg-white text-black hover:bg-red-500 hover:text-white' : 'text-white hover:bg-red-500 hover:border-red-500 hover:text-white'}
                 >
                   Intermediário
                 </Button>
@@ -189,7 +189,7 @@ export default function AcademiaPage() {
                   variant={difficultyFilter === 'advanced' ? 'default' : 'outline'}
                   onClick={() => setDifficultyFilter(difficultyFilter === 'advanced' ? 'all' : 'advanced')}
                   size="sm"
-                  className={difficultyFilter === 'advanced' ? 'bg-red-600' : ''}
+                  className={difficultyFilter === 'advanced' ? 'bg-white text-black hover:bg-red-500 hover:text-white' : 'text-white hover:bg-red-500 hover:border-red-500 hover:text-white'}
                 >
                   Avançado
                 </Button>

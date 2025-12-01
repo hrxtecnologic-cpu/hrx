@@ -18,11 +18,11 @@ async function checkAdmin(userId: string) {
   const supabase = await createClient();
   const { data: user } = await supabase
     .from('users')
-    .select('role')
+    .select('is_admin')
     .eq('clerk_id', userId)
     .single();
 
-  return user?.role === 'admin';
+  return user?.is_admin === true;
 }
 
 // ============================================================================
@@ -212,6 +212,7 @@ export async function PUT(
     if (body.instructor_bio !== undefined) updateData.instructor_bio = body.instructor_bio;
     if (body.meta_title !== undefined) updateData.meta_title = body.meta_title;
     if (body.meta_description !== undefined) updateData.meta_description = body.meta_description;
+    if (body.certificate_enabled !== undefined) updateData.certificate_enabled = body.certificate_enabled;
 
     const { data: updatedCourse, error: updateError } = await supabase
       .from('courses')

@@ -173,10 +173,10 @@ export default function CourseDetailsPage({ params }: CourseDetailsPageProps) {
     <div className="min-h-screen bg-black">
       {/* Hero Section */}
       <div className="relative h-96 bg-gradient-to-b from-blue-900/20 to-black">
-        {course.cover_image && (
+        {course.cover_image_url && (
           <div
             className="absolute inset-0 bg-cover bg-center opacity-30"
-            style={{ backgroundImage: `url(${course.cover_image})` }}
+            style={{ backgroundImage: `url(${course.cover_image_url})` }}
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
@@ -214,7 +214,7 @@ export default function CourseDetailsPage({ params }: CourseDetailsPageProps) {
                 <BookOpen className="h-4 w-4" />
                 <span>{lessons.length} aulas</span>
               </div>
-              {course.certificate_on_completion && (
+              {course.certificate_enabled && (
                 <div className="flex items-center gap-2">
                   <Award className="h-4 w-4 text-yellow-500" />
                   <span>Com certificado</span>
@@ -339,14 +339,14 @@ export default function CourseDetailsPage({ params }: CourseDetailsPageProps) {
             </Card>
 
             {/* Requirements */}
-            {course.requirements && course.requirements.length > 0 && (
+            {course.prerequisites && (
               <Card className="bg-zinc-900 border-zinc-800">
                 <CardHeader>
                   <CardTitle className="text-white">Requisitos</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-2">
-                    {course.requirements.map((req, idx) => (
+                    {course.prerequisites.split('\n').filter((req: string) => req.trim()).map((req: string, idx: number) => (
                       <li key={idx} className="flex items-start gap-2 text-zinc-300">
                         <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2" />
                         <span>{req}</span>
@@ -453,7 +453,7 @@ export default function CourseDetailsPage({ params }: CourseDetailsPageProps) {
                       <BookOpen className="h-4 w-4 text-blue-500" />
                       {lessons.length} aulas
                     </li>
-                    {course.certificate_on_completion && (
+                    {course.certificate_enabled && (
                       <li className="flex items-center gap-2">
                         <Award className="h-4 w-4 text-yellow-500" />
                         Certificado de conclusão

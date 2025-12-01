@@ -46,9 +46,9 @@ const courseSchema = z.object({
   workload_hours: z.number().min(1, 'Carga horária deve ser maior que 0'),
   is_free: z.boolean(),
   price: z.number().min(0, 'Preço não pode ser negativo').optional(),
-  cover_image: z.string().url('URL inválida').optional().or(z.literal('')),
+  cover_image_url: z.string().url('URL inválida').optional().or(z.literal('')),
   instructor_name: z.string().optional(),
-  certificate_on_completion: z.boolean(),
+  certificate_enabled: z.boolean(),
   minimum_score: z.number().min(0).max(100).optional(),
 });
 
@@ -114,14 +114,14 @@ export default function EditCoursePage({ params }: EditCoursePageProps) {
           workload_hours: courseInfo.workload_hours,
           is_free: courseInfo.is_free,
           price: courseInfo.price || 0,
-          cover_image: courseInfo.cover_image || '',
+          cover_image_url: courseInfo.cover_image_url || '',
           instructor_name: courseInfo.instructor_name || '',
-          certificate_on_completion: courseInfo.certificate_on_completion,
+          certificate_enabled: courseInfo.certificate_enabled ?? true,
           minimum_score: courseInfo.minimum_score || 70,
         });
 
         setLearningObjectives(courseInfo.learning_objectives || ['']);
-        setRequirements(courseInfo.requirements || ['']);
+        setRequirements(courseInfo.prerequisites ? [courseInfo.prerequisites] : ['']);
 
         // Fetch lessons
         const lessonsRes = await fetch(`/api/admin/academy/courses/${courseId}/lessons`);
@@ -147,7 +147,7 @@ export default function EditCoursePage({ params }: EditCoursePageProps) {
       const payload = {
         ...data,
         learning_objectives: learningObjectives.filter((obj) => obj.trim() !== ''),
-        requirements: requirements.filter((req) => req.trim() !== ''),
+        prerequisites: requirements.filter((req) => req.trim() !== '').join('\n'),
       };
 
       const res = await fetch(`/api/admin/academy/courses/${courseId}`, {
@@ -477,12 +477,12 @@ export default function EditCoursePage({ params }: EditCoursePageProps) {
                 </div>
 
                 <div>
-                  <Label htmlFor="cover_image" className="text-white">
+                  <Label htmlFor="cover_image_url" className="text-white">
                     URL da Imagem de Capa
                   </Label>
                   <Input
-                    id="cover_image"
-                    {...register('cover_image')}
+                    id="cover_image_url"
+                    {...register('cover_image_url')}
                     className="bg-zinc-800 border-zinc-700 text-white"
                   />
                 </div>
@@ -544,7 +544,7 @@ export default function EditCoursePage({ params }: EditCoursePageProps) {
                     <Trash2 className="h-4 w-4 mr-2" />
                     Deletar Curso
                   </Button>
-                  <Button type="submit" disabled={submitting} className="bg-blue-600 text-white">
+                  <Button type="submit" disabled={submitting} className="bg-white text-black hover:bg-red-500 hover:text-white transition-colors">
                     {submitting ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -569,7 +569,7 @@ export default function EditCoursePage({ params }: EditCoursePageProps) {
                 <CardTitle className="text-white">Aulas ({lessons.length})</CardTitle>
                 <Button
                   onClick={() => router.push(`/admin/academia/cursos/${courseId}/aulas/nova`)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  className="bg-white text-black hover:bg-red-500 hover:text-white transition-colors"
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Nova Aula
@@ -688,11 +688,11 @@ export default function EditCoursePage({ params }: EditCoursePageProps) {
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
-                  id="certificate_on_completion"
-                  {...register('certificate_on_completion')}
+                  id="certificate_enabled"
+                  {...register('certificate_enabled')}
                   className="w-4 h-4"
                 />
-                <Label htmlFor="certificate_on_completion" className="text-white cursor-pointer">
+                <Label htmlFor="certificate_enabled" className="text-white cursor-pointer">
                   Emitir Certificado
                 </Label>
               </div>

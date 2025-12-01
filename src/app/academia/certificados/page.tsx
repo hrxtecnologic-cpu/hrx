@@ -174,7 +174,7 @@ export default function CertificadosPage() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Buscar por curso ou código..."
-                  className="pl-10 bg-zinc-800 border-zinc-700 text-white"
+                  className="pl-10 bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
                 />
               </div>
             </CardContent>
@@ -199,7 +199,7 @@ export default function CertificadosPage() {
               {!searchTerm && (
                 <Button
                   onClick={() => router.push('/academia')}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  className="bg-white text-black hover:bg-red-500 hover:text-white transition-colors"
                 >
                   Explorar Cursos
                 </Button>
@@ -255,7 +255,7 @@ export default function CertificadosPage() {
                             size="sm"
                             variant="outline"
                             onClick={() => handleCopyCode(certificate.certificate_code)}
-                            className="flex items-center gap-2"
+                            className="flex items-center gap-2 text-white hover:bg-red-500 hover:border-red-500 hover:text-white"
                           >
                             {copiedCode === certificate.certificate_code ? (
                               <>
@@ -276,7 +276,7 @@ export default function CertificadosPage() {
                       <div className="flex gap-3">
                         <Button
                           onClick={() => alert('Funcionalidade de download do PDF em desenvolvimento')}
-                          className="bg-blue-600 hover:bg-blue-700 text-white"
+                          className="bg-white text-black hover:bg-red-500 hover:text-white transition-colors"
                         >
                           <Download className="h-4 w-4 mr-2" />
                           Baixar PDF
@@ -284,6 +284,7 @@ export default function CertificadosPage() {
                         <Button
                           variant="outline"
                           onClick={() => handleShare(certificate)}
+                          className="text-white hover:bg-red-500 hover:border-red-500 hover:text-white"
                         >
                           <Share2 className="h-4 w-4 mr-2" />
                           Compartilhar
@@ -296,6 +297,7 @@ export default function CertificadosPage() {
                               '_blank'
                             )
                           }
+                          className="text-white hover:bg-red-500 hover:border-red-500 hover:text-white"
                         >
                           <ExternalLink className="h-4 w-4 mr-2" />
                           Validar

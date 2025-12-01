@@ -469,7 +469,7 @@ export default function EditLessonPage({ params }: EditLessonPageProps) {
                 <Button
                   type="submit"
                   disabled={submitting}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12"
+                  className="w-full bg-white text-black hover:bg-red-500 hover:text-white transition-colors h-12"
                 >
                   {submitting ? (
                     <>

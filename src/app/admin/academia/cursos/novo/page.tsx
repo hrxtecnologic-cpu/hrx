@@ -1,13 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
@@ -17,7 +16,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, Save, X, Plus, ArrowLeft, Info } from 'lucide-react';
+import { Loader2, Save, X, Plus, ArrowLeft, Info, Eye, CheckCircle } from 'lucide-react';
+import { ImageUploader } from '@/components/academy/ImageUploader';
+import { RichTextEditor } from '@/components/academy/RichTextEditor';
+import { TagsInput } from '@/components/academy/TagsInput';
+import { LessonBuilder, type Lesson } from '@/components/academy/LessonBuilder';
+import { CoursePreview } from '@/components/academy/CoursePreview';
+import { AutoSaveIndicator, type AutoSaveStatus } from '@/components/academy/AutoSaveIndicator';
+import { toast } from 'sonner';
 
 const courseSchema = z.object({
   title: z.string().min(3, 'Título deve ter pelo menos 3 caracteres'),
@@ -31,19 +37,46 @@ const courseSchema = z.object({
   workload_hours: z.number().min(1, 'Carga horária deve ser maior que 0'),
   is_free: z.boolean(),
   price: z.number().min(0, 'Preço não pode ser negativo').optional(),
-  cover_image: z.string().url('URL inválida').optional().or(z.literal('')),
+  cover_image_url: z.string().url('URL inválida').optional().or(z.literal('')),
   instructor_name: z.string().optional(),
-  certificate_on_completion: z.boolean(),
+  instructor_bio: z.string().optional(),
+  certificate_enabled: z.boolean(),
   minimum_score: z.number().min(0).max(100).optional(),
 });
 
 type CourseFormData = z.infer<typeof courseSchema>;
+
+const STORAGE_KEY = 'hrx-course-draft';
+const AUTOSAVE_INTERVAL = 30000; // 30 seconds
+
+const TAG_SUGGESTIONS = [
+  'bartender',
+  'garçom',
+  'copeiro',
+  'chef',
+  'cozinha',
+  'eventos',
+  'hospitalidade',
+  'atendimento',
+  'bebidas',
+  'coquetel',
+  'vinho',
+  'café',
+  'gestão',
+  'liderança'
+];
 
 export default function NovoCursoPage() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [learningObjectives, setLearningObjectives] = useState<string[]>(['']);
   const [requirements, setRequirements] = useState<string[]>(['']);
+  const [tags, setTags] = useState<string[]>([]);
+  const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [autoSaveStatus, setAutoSaveStatus] = useState<AutoSaveStatus>('idle');
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [progressPercentage, setProgressPercentage] = useState(0);
 
   const {
     register,
@@ -51,12 +84,13 @@ export default function NovoCursoPage() {
     formState: { errors },
     setValue,
     watch,
+    getValues,
   } = useForm<CourseFormData>({
     resolver: zodResolver(courseSchema),
     defaultValues: {
       difficulty_level: 'beginner',
       is_free: true,
-      certificate_on_completion: true,
+      certificate_enabled: true,
       workload_hours: 1,
       price: 0,
       minimum_score: 70,
@@ -64,6 +98,81 @@ export default function NovoCursoPage() {
   });
 
   const isFree = watch('is_free');
+  const watchedValues = watch();
+
+  // Calculate progress percentage
+  useEffect(() => {
+    const fields = [
+      watchedValues.title,
+      watchedValues.slug,
+      watchedValues.description,
+      watchedValues.category,
+      watchedValues.cover_image_url,
+      learningObjectives.filter(obj => obj.trim()).length > 0,
+      lessons.length > 0
+    ];
+
+    const filledFields = fields.filter(Boolean).length;
+    const percentage = Math.round((filledFields / fields.length) * 100);
+    setProgressPercentage(percentage);
+  }, [watchedValues, learningObjectives, lessons]);
+
+  // Load draft from localStorage
+  useEffect(() => {
+    const savedDraft = localStorage.getItem(STORAGE_KEY);
+    if (savedDraft) {
+      try {
+        const draft = JSON.parse(savedDraft);
+
+        // Restore form values
+        Object.keys(draft).forEach((key) => {
+          if (key !== 'learningObjectives' && key !== 'requirements' && key !== 'tags' && key !== 'lessons') {
+            setValue(key as keyof CourseFormData, draft[key]);
+          }
+        });
+
+        // Restore arrays
+        if (draft.learningObjectives) setLearningObjectives(draft.learningObjectives);
+        if (draft.requirements) setRequirements(draft.requirements);
+        if (draft.tags) setTags(draft.tags);
+        if (draft.lessons) setLessons(draft.lessons);
+
+        toast.success('Rascunho restaurado', {
+          description: 'Seus dados foram recuperados automaticamente'
+        });
+      } catch (error) {
+        console.error('Error loading draft:', error);
+      }
+    }
+  }, [setValue]);
+
+  // Auto-save to localStorage
+  useEffect(() => {
+    const autoSave = setInterval(() => {
+      const formData = getValues();
+      const draft = {
+        ...formData,
+        learningObjectives,
+        requirements,
+        tags,
+        lessons,
+        savedAt: new Date().toISOString()
+      };
+
+      setAutoSaveStatus('saving');
+
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
+        setAutoSaveStatus('saved');
+        setLastSaved(new Date());
+      } catch (error) {
+        console.error('Error saving draft:', error);
+        setAutoSaveStatus('error');
+      }
+    }, AUTOSAVE_INTERVAL);
+
+    return () => clearInterval(autoSave);
+  }, [getValues, learningObjectives, requirements, tags, lessons]);
 
   const generateSlug = (title: string) => {
     return title
@@ -84,6 +193,8 @@ export default function NovoCursoPage() {
         ...data,
         learning_objectives: learningObjectives.filter((obj) => obj.trim() !== ''),
         requirements: requirements.filter((req) => req.trim() !== ''),
+        tags,
+        // Note: lessons will be saved separately after course creation
       };
 
       const res = await fetch('/api/admin/academy/courses', {
@@ -95,14 +206,71 @@ export default function NovoCursoPage() {
       const result = await res.json();
 
       if (result.success) {
-        alert('Curso criado com sucesso!');
-        router.push(`/admin/academia/cursos/${result.data.id}`);
+        // Clear draft from localStorage
+        localStorage.removeItem(STORAGE_KEY);
+
+        const courseId = result.data.id;
+
+        // Salvar as lições se existirem
+        if (lessons.length > 0) {
+          toast.info('Salvando aulas...', {
+            description: `Criando ${lessons.length} aula(s)...`
+          });
+
+          let savedCount = 0;
+          for (let i = 0; i < lessons.length; i++) {
+            const lesson = lessons[i];
+            try {
+              const lessonRes = await fetch(`/api/admin/academy/courses/${courseId}/lessons`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  title: lesson.title,
+                  description: lesson.description || '',
+                  order_index: i,
+                  content_type: lesson.contentType || 'video',
+                  video_url: lesson.videoUrl || null,
+                  video_duration_seconds: lesson.durationMinutes ? lesson.durationMinutes * 60 : null,
+                  video_provider: lesson.videoUrl?.includes('youtube') ? 'youtube' :
+                                 lesson.videoUrl?.includes('vimeo') ? 'vimeo' : null,
+                  text_content: null,
+                  quiz_data: null,
+                  attachments: [],
+                  duration_minutes: lesson.durationMinutes || 0,
+                  is_preview: lesson.isPreview ?? false,
+                  is_mandatory: lesson.isMandatory ?? true,
+                }),
+              });
+
+              const lessonResult = await lessonRes.json();
+              if (lessonResult.success) {
+                savedCount++;
+              }
+            } catch (lessonError) {
+              console.error(`Erro ao salvar aula ${lesson.title}:`, lessonError);
+            }
+          }
+
+          if (savedCount > 0) {
+            toast.success(`${savedCount} aula(s) criada(s)!`);
+          }
+        }
+
+        toast.success('Curso criado com sucesso!', {
+          description: 'Redirecionando para a página do curso...'
+        });
+
+        router.push(`/admin/academia/cursos/${courseId}`);
       } else {
-        alert(result.error || 'Erro ao criar curso');
+        toast.error('Erro ao criar curso', {
+          description: result.error || 'Tente novamente'
+        });
       }
     } catch (error) {
       console.error('Erro ao criar curso:', error);
-      alert('Erro ao criar curso. Tente novamente.');
+      toast.error('Erro ao criar curso', {
+        description: 'Verifique sua conexão e tente novamente'
+      });
     } finally {
       setSubmitting(false);
     }
@@ -141,25 +309,56 @@ export default function NovoCursoPage() {
       <div className="space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-3 mb-3">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => router.push('/admin/academia/cursos')}
-                className="border-zinc-700 hover:bg-zinc-800"
-              >
-                <ArrowLeft className="h-4 w-4 text-white" />
-              </Button>
-              <div>
-                <h1 className="text-3xl font-bold text-white">Criar Novo Curso</h1>
-                <p className="text-zinc-400 mt-1">
-                  Preencha as informações para criar um novo curso na Academia HRX
-                </p>
-              </div>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => router.push('/admin/academia/cursos')}
+              className="border-zinc-700 hover:bg-zinc-800"
+            >
+              <ArrowLeft className="h-4 w-4 text-white" />
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold text-white">Criar Novo Curso</h1>
+              <p className="text-zinc-400 mt-1">
+                Preencha as informações para criar um novo curso na Academia HRX
+              </p>
             </div>
           </div>
+
+          <div className="flex items-center gap-4">
+            <AutoSaveIndicator status={autoSaveStatus} lastSaved={lastSaved} />
+            <Button
+              variant="outline"
+              onClick={() => setPreviewOpen(true)}
+              className="border-zinc-700 hover:bg-zinc-800 text-white"
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              Pré-visualizar
+            </Button>
+          </div>
         </div>
+
+        {/* Progress Bar */}
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardContent className="pt-6">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-zinc-400">Progresso do Curso</span>
+                <span className="font-medium text-white">{progressPercentage}%</span>
+              </div>
+              <div className="w-full h-2 bg-zinc-800 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-500"
+                  style={{ width: `${progressPercentage}%` }}
+                />
+              </div>
+              <p className="text-xs text-zinc-500">
+                Preencha todos os campos para completar o cadastro
+              </p>
+            </div>
+          </CardContent>
+        </Card>
 
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -220,16 +419,17 @@ export default function NovoCursoPage() {
                     )}
                   </div>
 
-                  {/* Descrição */}
+                  {/* Descrição com Rich Text */}
                   <div className="space-y-3">
-                    <Label htmlFor="description" className="text-sm font-medium text-white">
+                    <Label className="text-sm font-medium text-white">
                       Descrição do Curso <span className="text-red-500">*</span>
                     </Label>
-                    <Textarea
-                      id="description"
-                      {...register('description')}
-                      className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 min-h-[140px] resize-none"
+                    <RichTextEditor
+                      value={watch('description') || ''}
+                      onChange={(value) => setValue('description', value)}
                       placeholder="Descreva o curso, seus benefícios e o que o aluno vai aprender..."
+                      maxLength={5000}
+                      minHeight="200px"
                     />
                     {errors.description && (
                       <p className="text-sm text-red-400 flex items-center gap-1">
@@ -237,7 +437,6 @@ export default function NovoCursoPage() {
                         {errors.description.message}
                       </p>
                     )}
-                    <p className="text-xs text-zinc-500">{watch('description')?.length || 0} caracteres</p>
                   </div>
 
                   {/* Categoria e Dificuldade */}
@@ -286,7 +485,22 @@ export default function NovoCursoPage() {
                     </div>
                   </div>
 
-                  {/* Instrutor e Imagem */}
+                  {/* Tags */}
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium text-white">Tags do Curso</Label>
+                    <TagsInput
+                      value={tags}
+                      onChange={setTags}
+                      suggestions={TAG_SUGGESTIONS}
+                      placeholder="Digite uma tag e pressione Enter..."
+                      maxTags={10}
+                    />
+                    <p className="text-xs text-zinc-500">
+                      Tags ajudam os alunos a encontrar seu curso
+                    </p>
+                  </div>
+
+                  {/* Instrutor */}
                   <div className="space-y-6">
                     <div className="space-y-3">
                       <Label htmlFor="instructor_name" className="text-sm font-medium text-white">
@@ -302,24 +516,36 @@ export default function NovoCursoPage() {
                     </div>
 
                     <div className="space-y-3">
-                      <Label htmlFor="cover_image" className="text-sm font-medium text-white">
-                        URL da Imagem de Capa
+                      <Label htmlFor="instructor_bio" className="text-sm font-medium text-white">
+                        Bio do Instrutor
                       </Label>
                       <Input
-                        id="cover_image"
-                        {...register('cover_image')}
+                        id="instructor_bio"
+                        {...register('instructor_bio')}
                         className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 h-11"
-                        placeholder="https://..."
+                        placeholder="Breve descrição sobre o instrutor..."
                       />
-                      {errors.cover_image && (
-                        <p className="text-sm text-red-400 flex items-center gap-1">
-                          <Info className="h-3 w-3" />
-                          {errors.cover_image.message}
-                        </p>
-                      )}
-                      <p className="text-xs text-zinc-500">Recomendado: 1200x630px</p>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+
+              {/* Imagem de Capa */}
+              <Card className="bg-zinc-900 border-zinc-800">
+                <CardHeader className="border-b border-zinc-800 pb-4">
+                  <CardTitle className="text-xl text-white">Imagem de Capa</CardTitle>
+                  <CardDescription className="text-zinc-400 mt-2">
+                    Imagem que aparecerá na listagem de cursos
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <ImageUploader
+                    value={watch('cover_image_url') || ''}
+                    onChange={(url) => setValue('cover_image_url', url)}
+                    maxSize={5 * 1024 * 1024}
+                    bucket="documents"
+                    folder="course-covers"
+                  />
                 </CardContent>
               </Card>
 
@@ -404,6 +630,19 @@ export default function NovoCursoPage() {
                   </Button>
                 </CardContent>
               </Card>
+
+              {/* Lesson Builder */}
+              <Card className="bg-zinc-900 border-zinc-800">
+                <CardHeader className="border-b border-zinc-800 pb-4">
+                  <CardTitle className="text-xl text-white">Conteúdo do Curso</CardTitle>
+                  <CardDescription className="text-zinc-400 mt-2">
+                    Adicione e organize as aulas do curso
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <LessonBuilder value={lessons} onChange={setLessons} />
+                </CardContent>
+              </Card>
             </div>
 
             {/* Sidebar - Col 1 */}
@@ -477,11 +716,11 @@ export default function NovoCursoPage() {
                     <div className="flex items-center gap-3 p-3 bg-zinc-800/50 rounded-lg border border-zinc-800">
                       <input
                         type="checkbox"
-                        id="certificate_on_completion"
-                        {...register('certificate_on_completion')}
+                        id="certificate_enabled"
+                        {...register('certificate_enabled')}
                         className="w-4 h-4 rounded border-zinc-600 bg-zinc-800 text-blue-600 focus:ring-blue-600 focus:ring-offset-zinc-900"
                       />
-                      <Label htmlFor="certificate_on_completion" className="text-sm font-medium text-white cursor-pointer">
+                      <Label htmlFor="certificate_enabled" className="text-sm font-medium text-white cursor-pointer">
                         Emitir Certificado
                       </Label>
                     </div>
@@ -513,7 +752,7 @@ export default function NovoCursoPage() {
                     <Button
                       type="submit"
                       disabled={submitting}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12 font-medium"
+                      className="w-full bg-white text-black hover:bg-red-500 hover:text-white transition-colors h-12 font-medium"
                     >
                       {submitting ? (
                         <>
@@ -532,7 +771,7 @@ export default function NovoCursoPage() {
                       type="button"
                       variant="outline"
                       onClick={() => router.push('/admin/academia/cursos')}
-                      className="w-full border-zinc-700 hover:bg-zinc-800 text-white h-11"
+                      className="w-full text-white hover:bg-red-500 hover:border-red-500 hover:text-white transition-colors h-11"
                     >
                       Cancelar
                     </Button>
@@ -547,6 +786,14 @@ export default function NovoCursoPage() {
           </div>
         </form>
       </div>
+
+      {/* Preview Modal */}
+      <CoursePreview
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        courseData={getValues()}
+        lessons={lessons}
+      />
     </div>
   );
 }

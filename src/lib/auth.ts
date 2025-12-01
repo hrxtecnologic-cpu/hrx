@@ -33,7 +33,7 @@ export async function isAdmin() {
     return { isAdmin: true, userId };
   }
 
-  // Verificar role no Supabase
+  // Verificar is_admin no Supabase
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -41,11 +41,11 @@ export async function isAdmin() {
 
   const { data: dbUser } = await supabase
     .from('users')
-    .select('role')
+    .select('is_admin')
     .eq('clerk_id', userId)
     .single();
 
-  if (dbUser && dbUser.role === 'admin') {
+  if (dbUser && dbUser.is_admin === true) {
     return { isAdmin: true, userId };
   }
 

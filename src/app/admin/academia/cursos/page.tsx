@@ -89,7 +89,7 @@ export default function CursosAdminPage() {
           <p className="text-zinc-400">Gerencie todos os cursos da Academia HRX</p>
         </div>
         <Link href="/admin/academia/cursos/novo">
-          <Button className="bg-blue-600 hover:bg-blue-700">
+          <Button className="bg-white text-black hover:bg-red-500 hover:text-white transition-colors">
             <Plus className="h-4 w-4 mr-2" />
             Novo Curso
           </Button>
@@ -107,7 +107,7 @@ export default function CursosAdminPage() {
                 placeholder="Buscar cursos..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-10 bg-zinc-800 border-zinc-700 text-white"
+                className="pl-10 bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
               />
             </div>
 
@@ -116,28 +116,28 @@ export default function CursosAdminPage() {
               <Button
                 variant={statusFilter === 'all' ? 'default' : 'outline'}
                 onClick={() => setStatusFilter('all')}
-                className={statusFilter === 'all' ? 'bg-blue-600' : ''}
+                className={statusFilter === 'all' ? 'bg-white text-black hover:bg-red-500 hover:text-white' : 'text-white hover:bg-red-500 hover:border-red-500 hover:text-white'}
               >
                 Todos
               </Button>
               <Button
                 variant={statusFilter === 'published' ? 'default' : 'outline'}
                 onClick={() => setStatusFilter('published')}
-                className={statusFilter === 'published' ? 'bg-green-600' : ''}
+                className={statusFilter === 'published' ? 'bg-white text-black hover:bg-red-500 hover:text-white' : 'text-white hover:bg-red-500 hover:border-red-500 hover:text-white'}
               >
                 Publicados
               </Button>
               <Button
                 variant={statusFilter === 'draft' ? 'default' : 'outline'}
                 onClick={() => setStatusFilter('draft')}
-                className={statusFilter === 'draft' ? 'bg-yellow-600' : ''}
+                className={statusFilter === 'draft' ? 'bg-white text-black hover:bg-red-500 hover:text-white' : 'text-white hover:bg-red-500 hover:border-red-500 hover:text-white'}
               >
                 Rascunhos
               </Button>
               <Button
                 variant={statusFilter === 'archived' ? 'default' : 'outline'}
                 onClick={() => setStatusFilter('archived')}
-                className={statusFilter === 'archived' ? 'bg-gray-600' : ''}
+                className={statusFilter === 'archived' ? 'bg-white text-black hover:bg-red-500 hover:text-white' : 'text-white hover:bg-red-500 hover:border-red-500 hover:text-white'}
               >
                 Arquivados
               </Button>
@@ -162,7 +162,7 @@ export default function CursosAdminPage() {
               Comece criando seu primeiro curso!
             </p>
             <Link href="/admin/academia/cursos/novo">
-              <Button className="bg-blue-600 hover:bg-blue-700">
+              <Button className="bg-white text-black hover:bg-red-500 hover:text-white transition-colors">
                 <Plus className="h-4 w-4 mr-2" />
                 Criar Curso
               </Button>
