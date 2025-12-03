@@ -75,7 +75,54 @@ export async function POST(req: Request) {
     logger.debug('Documentos recebidos', {
       userId,
       documentTypes: documents ? Object.keys(documents) : [],
-      documentCount: documents ? Object.keys(documents).length : 0
+      documentCount: documents ? Object.keys(documents).length : 0,
+      certifications: certifications ? Object.keys(certifications) : []
+    });
+
+    // ========== Mesclar certificações nos documentos para validação ==========
+    // Os certificados (CNV, CNH, NR10, etc) vêm no objeto 'certifications'
+    // Precisamos mapeá-los para o formato esperado pelo validador de documentos
+    const certToDocMap: Record<string, string> = {
+      'cnh': 'cnh_photo',
+      'cnv': 'cnv_photo',
+      'nr10': 'nr10_certificate',
+      'nr35': 'nr35_certificate',
+      'drt': 'drt_photo',
+    };
+
+    const mergedDocuments: Record<string, string> = { ...(documents || {}) };
+    const mergedValidities: Record<string, string | null> = {
+      cnh_validity: cnh_validity || null,
+      cnv_validity: cnv_validity || null,
+      nr10_validity: nr10_validity || null,
+      nr35_validity: nr35_validity || null,
+      drt_validity: drt_validity || null,
+    };
+
+    // Mesclar certificações
+    if (certifications) {
+      Object.entries(certifications).forEach(([certCode, certData]) => {
+        const cert = certData as { document_url?: string; validity?: string };
+        const docType = certToDocMap[certCode];
+
+        if (docType && cert?.document_url) {
+          mergedDocuments[docType] = cert.document_url;
+        }
+
+        // Extrair validade da certificação se não foi passada diretamente
+        if (cert?.validity) {
+          const validityKey = `${certCode}_validity`;
+          if (!mergedValidities[validityKey]) {
+            mergedValidities[validityKey] = cert.validity;
+          }
+        }
+      });
+    }
+
+    logger.debug('Documentos mesclados para validação', {
+      userId,
+      mergedDocuments: Object.keys(mergedDocuments),
+      mergedValidities
     });
 
     // Validar com Zod
@@ -153,13 +200,8 @@ export async function POST(req: Request) {
     }
 
     // ========== Validar Documentos Obrigatórios ==========
-    const validityFields = {
-      cnh_validity,
-      cnv_validity,
-      nr10_validity,
-      nr35_validity,
-      drt_validity,
-    };
+    // Usar documentos e validades mesclados (inclui certificações)
+    const validityFields = mergedValidities;
 
     // ✨ NOVO: Usar subcategorias ao invés de categorias para validação de documentos
     const categoriesToValidate = subcategories && subcategories.length > 0
@@ -171,12 +213,14 @@ export async function POST(req: Request) {
       usandoSubcategorias: !!subcategories,
       subcategories,
       categories: validatedData.categories,
-      categoriesToValidate
+      categoriesToValidate,
+      mergedDocumentKeys: Object.keys(mergedDocuments)
     });
 
+    // Usar mergedDocuments que inclui documentos básicos + certificações
     const documentValidation = subcategories && subcategories.length > 0
-      ? validateDocumentsForSubcategories(subcategories, documents || {}, validityFields)
-      : validateDocumentsForCategories(validatedData.categories, documents || {}, validityFields);
+      ? validateDocumentsForSubcategories(subcategories, mergedDocuments, validityFields)
+      : validateDocumentsForCategories(validatedData.categories, mergedDocuments, validityFields);
 
     if (!documentValidation.valid) {
       const errorMessage = formatDocumentValidationErrors(documentValidation);
@@ -229,13 +273,13 @@ export async function POST(req: Request) {
         email: validatedData.email,
         phone: validatedData.phone,
 
-        // Documentos específicos e validades
+        // Documentos específicos e validades (usar valores mesclados)
         cnh_number: cnh_number || null, // Obrigatório para motoristas
-        cnh_validity: cnh_validity || null,
-        cnv_validity: cnv_validity || null, // Obrigatório para seguranças
-        nr10_validity: nr10_validity || null,
-        nr35_validity: nr35_validity || null,
-        drt_validity: drt_validity || null,
+        cnh_validity: mergedValidities.cnh_validity || null,
+        cnv_validity: mergedValidities.cnv_validity || null, // Obrigatório para seguranças
+        nr10_validity: mergedValidities.nr10_validity || null,
+        nr35_validity: mergedValidities.nr35_validity || null,
+        drt_validity: mergedValidities.drt_validity || null,
 
         // Endereço
         cep: validatedData.cep,

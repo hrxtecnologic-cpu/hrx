@@ -5,9 +5,8 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Upload, Check, X, AlertCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -18,6 +17,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import { compressImage, isImageFile } from '@/lib/image-utils';
+import { uploadFileWithProgress, getUploadErrorMessage } from '@/lib/upload-utils';
 import type { Certification, CertificationConfig } from '@/types/certification';
 
 interface CertificationUploadProps {
@@ -37,37 +38,50 @@ export function CertificationUpload({
 }: CertificationUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadError, setUploadError] = useState<string>('');
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
     if (!allowedTypes.includes(file.type)) {
-      alert('Apenas JPG, PNG ou PDF');
+      setUploadError('Formato inválido. Use JPG, PNG ou PDF.');
       return;
     }
 
     if (file.size > 10 * 1024 * 1024) {
-      alert('Arquivo muito grande (máx 10MB)');
+      setUploadError('Arquivo muito grande. Máximo 10MB.');
       return;
     }
 
+    setUploadError('');
     setUploading(true);
     setUploadProgress(0);
 
-    const progressInterval = setInterval(() => {
-      setUploadProgress((prev) => Math.min(prev + 10, 90));
-    }, 200);
-
     try {
-      const result = await onUpload(file);
+      // Comprimir imagem antes do upload (reduz fotos de celular)
+      let fileToUpload = file;
+      if (isImageFile(file)) {
+        try {
+          fileToUpload = await compressImage(file, {
+            maxSizeMB: 1,
+            maxWidthOrHeight: 1920,
+          });
+        } catch (compressionError) {
+          console.warn('Compressão falhou, usando arquivo original:', compressionError);
+        }
+      }
 
-      clearInterval(progressInterval);
+      // Upload com progresso real
+      const result = await onUpload(fileToUpload);
+
       setUploadProgress(100);
 
       if (result.error) {
-        alert(`Erro: ${result.error}`);
+        setUploadError(result.error);
+        setUploading(false);
+        setUploadProgress(0);
         return;
       }
 
@@ -82,13 +96,13 @@ export function CertificationUpload({
         setUploadProgress(0);
       }, 500);
     } catch (error) {
-      clearInterval(progressInterval);
       console.error('Erro ao fazer upload:', error);
-      alert('Erro ao fazer upload');
+      const errorMessage = getUploadErrorMessage(error);
+      setUploadError(errorMessage);
       setUploading(false);
       setUploadProgress(0);
     }
-  };
+  }, [certification, onChange, onUpload]);
 
   const getStatusColor = () => {
     if (!certification?.status) return 'border-zinc-800';
@@ -256,6 +270,13 @@ export function CertificationUpload({
       {certification?.status === 'rejected' && certification?.rejection_reason && (
         <div className="p-2 bg-red-600/10 border border-red-600/30 rounded">
           <p className="text-xs text-red-400">{certification.rejection_reason}</p>
+        </div>
+      )}
+
+      {/* Mensagem de erro de upload */}
+      {uploadError && (
+        <div className="p-2 bg-red-600/10 border border-red-600/30 rounded">
+          <p className="text-xs text-red-400">{uploadError}</p>
         </div>
       )}
     </div>

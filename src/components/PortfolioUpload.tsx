@@ -1,14 +1,20 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
-import { formatFileSize } from '@/lib/supabase/storage';
+import { createPreviewUrl, revokePreviewUrl } from '@/lib/image-utils';
+import { getUploadErrorMessage } from '@/lib/upload-utils';
 
 interface PortfolioUploadProps {
   onUpload: (files: File[]) => Promise<void>;
   currentUrls?: string[];
   maxFiles?: number;
+}
+
+interface UploadProgress {
+  completed: number;
+  total: number;
 }
 
 export function PortfolioUpload({
@@ -17,8 +23,9 @@ export function PortfolioUpload({
   maxFiles = 10,
 }: PortfolioUploadProps) {
   const [uploading, setUploading] = useState(false);
-  const [files, setFiles] = useState<File[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<UploadProgress>({ completed: 0, total: 0 });
   const [previews, setPreviews] = useState<string[]>(currentUrls);
+  const [blobUrls, setBlobUrls] = useState<string[]>([]); // Para rastrear URLs de blob criadas
   const [error, setError] = useState<string>('');
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -29,7 +36,19 @@ export function PortfolioUpload({
     }
   }, [currentUrls]);
 
-  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  // Limpar URLs de blob ao desmontar (liberar memória)
+  useEffect(() => {
+    return () => {
+      blobUrls.forEach((url) => {
+        if (url.startsWith('blob:')) {
+          revokePreviewUrl(url);
+        }
+      });
+    };
+  }, [blobUrls]);
+
+  // Handler de mudança de arquivo com compressão e upload paralelo
+  const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files || []);
     if (selectedFiles.length === 0) return;
 
@@ -40,40 +59,55 @@ export function PortfolioUpload({
     }
 
     setError('');
-    setFiles(selectedFiles);
+    setUploadProgress({ completed: 0, total: selectedFiles.length });
 
-    // Gerar previews
+    // Gerar previews usando createObjectURL (mais eficiente que FileReader)
     const newPreviews: string[] = [];
+    const newBlobUrls: string[] = [];
+
     for (const file of selectedFiles) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        newPreviews.push(reader.result as string);
-        if (newPreviews.length === selectedFiles.length) {
-          setPreviews([...previews, ...newPreviews]);
-        }
-      };
-      reader.readAsDataURL(file);
+      const previewUrl = createPreviewUrl(file);
+      newPreviews.push(previewUrl);
+      newBlobUrls.push(previewUrl);
     }
+
+    setPreviews((prev) => [...prev, ...newPreviews]);
+    setBlobUrls((prev) => [...prev, ...newBlobUrls]);
 
     // Auto-upload
     setUploading(true);
     try {
       await onUpload(selectedFiles);
     } catch (err) {
-      setError('Erro ao fazer upload. Tente novamente.');
-      console.error(err);
+      // Mensagem de erro específica
+      const errorMessage = getUploadErrorMessage(err);
+      setError(errorMessage);
+      console.error('Erro no upload do portfólio:', err);
     } finally {
       setUploading(false);
+      setUploadProgress({ completed: 0, total: 0 });
     }
-  }
+  }, [maxFiles, onUpload, previews.length]);
 
-  function handleButtonClick() {
-    inputRef.current?.click();
-  }
+  const handleButtonClick = useCallback(() => {
+    // Fechar teclado virtual antes de abrir seletor de arquivos (melhoria mobile)
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+    setTimeout(() => {
+      inputRef.current?.click();
+    }, 100);
+  }, []);
 
-  function removePreview(index: number) {
-    setPreviews(previews.filter((_, i) => i !== index));
-  }
+  const removePreview = useCallback((index: number) => {
+    // Limpar URL de blob se necessário
+    const urlToRemove = previews[index];
+    if (urlToRemove && urlToRemove.startsWith('blob:')) {
+      revokePreviewUrl(urlToRemove);
+      setBlobUrls((prev) => prev.filter((url) => url !== urlToRemove));
+    }
+    setPreviews((prev) => prev.filter((_, i) => i !== index));
+  }, [previews]);
 
   return (
     <div className="space-y-3">
@@ -160,11 +194,25 @@ export function PortfolioUpload({
 
           {/* Progresso */}
           {uploading && (
-            <div className="mt-4">
+            <div className="mt-4 space-y-2">
               <div className="flex items-center justify-center gap-2">
                 <div className="animate-spin rounded-full h-5 w-5 border-2 border-zinc-700 border-t-red-600" />
-                <span className="text-sm text-zinc-400">Enviando fotos...</span>
+                <span className="text-sm text-zinc-400">
+                  {uploadProgress.total > 0
+                    ? `Enviando ${uploadProgress.completed + 1} de ${uploadProgress.total}...`
+                    : 'Processando fotos...'}
+                </span>
               </div>
+              {uploadProgress.total > 0 && (
+                <div className="w-full bg-zinc-700 rounded h-1.5">
+                  <div
+                    className="h-full bg-red-600 rounded transition-all duration-300"
+                    style={{
+                      width: `${((uploadProgress.completed) / uploadProgress.total) * 100}%`,
+                    }}
+                  />
+                </div>
+              )}
             </div>
           )}
 

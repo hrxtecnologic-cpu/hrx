@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { formatFileSize } from '@/lib/supabase/storage';
+import { compressImage, createPreviewUrl, revokePreviewUrl, isImageFile } from '@/lib/image-utils';
+import { getUploadErrorMessage } from '@/lib/upload-utils';
 
 interface DocumentUploadProps {
   label: string;
@@ -39,20 +41,46 @@ export function DocumentUpload({
     }
   }, [currentUrl]);
 
-  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  // Limpar URL de preview ao desmontar (liberar memória)
+  useEffect(() => {
+    return () => {
+      if (preview && preview.startsWith('blob:')) {
+        revokePreviewUrl(preview);
+      }
+    };
+  }, [preview]);
+
+  // Handler de mudança de arquivo com compressão
+  const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (!selectedFile) return;
 
     setError('');
-    setFile(selectedFile);
 
-    // Preview para imagens
-    if (selectedFile.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreview(reader.result as string);
-      };
-      reader.readAsDataURL(selectedFile);
+    // Limpar preview anterior se for blob
+    if (preview && preview.startsWith('blob:')) {
+      revokePreviewUrl(preview);
+    }
+
+    // Comprimir imagem antes do upload (reduz fotos de celular de 4-12MB para ~1MB)
+    let fileToUpload = selectedFile;
+    if (isImageFile(selectedFile)) {
+      try {
+        fileToUpload = await compressImage(selectedFile, {
+          maxSizeMB: 1,
+          maxWidthOrHeight: 1920,
+        });
+      } catch (compressionError) {
+        console.warn('Compressão falhou, usando arquivo original:', compressionError);
+      }
+    }
+
+    setFile(fileToUpload);
+
+    // Preview usando createObjectURL (mais eficiente que FileReader, não causa crash em iOS)
+    if (isImageFile(fileToUpload)) {
+      const previewUrl = createPreviewUrl(fileToUpload);
+      setPreview(previewUrl);
     } else {
       setPreview('');
     }
@@ -60,14 +88,16 @@ export function DocumentUpload({
     // Auto-upload
     setUploading(true);
     try {
-      await onUpload(selectedFile);
+      await onUpload(fileToUpload);
     } catch (err) {
-      setError('Erro ao fazer upload. Tente novamente.');
-      console.error(err);
+      // Mensagem de erro específica baseada no tipo de erro
+      const errorMessage = getUploadErrorMessage(err);
+      setError(errorMessage);
+      console.error('Erro no upload:', err);
     } finally {
       setUploading(false);
     }
-  }
+  }, [onUpload, preview]);
 
   function handleButtonClick() {
     inputRef.current?.click();

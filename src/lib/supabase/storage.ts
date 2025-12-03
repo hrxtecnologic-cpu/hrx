@@ -1,4 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
+import { compressImage } from '@/lib/image-utils';
+import { getUploadErrorMessage } from '@/lib/upload-utils';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -29,6 +31,8 @@ export interface DocumentMetadata {
 
 /**
  * Faz upload de um documento via API Route (mais seguro)
+ * Inclui compressão automática de imagens para mobile
+ *
  * @param file - Arquivo a ser enviado
  * @param clerkId - ID do usuário no Clerk (não usado, mantido para compatibilidade)
  * @param documentType - Tipo do documento
@@ -40,9 +44,22 @@ export async function uploadDocument(
   documentType: DocumentType
 ): Promise<{ url: string; error?: string }> {
   try {
+    // Comprimir imagem antes do upload (reduz fotos de celular de 4-12MB para ~1MB)
+    let fileToUpload = file;
+    if (file.type.startsWith('image/')) {
+      try {
+        fileToUpload = await compressImage(file, {
+          maxSizeMB: 1,
+          maxWidthOrHeight: 1920,
+        });
+      } catch (compressionError) {
+        console.warn('Compressão falhou, usando arquivo original:', compressionError);
+      }
+    }
+
     // Criar FormData
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('file', fileToUpload);
     formData.append('documentType', documentType);
 
     // Upload via API Route
@@ -60,48 +77,102 @@ export async function uploadDocument(
     return { url: data.url };
   } catch (error) {
     console.error('Erro no upload:', error);
-    return { url: '', error: 'Erro ao fazer upload do arquivo' };
+    const errorMessage = getUploadErrorMessage(error);
+    return { url: '', error: errorMessage };
   }
 }
 
 /**
  * Faz upload de múltiplas fotos de portfólio via API Route
+ * Upload PARALELO com compressão automática - muito mais rápido que sequencial
+ *
  * @param files - Arquivos a serem enviados
  * @param clerkId - ID do usuário no Clerk (não usado, mantido para compatibilidade)
+ * @param onProgress - Callback opcional de progresso (completed, total)
  * @returns URLs dos arquivos ou erro
  */
 export async function uploadPortfolioPhotos(
   files: File[],
-  clerkId: string
-): Promise<{ urls: string[]; error?: string }> {
+  clerkId: string,
+  onProgress?: (completed: number, total: number) => void
+): Promise<{ urls: string[]; error?: string; failures?: number }> {
   try {
-    const urls: string[] = [];
+    const total = files.length;
+    let completed = 0;
 
-    for (const file of files) {
-      // Criar FormData
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('documentType', 'portfolio');
+    // Upload PARALELO - muito mais rápido que sequencial
+    const uploadPromises = files.map(async (file, index) => {
+      try {
+        // Comprimir imagem antes do upload
+        let fileToUpload = file;
+        if (file.type.startsWith('image/')) {
+          try {
+            fileToUpload = await compressImage(file, {
+              maxSizeMB: 1,
+              maxWidthOrHeight: 1920,
+            });
+          } catch (compressionError) {
+            console.warn(`Compressão falhou para arquivo ${index}:`, compressionError);
+          }
+        }
 
-      // Upload via API Route
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
+        // Criar FormData
+        const formData = new FormData();
+        formData.append('file', fileToUpload);
+        formData.append('documentType', 'portfolio');
 
-      const data = await response.json();
+        // Upload via API Route
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
 
-      if (!response.ok) {
-        return { urls: [], error: data.error || 'Erro ao fazer upload' };
+        const data = await response.json();
+
+        completed++;
+        onProgress?.(completed, total);
+
+        if (!response.ok) {
+          return { success: false, url: '', index, error: data.error };
+        }
+
+        return { success: true, url: data.url, index };
+      } catch (error) {
+        completed++;
+        onProgress?.(completed, total);
+
+        return { success: false, url: '', index, error: getUploadErrorMessage(error) };
       }
+    });
 
-      urls.push(data.url);
+    const results = await Promise.all(uploadPromises);
+
+    // Separar sucessos e falhas
+    const successfulUploads = results.filter((r) => r.success);
+    const failedUploads = results.filter((r) => !r.success);
+
+    // Se todos falharam, retornar erro
+    if (successfulUploads.length === 0 && failedUploads.length > 0) {
+      return {
+        urls: [],
+        error: failedUploads[0].error || 'Erro ao fazer upload das fotos',
+        failures: failedUploads.length,
+      };
     }
 
-    return { urls };
+    // Se alguns falharam, retornar os sucessos com aviso
+    if (failedUploads.length > 0) {
+      console.warn(`${failedUploads.length} de ${total} uploads falharam`);
+    }
+
+    return {
+      urls: successfulUploads.map((r) => r.url),
+      failures: failedUploads.length,
+    };
   } catch (error) {
     console.error('Erro no upload de portfólio:', error);
-    return { urls: [], error: 'Erro ao fazer upload das fotos' };
+    const errorMessage = getUploadErrorMessage(error);
+    return { urls: [], error: errorMessage };
   }
 }
 
